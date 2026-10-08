@@ -1,0 +1,283 @@
+=================== SHEET: Cover Sheet ===================
+=================== SHEET: General Notes ===================
+1.    GENERAL NOTES
+1.1    REVISION HISTORY
+Version	Updated By	Date	Modified Section	Brief description of changes made
+1.0	Morneau Shepell	42243	Initial Document
+2.0	Morneau Shepell	42286	Summary, Events File Layout, Header (CSV), Default Values	Summary:  8. Multiple Lines: one line per member 9. Data Integrity: removed details on the validations severities, kept it general 10. File Transmission Details: removed naming convention to files 11. File Transmission Frequency: annually for MDC year and possibly in-year for retros but will still need to be discussed, as the retro/adjustment discussion has not yet been finalized. Events File Layout: - removed: Marital Status, Address Info, Phone Numbers, Email, Employee Number, employer Code, Hire Date - added: fields from Core (current year info and 10 prior years retro) and Leave Layout (10 periods of leave) - changed: the order to the fields, Full-Time/Part-Time field name has changed to Employment Status and Employment Status Effective Date  Header (CSV): - same changes as indicated in the Events File Layout tab Default Values:  - updated explanation for the adjustment to Transaction Dates when a member is hired in the current year or is terminated in the current year when loading data  - added: the retro years 8 through 10 in the contribution related fields  - changed:  Full-Time/Part-Time field name to Employment Type
+3.0	Morneau Shepell	42306	Summary, Events File Layout, Header, Tables of Codes, Default Values	Summary: 5. Files Supported Header - same changes as indicated in the Events File Layout Events File Layout - Change in fields pertaining to the file Tables of Codes - Removal of Notice of Retirement as possible code Default Values -Adjustment of values according to the changes made in Events File Layout
+3.1	Morneau Shepell	42319	Summary, Header, Events File Layout	Summary: - Acceptance of inclusion of pensioners that re-enrol and then resume pension as a part of the population covered by the file. The effectiveness of a different treatment for this population through this file is however conditioned to the approval of the Solution Option to which this request refers to (1640) 'Header - Inclusion of note specifying the differences between the header layout tab and the file layout tab - Same changes as indicated in the Events File Layout Events File Layout: - Inclusion of note specifying the differences between the header layout tab and the file layout tab - Elimination of fields EmploymentStatus and EmploymentStatusEffectiveDate accepted - Last name and First name fields change to non-mandatory accepted - Acceptance of precision that all service breaks will be closed when the employment is terminated. This precision was transposed to the Default Values tab - Acknowledgement of LVFRET and LVFREE cases as special cases that will have to be discussed. Transposition of description of cases to the Special Cases tab. Questions transposed to the Question Log - Acceptance of new fields Employment End Date and Date Of Death - Precision of Record and Field in Ariel for Date Of Death - Acceptance of change in the Description of fields Annualized Earnings (Current Year), Weeks (Current Year), Low Contribution (Current Year) and High Contribution (Current Year) - Acceptance of change in the Field name Low Contribution (Current Year) and High Contribution (Current Year) - Acceptance of change to non-mandatory fields for Annualized Earnings (Current Year) and High Contribution (Current Year) - Acceptance of change to mandatory fields for Weeks (Current Year), Low Contribution (Current Year) and PA (Current Year) - Acceptance of comment on different values used in conversion for AdditionalSalary.Type - Precision that the code CTSRV used in Service Type is the same as ContributoryService - Inclusion of a question in the question log explaining that CTSRV is the same as ContributoryService - Acceptance of new fields Title, Last Name, First Name, Relationship, Address Line 1, Address Line 2, Address Line 3, City, Province, Country, Postal Code and Telephone Number. Addition of the precision that these fields will not be loaded into Ariel, but in CRM
+3.1 (cont.)	Morneau Shepell	42319	Events File Layout (continuation), Tables of Codes, Default Values, Special Cases	Events File Layout: - Change of the Data Type of the new field Relationship from Character to Code. Codes yet to be defined. Tables of Codes: - Acceptance of the suppression of the table Employment Type - Acceptance of the new entry for Pension Recommencement in the table Event Type. The effectiveness of a different treatment for this for this code is however conditioned to the approval of the Solution Option to which this request refers to (1640) - Addition of a new code for Pension Recommencement in the table Event Type - Acceptance of all changes to the tables Title, Province and Country - Addition of the table Relationship - codes yet to be defined Default Values: - Acceptance of suppression of default values for ServiceBreak.Type, ServiceBreak.EndDate and ServiceBreak.TransactionIndicator - Addition of the default value for ServiceBreak.EndDate Special Cases: - Addition of the special cases of participants currently in LVFRET or LVFREE
+3.2	Morneau Shepell	42390	File Layout	File Layout:  - Inclusion of Other Information - Change of Mandatory Field values to "No" for Weeks (Current Year), Low Contributions (Current Year), High Contributions (Current Year) and PA (Current Year) to accommodate the fact that a CoreData interface might have been already reported in the year - Inclusion of precisions of Mandatory Field values regarding the different Event Types - Change of Mandatory Field values to "Yes" for Last Name and First Name, so that at least one file per data collection type provides these values and the member is easily identified in the screen - Suppression of values in Record Ariel (GUI) and Field in Ariel (GUI) for Last Name and First Name, to make it clear that no change will be made in Ariel
+3.3	Morneau Shepell	42457	File Layout, Default Values	File Layout:  - Inclusion of precisions on Contributions.Amount Default Values: - Inclusion of precisions on Contribution.BeginDate, Service.BeginDate, AdditionalSalary.BeginDate, Service.EndDate, Service.PaymentDate, Service.TargetDate, AdditionalSalary.EndDate, AdditionalSalary.PaymentDate, AdditionalSalary.TargetDate, PA.CalculationYear and Contributions.Type
+4.0	Morneau Shepell	42573	File Layout, Default Values	File Layout: - SIN: Record in Ariel and Field in Ariel has been changed to N/A and the Comment/Details has been updated  - Last Name and First Name:  Record in Ariel and Field in Ariel has been updated to N/A and Comment/Details has been updated -Event Type: Comment/Details has been updated - Removal of field Title in the Death Contact Information section - Moved field Relationship at the beginning of the Death Contact section - Change of field "Province" to "Province / State" - Change of field "Postal Code" to "Postal Code / Zip Code" - Put Weeks (Current Year), Low Contributions (Current Year), PA (Current Year) to mandatory fields - Record in Ariel, Field in Ariel, and Comments/Details have been updated for Low Contributions (Current Year),     High Contributions (Current Year), Low Contributions (Previous Year) and High Contributions (Previous Year) - Annualized Earnings (current and previous years): the fields have been moved to come right before the PA; and data is now placed in the Salary Rates record and not the Additionl Salary Default Values: - added the column Record Name - added Field Name's Number of Pays, summary Attributes and Transaction Indicators for certain records - updated Descriptions for Calculations/Benefit, Employment and Membership - Salary Rates record added: data is now placed in the Salary Rates record and not the Additionl Salary for annualized earnings 
+5.0	Morneau Shepell	42674	File Layout Special Cases	File Layout: - changed Data Type for the field Telephone Number of Death Contact from Integer to Character - Field High Contributions - formula for High RCA Calculated Contributions has been updated. End of formula has been changed to Ariel.∑RCAHighCLC(PreviousYear) (the underlined was previously RPP) Special Cases: - Leaves
+6.0	Morneau Shepell	42846	File Layout and Default Values	File Layout: - Field PA (Current Year) - added "Comments/Details" for load of PA = 0 - Field PA (Previous Year) - added "Comments/Details" for load of PA = 0 Default Values: - added update to field Declaration Date for Transactions/Service - added update to field Declaration Date for Transactions/Contributions - added Target and Payment Date fields for Transactions/Contributions (as they were missing) - removed fields relating to Additional Salary (as we no longer update these fields in Ariel DB for HOOPP)  *Note that as of R14 the Number of Pays field in Ariel will no longer be populated. The field Declaration Date was created in Ariel DB as of R13  to maintain the date necessary for the extraction of the HOOPP contribution reports.
+7.0	Morneau Shepell	42977	Summary Default Values	Summary: - Removal of point 5 in 'File Details'  Default Values: - updated Declaration Date for service and contributions transactions. 
+8.0	Morneau Shepell	43089	Events File Layout, Default Values, Reports	Events File Layout: - precision added in column "Comments / Details" for field High Contributions  (point #2 updated and #4 and #5 added) - removed mapping of Death Contact fields to beneficiary record of Ariel (these fields should not be validated because this information is sent to an information box of EV-300 and not directly used in death package) Default Values: - Additional of field "Termination data update" in Employment record Reports: - added the tab for the first time
+9.0	Morneau Shepell	43118	Events File Layout	Events File Layout: - Addition of a comment for the fields SIN, Employment End Date and Date of Death to indicate that these fields will be left-padded with zeros to match the expected field length.
+10.0	Morneau Shepell	43181	Events File Layout	Events File Layout: - High Contributions (Current Year) and High Contributions (Previous Year) : "Comments / Details" column updated relating to change in RPP/RCA calculated split applicable in R16. Year of Payment Date is being used in the calculation instead of Target Year.
+11.0	Morneau Shepell	43252	Default Values	Default Values: - Details added to Calculations/Benefit regarding : Final Calculation, Client Request Date & Estimate
+12	Morneau Shepell	43391	Default Values Special Cases	Default Values: -  Breaks with a start date after the EmploymentEndDate will be deleted. Special Cases: - When Termination code = TERMFIN.  Disability breaks should remain untouched
+1.2    OUT OF SCOPE
+Item				Description\Reason
+1.3    CLIENT SIGN-OFF
+Name	Role	Sign-off date	Signature	Version signed-off
+=================== SHEET: Summary ===================
+2.    BUSINESS OBJECTIVE
+The purpose of the Events interface is to provide the required information about employees to effectively 
+administer the pension plan in the Morneau Shepell system.
+Information requirements include:
+    •	Member identification field (SIN)
+    •	Information pertaining to the administration of the pension plan, such as contributions, service amount, 
+	employment type, leave information, termination details, etc.
+3.    SELECTION MODE
+The file is a change only file containing full records for all members that meet the selection criteria outlined in
+the section “Selection Logic”.
+4.    SELECTION LOGIC
+Employees corresponding to the following criteria are to be included in the file:
+    •	Any active employee whose death is reported
+    •	Any active employee who is retiring
+    •	Any active employee whose employment is being terminated
+    •	Any pensioner who has re-enrolled and subsequently resumes pension 
+5.    FILES SUPPORTED
+The interface is defined based on a standard format provided within this document.
+6.    FILE DETAILS
+    •	Must be encoded in ANSI format
+    •	Provides data delimited by a comma
+    •	Contains a header (see tab "Header")
+    •	Has a ".csv" extension
+    •	Is sorted by Social Insurance Number (key identifier), therefore an authorization must be provided.
+    •	Will follow the order of the fields specified in the "Events File Layout" which is relevant for administration purposes.
+    •	Will be available on the Employer Portal but will have to be manually populated by the employer
+    •	Once populated and saved, must respect the "File Details" and "Supported Data Types" outlined in this document.
+7.    SUPPORTED DATA TYPES
+The following is the list of supported data types for the Events file:
+    •	Date format will be MMDDYYYY
+    •	Alphanumeric fields supported values range is from A to Z and 0 to 9
+    •	Character fields supported values range is from A to Z and 0 to 9 and also include all special characters
+    •	Codes provided need to be listed in the "Tables of Codes" section
+    •	There are no left padded zeros for numerical values
+    •	Decimal symbol is the period (.) symbol
+8.    MULTIPLE LINES
+    •	None
+9.    DATA INTEGRITY
+    •	Validations will be covered in a separate Chapter 7 document.
+10.    FILE TRANSMISSION DETAILS
+    •	The Events data interface files are submitted and processed through the Employer Portal, under the processes 
+	Termination, Retirement - Final Data or Pre-Retirement Death.
+11.    FILE TRANSMISSION FREQUENCY
+    •	Adhoc; in-year
+12.    ADDITIONAL ASSUMPTIONS AND COMMENTS
+    •	The initial layout is based on a standard layout and is subject to changes until the plan analysis, the data conversion
+	and interface specifications are completed.
+=================== SHEET: Header ===================
+13.    HEADER SPECIFICATIONS
+                •	Following is the layout for the header record to be included as the first row of the data feed.
+                •	This layout applies only to the header of .CSV files. Additional fields to be only presented in the GUI
+	are enumerated in the Events File Layout.
+                •	The purpose of this header record is to identify each field in the data feed and ensure each of
+	them will be interpreted correctly in Morneau Shepell's system.
+                •	The names as listed in the "Field Name" column of the grid below should appear in the header record.
+                •	The fields contained in the header record are delimited by a comma.
+Field Name	Mandatory Field In File	Data Type	Comments / Details
+SIN	Yes	Character
+LastName	Yes	Character
+FirstName	Yes	Character
+EventType	Yes	Character
+EmploymentEndDate	Yes	Character	If "Event Type" = Termination, Retirement, Pension Recommencement, "Employment End Date" is required.  Therefore, this field must be included in the .CSV version of the file.  
+Weeks_CurrentYear	Yes	Character
+LowContributions_CurrentYear	Yes	Character
+HighContributions_CurrentYear	Yes	Character
+AnnualizedEarnings_CurrentYear	Yes	Character
+PA_CurrentYear	Yes	Character
+Weeks_PreviousYear	Yes	Character
+LowContributions_PreviousYear	Yes	Character
+HighContributions_PreviousYear	Yes	Character
+AnnualizedEarnings_PreviousYear	Yes	Character
+PA_PreviousYear	Yes	Character
+=================== SHEET: Events File Layout ===================
+14.    EVENTS FILE LAYOUT
+                        •	Following is the layout of the transaction records to be included in the data feed
+	or presented in the GUI.
+                        •	The purpose of this transaction record is to update service, contributions and employment type changes
+                        •	The fields included in the transaction record are delimited by a comma.
+Field Name	Description	Mandatory Field	Max Length	Data Type	Example	Table of Codes	Record in Ariel (GUI)	Field in Ariel (GUI)	Comments / Details
+SIN	Social Insurance Number without hyphens This is a key field and cannot be changed through the interface	Yes	9	Integer	985654563		N/A	N/A	Used to match member in the database. In the event that the length of the value reported is less than the expected length, the DataImport will add zeros (left-padded with "0") in order to ensure the length is as expected.
+Last Name	Last name of employee	Yes	40	Character	Smith		N/A	N/A	Will not be used to change name on file; for information only.
+First Name	First name of employee	Yes	40	Character	John		N/A	N/A	Will not be used to change name on file; for information only.
+Event Type	The type of termination event	Yes	6	Code	RETFIN	Event Type	A. Employment B. Plans/Membership	A. TerminationType B. Status Code/Sub-Status Code	When Event Type=TERFIN:  - the Termination Type will be populated in the employment record - a preliminary calculation request will be generated when the last open employment is being terminated - Membership Stauts/Sub-Status will be put to D-NCT when the last open employment is being terminated When Event Type=DECFIN: - a preliminary calculation request will be generated when the last open employment is being terminated - Membership Stauts/Sub-Status will be put to D-NCT when the last open employment is being terminated When Event Type=RETFIN no calculation request will be generated, however financial data will be loaded.   - If Membership Status = P the Benefit Reevaluation flag will be activated in Ariel. - If Membership Status = D and Sub-Status=NCT the Benefit Reevaluation flag will not be activated in Ariel.
+Employment End Date	Employee's last day of employment (this day may be later then the employee's last day worked - due to vacation, leave, etc.)	Yes  Field used if Event Type = TERFIN, RETFIN	8	Date	07252014		Employment	Termination Date Other Information	Value of Other Information field should be set to "Events" + Employment End Date In the event that the length of the value reported is less than the expected length, the DataImport will add zeros (left-padded with "0") in order to ensure the length is as expected.
+Date Of Death	Date Employee passed away	Yes Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	8	Date	07252014		Member Employment	Date of Death Termination Date	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement  In the event that the length of the value reported is less than the expected length, the DataImport will add zeros (left-padded with "0") in order to ensure the length is as expected.
+Weeks (Current Year)	Contributory service for the year, in weeks, for the current year, if not reported through MDC	Yes	4	Decimal	52.00		Transactions / Service	Service	Service.Type = CTSRV (Contributory Service)
+Low Contributions (Current Year)	Low contributions made for the current year if they were not reported through MDC	Yes	7	Decimal	523.64		Transactions/Contributions	Contributions Amount	Contributions.Type = RPPLOW Contributions.TransactionIndicator = Provided (PRV) Contributions.Amount = File.LowContributions [PRV] + Ariel.Low(CurrentYear) [PRV] Attention:  1. Value added to the values already stored in Ariel with the same Contribution.Type, Transaction Indicator, Summary Attributes and Transaction Dates; otherwise it will create an additional transaction in the database. 1. See Default Values, Contributions Record 2. We load a 0 value if this is what is reported. 
+High Contributions (Current Year)	High contributions made for the current year if they were not reported through MDC	No	7	Decimal	321.23		Transactions/Contributions	Contributions Amount	High RPP Provided contributions:  Contributions.Type = RPPHGH Contributions.TransactionIndicator = Provided (PRV) Contributions.Amount = ArielHighRPP(CurrentYear) [PRV] + File.HighContributions (PRV) High RPP Calculated contributions: Contributions.Type = RPPHGH Contributions.TransactionIndicator = Calculated (CLC) Contributions.Amount = -[MAX (0; ∑Ariel.LowPRV(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate) + ∑Ariel.HighPRV(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate)  + ∑Ariel.LowRetro(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate) + ∑Ariel.HighRetro(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate)+ File.LowContributions + File.HighContributions - (1000 + 0.7*File.PA_CurrentYear))] - Ariel.∑RPPHighCLC(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate) High RCA Calculated contributions: Contributions.Type = RCAHGH.  Contributions.TransactionIndicator = Calculated (CLC) Contributions.Amount =  [MAX (0; ∑Ariel.LowPRV(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate) + ∑Ariel.HighPRV(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate)  + ∑Ariel.LowRetro(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate) + ∑Ariel.HighRetro(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate)+ File.LowContributions + File.HighContributions - (1000 + 0.7*File.PA_CurrentYear))] - Ariel.∑RPPHighCLC(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate) Attention:  1. Value added to the values already stored in Ariel with the same Contribution.Type, Transaction Indicator, Summary Attributes and Transaction Dates; otherwise it will create an additional transaction in the database. 1. When File.PA_CurrentYear is 0.00 Ariel.PA should be used. If there is no PA in Ariel for Year of File.EmploymentEndDate OR Year of File.DeathDate, then no High RPP or High RCA will be calculated at this point. 1. See Default Values, Contributions Record 2. We Load a 0 value if this is what is reported and/or calculated. The calculated amount should only be loaded/calculated if a High RPP and PA are present/reported for the year being calculated.
+Annualized Earnings (Current Year)	Annualized earnings for the current year	No	6	Integer	53000		Transactions / Salary Rates	Rate	See Default Values, Transactions/Salary Rates PZ - For conversion we passed “Provided” into Ariel.
+PA (Current Year)	Pension adjustment for the current year, if not reported through MDC	Yes	5	Integer	12594		Plans/Tax Info/PA	Pension Adjustment	As of R13, PA values of 0 will be recorded to the Ariel DB database.
+Weeks (Previous Year)	Contributory service for the previous year, in weeks, if it was not reported through MDC	No	4	Decimal	52.00		Transactions / Service	Service	Service.Type = CTSRV (Contributory Service)
+Low Contributions (Previous Year)	Low contributions made for the previous year if they were not reported through MDC	No	7	Decimal	523.64		Transactions/Contributions	Contributions Amount (Derived value)	Contributions.Type = RPPLOW Contributions.TransactionIndicator = Provided (PRV) Contributions.Amount = File.LowContributions (PRV) + Ariel.Low(PreviousYear) [PRV] Attention:  1. Value added to the values already stored in Ariel with the same Contribution.Type, Transaction Indicator, Summary Attributes and Transaction Dates; otherwise it will create an additional transaction in the database. 1. See Default Values, Contributions Record 2. We load a 0 value if this is what is reported. 
+High Contributions (Previous Year)	High contributions made for the previous year if they were not reported through MDC	No	7	Decimal	321.23		Transactions/Contributions	Contributions Amount	High RPP Provided contributions:  Contributions.Type = RPPHGH Contributions.TransactionIndicator = Provided (PRV) Contributions.Amount = ArielHighRPP(PreviousYear) [PRV] + File.HighContributions (PRV) High RPP Calculated contributions: Contributions.Type = RPPHGH Contributions.TransactionIndicator = Calculated (CLC) Contributions.Amount = -[MAX (0; ∑Ariel.LowPRV(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr) + ∑Ariel.HighPRV(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr)  + ∑Ariel.LowRetro(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr) + ∑Ariel.HighRetro(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr)+ File.LowContributions(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr) + File.HighContributions(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr) - (1000 + 0.7*File.PA_PreviousYear))] - Ariel.∑RPPHighCLC(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr) High RCA Calculated contributions: Contributions.Type = RCAHGH.  Contributions.TransactionIndicator = Calculated (CLC) Contributions.Amount =  [MAX (0; ∑Ariel.LowPRV(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr) + ∑Ariel.HighPRV(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr)  + ∑Ariel.LowRetro(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr) + ∑Ariel.HighRetro(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr)+ File.LowContributions(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr) + File.HighContributions(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr) - (1000 + 0.7*File.PA_PreviousYear))] - Ariel.∑RPPHighCLC(Year(Ariel.PaymentDate) = Year(File.EmploymentEnd/DeathDate-1yr) Attention:  1. Value added to the values already stored in Ariel with the same Contribution.Type, Transaction Indicator, Summary Attributes and Transaction Dates; otherwise it will create an additional transaction in the database. 1. When File.PA_PreviousYear is 0.00 or blank Ariel.PA should be used for the Year of File.EmploymentEnd/DeathDate-1yr). If there is no PA in Ariel for either Current or Previous Year and there are no High Contributions (with Transaction Indicator = Provided) neither in Ariel nor in file,, then no High RPP or High RCA will be calculated at this point. 2. See Default Values, Contributions Record 3. Where Current Year = File.EmploymentEndDate or File.DeathDate  4. Where Previous Year = File.EmploymentEndDate - 1year or File.DeathDate - 1 year 3. We Load a 0 value if this is what is reported and/or calculated. The calculated amount should only be loaded/calculated if a High RPP and PA are present/reported for the year being calculated.
+Annualized Earnings (Previous Year)	Annualized earnings for the previous year if they were not reported through MDC	No	6	Integer	53000		Transactions / Salary Rates	Rate	See Default Values, Transactions/Salary Rates PZ - For conversion we passed “Provided” into Ariel.
+PA (Previous Year)	Pension adjustment for the previous year if it was not reported through MDC	No	5	Integer	12594		Plans/Tax Info/PA	Pension Adjustment	As of R13, PA values of 0 will be recorded to the Ariel DB database.
+Relationship	Relationship to deceased Mbr - used for pre-retirement death (note that order has changed - Relationship will be at the beginning of the section for Death Contact Information and title has been removed - as requested by Alias Downey 2016-04-28)	Yes Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	40	Character	Brother		Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+Last Name	Last Name of Death Contact - used for pre-retirement death	Yes Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	40	Character	Smith		Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+First Name	First Name of Death Contact - used for pre-retirement death	Yes Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	40	Character	John		Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+Address Line 1	Address info of Death Contact - used for pre-retirement death	Yes Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	40	Character	123 Street		Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+Address Line 2	Address info of Death Contact - used for pre-retirement death	No Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	40	Character	Apt. #805		Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+Address Line 3	Address info of Death Contact - used for pre-retirement death	No Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	40	Character	PO BOX 456		Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+City	Address info of Death Contact - used for pre-retirement death	Yes Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	40	Character	Toronto		Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+Province / State	Address info of Death Contact - used for pre-retirement death	Yes Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	2	Code	ON	Province	Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+Country	Address info of Death Contact - used for pre-retirement death	Yes Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	2	Code	CA	Country	Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+Postal Code / Zip Code	Address info of Death Contact - used for pre-retirement death	Yes Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	12	Character	M5C 3B2		Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+Telephone Number	Telephone Number of Death Contact - used for pre-retirement death	Yes Field available if Event Type = DECFIN, on GUI only, NOT available on .CSV	15	 Character	4166466445		Not to be stored in Ariel, but in CRM	Not to be stored in Ariel, but in CRM	This field should NOT be included on .CSV version of config file. This field shall only be available when this config file is initiated directly via the GUI (ER Portal) for Death Before Retirement
+=================== SHEET: Tables of Codes ===================
+15.    TABLES OF CODES
+15.1	Event Type
+Interface Code	Description
+TERFIN	Termination - Final Data Received
+DECFIN	Deceased - Final Data Received
+RETFIN	Retirement - Final Data Received
+15.2 TITLE
+Interface Code	Description
+Ms.	Miss
+Mrs.	Miss
+Miss	Miss
+Mr.	Mister
+Dr.	Doctor
+15.3    PROVINCE
+Interface Code	Description
+AB	Alberta
+BC	British Columbia
+MB	Manitoba
+NB	New Brunswick
+NL	Newfoundland and Labrador
+NT	Northwest Territories
+NS	Nova Scotia
+NU	Nunavut
+ON	Ontario
+PE	Prince Edward Island
+QC	Quebec
+SK	Saskatchewan
+YT	Yukon
+AL	Alabama
+AK	Alaska
+AZ	Arizona
+AR	Arkansas
+CA	California
+CO	Colorado
+CT	Connecticut
+DE	Delaware
+DC	District of Columbia
+FL	Florida
+GA	Georgia
+HI	Hawaii
+ID	Idaho
+IL	Illinois
+IN	Indiana
+IA	Iowa
+KS	Kansas
+KY	Kentucky
+LA	Louisiana
+ME	Maine
+MD	Maryland
+MA	Massachusetts
+MI	Michigan
+MN	Minnesota
+MS	Mississippi
+MO	Missouri
+MT	Montana
+NE	Nebraska
+NV	Nevada
+NH	New Hampshire
+NJ	New Jersey
+NM	New Mexico
+NY	New York
+NC	North Carolina
+ND	North Dakota
+OH	Ohio
+OK	Oklahoma
+OR	Oregon
+PA	Pennsylvania
+RI	Rhode Island
+SC	South Carolina
+SD	South Dakota
+TN	Tennessee
+TX	Texas
+UT	Utah
+VT	Vermont
+VA	Virginia
+WA	Washington
+WV	West Virginia
+WI	Wisconsin
+WY	Wyoming
+PR	Puerto Rico
+15.4    COUNTRY 
+Interface Code	Description
+CA	Canada
+US	United States
+=================== SHEET: Default Values ===================
+16.    DEFAULT VALUES
+The following are the default values for other mandatory fields that will not be provided by the employer but that have to be informed in order 
+to create a record in Ariel.
+Record Name	Field Name	Description
+Employment	Termination data update	Should be set to File.ExecutionDate (today's date) of matched employment Note : this field will be updated with every Events file that is loaded to Ariel DB. 
+Calculations/Benefit	Event Category	If Event Type = TERFIN then it should be set to "Termination". If Event Type = DECFIN then it should be set to "Death Before Retirement".
+Calculations/Benefit	Event Date	Should be set to the Termination Date of the Employment with the most recent termination date
+Calculations/Benefit	Final Calculation	Should be Unchecked
+Calculations/Benefit	Client Request Date	Should be set to File.Execution Date
+Calculations/Benefit	Estimate	Should be Unchecked
+Employment	TerminationCode	If Event Type = TERFIN then it should be set to "Termination". If Event Type = DECFIN then it should be set to "Death".
+Membership	Status.Code	If Event Type = TERFIN or DECFIN then should be set to "Deferred Pensioner"once the last open employment has been terminated
+Membership	Status.EffectiveDate	If Event Type = TERFIN or DECFIN then should be set to the Termination Date of the employment with the most recent termination date
+Membership	SubStatus.Code	If Event Type = TERFIN or DECFIN then should be set to "Not Completed Termination" once the last open employment has been terminated
+Membership	SubStatus.EffectiveDate	If Event Type = TERFIN or DECFIN then should be set to the Termination Date of the employment with the most recent termination date
+Transactions/Service	Type	For File.Weeks non null nor zero, service type should be set to "CTSRV"
+Transactions/Service	Begin Date	For Weeks_CurrentYear, should be set to the most recent date between the 1st January of the termination year and Ariel.PermanencyDate. For Weeks_PreviousYear, should be set to the most recent date between the 1st January of termination year - 1 and Ariel.PermanencyDate.
+Transactions/Service	End Date	For Weeks_CurrentYear, should be set to the termination date. For Weeks_PreviousYear, should be set to 31st December of the prior year.
+Transactions/Service	Payment Date	Should be set to termination date. For Service_PreviousYear, should be set to 31st December of the prior year.
+Transactions/Service	Target Date	Should be set to termination date. For Service_PreviousYear, should be set to 31st December of the prior year.
+Transactions/Service	Declaration Date	DeclarationDate = Ariel.ContributionPeriodEndDate which is set to: 1. File.EmploymentEndDate or File.DateOfDeath for Weeks_CurrentYear data  2. December 31 of Year (File.EmploymentEndDate or File.DeathDate) -1 for Weeks_PreviousYear data
+Transactions/Service	Transaction Indicator	Should be set to "PRV"
+Transactions/Service	Number of Pays	Should be set to the year of the collect Start Date
+Transactions/Service	Summary Attributes	Should be set to "Final Data - Events"
+Transactions/Contributions	Contribution Type	Contributions.Type should be set according to notes in the Comments / Details in the File Layout for Low Contributions and High Contributions
+Transactions/Contributions	Begin Date	1. For the Contributions instances created from LowContributions_CurrentYear and File.HighContributions_CurrentYear, Contribution.BeginDate should be set to the most recent date between the 1st January of the termination year and Ariel.PermanencyDate; 2. For LowContributions_PreviousYear and HighContributions_PreviousYear, it should be set to the most recent date between the 1st January of termination year - 1 and Ariel.PermanencyDate.
+Transactions/Contributions	End Date	1. For the Contributions instances created from LowContributions_CurrentYear and File.HighContributions_CurrentYear, Contribution.EndDate should be set to the termination date.  2. For LowContributions_PreviousYear and HighContributions_PreviousYear, it should be set to 31st December of termination year - 1.
+Transactions/Contributions	Payment Date	Should be set to termination date. For Service_PreviousYear, should be set to 31st December of the prior year.
+Transactions/Contributions	Target Date	Should be set to termination date. For Service_PreviousYear, should be set to 31st December of the prior year.
+Transactions/Contributions	Declaration Date	DeclarationDate = Ariel.ContributionPeriodEndDate which is set to: 1. File.EmploymentEndDate or File.DateOfDeath for Low(orHigh)Contributions_CurrentYear data  2. December 31 of Year (File.EmploymentEndDate or File.DeathDate) -1 for Low(orHigh)Contributions_PreviousYear data
+Transactions/Contributions	Transaction Indicator	Should be set to "PRV"
+Transactions/Contributions	Number of Pays	Should be set to the year of the collect Start Date
+Transactions/Contributions	Summary Attributes	Should be set to "Final Data - Events"
+Transactions/Salary Rates	Entry Date	Defaulted to Execution Date
+Transactions/Salary Rates	Number of Pays	Should be set to the year of the collect Start Date
+Transactions/Salary Rates	Summary Attributes	Should be set to "Final Data - Events"
+Transactions/Salary Rates	Transaction Indicator	Defaulted to "Provided"
+Transactions/Salary Rates	Salary Rate Type	Defaulted to "REPORT"
+Transactions/Salary Rates	Effective Date	- For AnnualizedEarnings_CurrentYear should be set to the most recent date between the 1st January of the Event year and Ariel.PermanencyDate - For AnnualizedEarnings_PreviousYear should be set to the most recent date between the 1st January of the Event year minus 1 and Ariel.PermanencyDate
+Plans/Tax Info/PA	Year of Calculation	For PA (Current Year) non null nor zero, PA.CalculationYear should be set to termination year. For PA (Previous Year) non null nor zero, PA.CalculationYear should be set to 31st December of the prior year.
+Plans/Tax Info/PA	Input Date	Should be set to execution date
+Transactions/Service Break	End Date	For all existing service breaks for an employment that is being terminated, this field should be set to Employment End Date +1 or Date Of Death +1, according to the case Note that Breaks with a start date after the EmploymentEndDate will be deleted.
+Plans/Designations/Beneficiaries	Type of Beneficiary	Defaulted to "Primary" (File.DeathContactInfo)
+Plans/Designations/Beneficiaries	Other Name	Should be set to "Death Contact info from Event" (File.DeathContactInfo)
+=================== SHEET: Special Cases ===================
+17.    SPECIAL CASES
+Item	Description
+Leaves Process	In order to understand the impact the leaves have on this file please consult the Excel file "Leaves Processing Exmaples.xlsx"
+Disability breaks	When Event Type = TERMFIN,  DTO/DTP/DPR/DMA/DMB/DMS breaks should remain untouched (neither closed nor deleted)
+=================== SHEET: __nAxPro_Settings__ ===================
+1
+=================== SHEET: Reports ===================
+18.    REPORTS
+Report Type	Description	File Name	Found In  DataImport Folder On Client Network 	Found In ER Portal	Found In CRM
+Execution Report	This report contains information related to the processing of the data file such as execution start date, execution end date, processing time duration, selected parameters, input file name, output files paths and relevant statistics (numbers of lines read, etc.)	D0000dti.html	yes	no	no
+Membership Reconciliation	This report contains the list of status changes resulting from the data received in the file. Information related to the movement of members regarding new employments, new memberships, statuses and sub-statuses changes.	D0000mov.xls	yes	no	no
+Summary Transactions Report	This file contains the transactions totals shown by type of transaction and by severity level.	D0000sta.xlslx	yes	no	no
+Transactions Report	This file contains the list by members of all the transactions resulting from the processing of the data file.	D0000tra.xlsx	yes	no	no
+Control Report	This file contains information messages used for audit purposes and HOOPP's "Private" information messages.	D0000ctl.xslx	yes	no	yes
+Summary of Validations (Non-Filtered)	This report contains 2 tabs. The first tab contains the messages generated during the execution of the load, classified by error type. The second tab contains the messages directly related to the file (incorrect field formats, invalid codes, etc.). All validations are displayed in this report.	D0000typ.xlsx	yes	no	no
+Summary of Validations (Filtered)	This report contains 2 tabs. The first tab contains the messages generated during the execution of the load, classified by error type. The second tab contains the messages directly related to the file (incorrect field formats, invalid codes, etc.).	D0000Val.xls	yes	yes	no
+Modified Fields Report	This report contains the list of the updated fields, showing the value in the file, the value previously in Ariel and the resulting value.	D0000upd.xlsx	yes	no	no
+Rejected Individuals	This file contains all the "rejected" records in the same format as the data file. These lines can be corrected directly in the file and then reloaded in Ariel.	Rejected_FileName.csv	yes	yes	no
+Interface File	Copy of the processed data file.	FileName.csv	yes	yes	no
+Person Data Change Information Report  (R14 NEW)	This file contains the last data values passed on the ER Portal.  The fields present are the same as the fields  contained in original .csv file or the fields enterred on the manual entry screen of ER Portal. 	D0000dci.xls	yes	yes	yes

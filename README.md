@@ -6,8 +6,8 @@ A full-stack web application built with **Next.js** (React + TypeScript).
 
 ## Status
 
-🚧 Early setup — the repository baseline is in place and ready for development. The
-Next.js application has **not** been scaffolded yet.
+✅ The Next.js (App Router) application is scaffolded and builds successfully — ready
+for feature development.
 
 ## Tech Stack
 
@@ -35,8 +35,6 @@ Board-Offsite/
 
 ## Getting Started
 
-The application scaffold is not yet in place. Once it is, the typical workflow will be:
-
 ```powershell
 # Install dependencies
 npm install
@@ -45,7 +43,8 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:3000 in your browser.
+Then open http://localhost:3000 in your browser. A sample health endpoint is
+available at http://localhost:3000/api/health.
 
 ## Development
 
