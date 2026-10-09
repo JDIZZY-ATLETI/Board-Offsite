@@ -151,7 +151,9 @@ Memory is flat across runs (no growth after GC); the whole file is buffered once
 
 Scripts: `npm run test:qa`, `npm run test:perf`, `npm run e2e:qa`. `vitest.config.ts` excludes `tests/perf/**` and `tests/e2e/**` from the default run. Dev dependency added: `axe-core@4.14`. CI (`.github/workflows/ci.yml`): `test:coverage` already runs `tests/qa/**`; added `npm audit --audit-level=high` (non-blocking until advisories are resolved) and an `e2e` job (build, `next start`, `e2e:phase1`, `e2e:qa`, artifacts) marked `continue-on-error` for its first runs.
 
-## 9. Release recommendation: **GO-with-fixes** (Phase 1, dev/demo scope)
+## 9. Release recommendation: **GO** (Phase 1, dev/demo scope) - updated after the fix pass (section 11)
+
+All blocking items below (1-4) and the critical audit advisory (6) were fixed in the fix pass; every gate is green (section 11). Remaining before promotion beyond local/demo: item 5 (verify on real Postgres) and the EntraId provider for production auth. Original assessment follows.
 
 Functionally every AC1-AC7 holds on the PGlite path, rule logic conforms to the spec (deviations are deliberate and documented), the ledger is sound under concurrency and tampering, and no raw SIN leaks anywhere. Before this foundation is promoted to a shared/dev environment or Phase 2 builds on it, fix:
 
@@ -178,4 +180,43 @@ Branch `main`, not pushed. Base: `94fd2f8` (Web Developer Phase 1 complete).
 | `beba1a6` | test(e2e): Phase-1 QA browser suite with axe-core scans |
 | `a299e80` | ci: surface npm audit (non-blocking) and add e2e job |
 | `6257f3d` | docs(qa): Phase 1 QA report + E2E/axe artifacts |
-| (this) | docs(qa): record commit hashes |
+| `96e7eda` | docs(qa): record commit hashes |
+
+## 11. Fix pass (2026-10-09)
+
+Every bug from section 4 was fixed on `main` (not pushed). `it.fails` pins were converted to normal passing tests; the e2e "known gaps" are now blocking checks.
+
+| # | Fix | Files | Test | Status |
+|---|---|---|---|---|
+| BUG-SEC-1 | `middleware.ts` deletes every inbound `x-user-id`/`x-user-role`/`x-role`/`x-employer-id` on every request (dev and prod) and only then bridges the dev cookie (non-production). `HeaderAuthProvider.getSession()` returns `null` when `NODE_ENV=production` (defence in depth if the matcher were bypassed). Documented in architecture 13.1 and README (curl now logs in via `/api/auth/dev-login` cookie). | `src/middleware.ts`, `src/lib/auth/identity-headers.ts`, `src/lib/auth/session.ts` | `security-roles.spec.ts`: "BUG-SEC-1 (fixed)" (prod: stripped + provider null + route 401), "dev: client-supplied ... stripped" x2, "non-production: provider accepts"; live probe: forged headers -> 401, submitter cookie + forged Admin header -> 403 | FIXED |
+| BUG-PIPE-1 | `detectEncodingProblem()` (UTF-16 LE/BE BOM, BOM-less UTF-16 by NUL pattern, any NUL byte) short-circuits `parseEventsCsv`; I51 fires `calculated.reason=UNSUPPORTED_ENCODING`, `detected` in {UTF16_LE, UTF16_BE, NUL_BYTES} (spec has no encoding rule; choice recorded in architecture 7.9.1). | `src/lib/events/decode.ts`, `parse.ts`, `src/lib/rules/types.ts`, `l0/I51.ts`, `pipeline/run.ts` | `adversarial-upload.spec.ts` "BUG-PIPE-1 (fixed)" (4 variants -> FILE_REJECTED, history RECEIVED,FILE_REJECTED, no failureReason); `rules-boundaries.spec.ts` UTF-16/NUL probe | FIXED |
+| BUG-PIPE-2 | NUL in a data cell is the same L0 path -> 200 FILE_REJECTED, no orphan, FILE_REJECTED never dedups so the bytes can be re-uploaded. | as above | "BUG-PIPE-2 (fixed)" | FIXED |
+| SEC-INFO-1 | `runBatch` catch: `failureRef = ctx.newId()`, full error logged with the ref, `failureReason = sanitizeFailureReason()` (only `PipelineError` messages pass through; control chars stripped; 500 chars); FAILED transition is best-effort and never rethrows. | `src/lib/pipeline/run.ts` | "SEC-INFO-1 (fixed)" (injected driver-style error: API shows `Processing failed unexpectedly. Reference <uuid>`, no SQL/params; log has the detail) | FIXED |
+| BUG-PIPE-3 | Architecture 11 lists `POST /api/batches/{id}/retry` (Admin), so that was implemented instead of changing dedup (the partial unique index would need a migration): FAILED -> RECEIVED on the same batchId, partial `events_records`/`validation_findings` dropped, counters reset, audit `BATCH_RETRY`, `?wait=true` runs inline; bronze/silver artifacts from the failed attempt are reused (write-once lake). Batches menu "Retry processing" calls it. | `src/app/api/batches/[batchId]/retry/route.ts`, `run.ts` (`putOnce`), `batches-table-live.tsx` | "BUG-PIPE-3 (fixed)" (role matrix 401/403/404/400/409, FAILED -> VALIDATED, history RECEIVED,PARSED,FAILED,RECEIVED,PARSED,VALIDATED) | FIXED |
+| BUG-PARSE-1 | `record_delimiter: [CRLF, LF, CR]`. | `src/lib/events/parse.ts` | `rules-boundaries.spec.ts` "BUG-PARSE-1 (fixed)" (CRLF/LF/CR in any order -> lines 2,3,4) | FIXED |
+| BUG-PARSE-2 | csv-parse `info.lines` is the record END line and counts CR and LF of a quoted CRLF separately; `parseEventsCsv` recovers the physical start line by subtracting newlines inside the record and the cumulative CR excess of earlier records. | `src/lib/events/parse.ts` | "BUG-PARSE-2 (fixed)" (lines 2,4 / 2,5,7 / LF variant) | FIXED |
+| BUG-API-1 | zod `.refine(isValidIsoDate)` (real calendar date, 1900-2999). | `src/app/api/batches/route.ts`, `src/lib/events/fields.ts` | `adversarial-upload.spec.ts` "BUG-API-1 (fixed)" (5 impossible dates -> 400, 2024-02-29 accepted) | FIXED |
+| GAP-LEDGER-1 | `fromSeq > toSeq` -> 400 VALIDATION_ERROR; `verifyLedger` returns `ledgerSeq: null` and appends nothing when `checked === 0`. | `src/app/api/ledger/verify/route.ts`, `src/lib/queries/ledger.ts` | `ledger-integrity.spec.ts` "GAP-LEDGER-1 (fixed)" (reversed 400; empty range/unknown stream -> no ChainAnchorPublished; real range still ledgered) | FIXED |
+| BUG-UI-4 + a11y serious set | `aria-expanded` only on the expand button; `--ink-faint` 60% -> 45% (dark 48% -> 60%); pagination/drawer buttons use visible text; home link `aria-label` only when collapsed; dropzone follows the react-dropzone button-inside pattern (`noClick`/`noKeyboard`, root is not a button); payload copy/download moved out of `<summary>`; top bar is a `<header>` banner (env chip inside a landmark); nav labels `Breadcrumb` / `Page breadcrumb` / `Sidebar navigation`; disabled report cards use `bg-surface` instead of `opacity-70`; not-found pages render `h1`; sr-only text for the Expand/Actions header cells. | `globals.css`, `data-table.tsx`, `pagination.tsx`, `entry-drawer.tsx`, `sidebar-nav.tsx`, `top-bar.tsx`, `page-header.tsx`, `file-dropzone.tsx`, `ledger-entry-card.tsx`, `empty-state.tsx`, `reports/page.tsx` | `e2e:qa` axe: **0 critical / 0 serious / 0 moderate / 0 minor** over 15 page states (was 0/32/22/3); new blocking check "axe: zero serious/critical violations" | FIXED |
+| BUG-UI-2 | A segment cannot catch its own layout, and any `loading.tsx` above the thrower flushes a 200 first. The dashboard and the batches list (with their `loading.tsx`) moved into route groups `(dashboard)` and `batches/(list)`, so the `[batchId]` layout renders in the shell; its `notFound()` is caught by the new `batches/not-found.tsx` (batch copy) with a real 404. | `src/app/(app)/(dashboard)/*`, `batches/(list)/*`, `batches/not-found.tsx`, `_lib.ts` | `e2e:qa` "BUG-UI-2a/2b (fixed)" + "malformed batch id -> 404"; fetch probe: unknown uuid 404, `not-a-uuid` 404, both with batch copy | FIXED |
+| BUG-UI-3 | `ConfirmDialog.returnFocusTo` -> `onCloseAutoFocus` focuses the trigger; `RejectedCsvButton` passes its ref. | `confirm-dialog.tsx`, `rejected-csv-button.tsx` | `e2e:qa` "BUG-UI-3 (fixed)" | FIXED |
+| GAP-D12 | `useIsDesktop()` (matchMedia >= 1024 px). Upload: dropzone + submit disabled and an info Alert "Use a desktop browser (>= 1024 px) for this action"; Verify button disabled with the same tooltip. Navigation untouched. | `src/lib/ui/use-is-desktop.ts`, `upload-form.tsx`, `integrity-banner.tsx` | `e2e:qa` "D12 (fixed)" at 768 px | FIXED |
+| COS-1 | `DataTable.rowTestId`; ledger rows carry `data-testid="ledger-row-{seq}"`. | `data-table.tsx`, `ledger-table.tsx` | `e2e:qa` "COS-1 (fixed)" | FIXED |
+| COS-2 | `file.size === 0` -> 400 `EMPTY_FILE`, no batch. Whitespace-only files still become FILE_REJECTED (legal). | `src/app/api/batches/route.ts` | "COS-2 (fixed)" | FIXED |
+| COS-3 | Pre-flight row/line counter treats CRLF, LF and CR as terminators. | `src/app/api/batches/route.ts` | covered by "LF-only and CR-only files parse like CRLF" + limits test | FIXED |
+| AUDIT-1 | `vitest`/`@vitest/coverage-v8` 3.2.7 -> 5.0.3 (`@types/node` 22 to satisfy the peer; `vitest.config.ts` uses `oxc.jsx.runtime` for Vite 8), `next` 15.5.25 -> 15.5.27, `sharp`/`source-map-js` patched via `npm audit fix`. 21 -> 14 advisories, **0 critical** (was 2). Remaining 7 high are all `braces`/`micromatch`/`fast-glob`/`chokidar` under `eslint-config-next` and `tailwindcss 3`: no fixed upstream version exists yet (`braces` latest 3.0.3 is the flagged one; npm offers only a downgrade of `eslint-config-next` to 14.x). 7 moderate: `esbuild`/`@esbuild-kit` under `drizzle-kit` (fix = downgrade to 0.18), `postcss-selector-parser` under tailwind 3. All dev/build tooling, none at runtime. `npm audit --audit-level=high` stays non-blocking in CI with that note. | `package.json`, `package-lock.json`, `vitest.config.ts` | `npm test` 413 passed, `test:coverage`, `test:perf` 5/5 on vitest 5 | PARTIAL (no upstream fix) |
+
+### Gates after the fix pass
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck` / `lint` / `lint:pii` | pass / 0 warnings / ok |
+| `npm test` | 43 files, **413 passed, 1 skipped** (Postgres-only GRANT test), 0 `it.fails` left |
+| `npm run test:coverage` (vitest 5 v8 remapping - not comparable with section 1) | lines 87.45 % / branches 76.06 % / functions 80.20 %; `src/lib/rules/**` 98.9 % lines; pipeline/events/ledger modules 97-100 % |
+| `npm run build` | Compiled successfully (27 s); shared First Load JS 103 kB; `/ledger` 200 kB, `/batches` 198 kB, `/upload` 171 kB; middleware 34.1 kB |
+| `npm run e2e:phase1` | 31/31 PASS |
+| `npm run e2e:qa` | **48 PASS, 0 FAIL, 0 known gaps, 0 notes**; axe 0/0/0/0 across 15 page states |
+| `npm run test:perf` | 5/5 PASS |
+| CI | `e2e` job is now blocking (`continue-on-error` removed); `npm audit` stays advisory |
+
+Design notes: header identities over HTTP can now only originate from the middleware (cookie bridge), so the README curl example logs in through `/api/auth/dev-login`; in-process tests keep passing headers directly. Admin retry reuses the write-once bronze/silver artifacts of the failed attempt (record ids inside those files may differ from the rebuilt DB rows) - acceptable for Phase 1, flagged for the lake-cleanup story. Not done: AC1/AC5 on real Postgres (no Docker on this machine); `EntraIdAuthProvider` remains Phase 4.
