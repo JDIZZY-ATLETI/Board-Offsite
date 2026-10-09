@@ -10,6 +10,8 @@ export default defineConfig({
     globals: true,
     // UI specs opt into jsdom with a `// @vitest-environment jsdom` pragma.
     include: ["tests/**/*.spec.ts", "tests/**/*.spec.tsx"],
+    // Perf smoke is opt-in (vitest.perf.config.ts); e2e runs through Playwright against a live server.
+    exclude: ["**/node_modules/**", "tests/perf/**", "tests/e2e/**"],
     setupFiles: ["tests/setup.ts"],
     testTimeout: 120_000,
     hookTimeout: 120_000,
