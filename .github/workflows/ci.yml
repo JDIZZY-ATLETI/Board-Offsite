@@ -27,7 +27,8 @@ jobs:
       # Includes tests/qa/** (rule boundaries, adversarial uploads, state machine, ledger, security).
       - run: npm run test:coverage
       - run: npm run build
-      # Architecture 13.5 A06: surfaced, non-blocking until the current dev-dependency advisories are resolved (see docs/qa/phase1-report.md).
+      # Architecture 13.5 A06: surfaced, non-blocking. Remaining high advisories (braces/micromatch via eslint-config-next and tailwindcss 3)
+      # have no fixed upstream version yet; see docs/qa/phase1-report.md "Fix pass".
       - run: npm audit --audit-level=high
         continue-on-error: true
       - uses: actions/upload-artifact@v4
@@ -40,8 +41,7 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     needs: verify
-    # First wiring of the browser suite in CI; promote to blocking once it has run green on main.
-    continue-on-error: true
+    # Blocking: e2e:qa enforces the ux-design 8.1 gate (zero serious/critical axe violations).
     env:
       NODE_ENV: test
       DB_DRIVER: pglite

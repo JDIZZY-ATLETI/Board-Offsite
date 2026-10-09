@@ -153,7 +153,7 @@ try {
   await page.keyboard.press("Escape");
   await dlg.waitFor({ state: "detached" });
   const focusBack = await page.evaluate(() => document.activeElement?.getAttribute("data-testid"));
-  gap("BUG-UI-3: Esc closes the dialog and returns focus to the trigger (8.1)", focusBack === "download-rejected-button", `active=${focusBack ?? (await page.evaluate(() => document.activeElement?.tagName))}`);
+  ok("BUG-UI-3 (fixed): Esc closes the dialog and returns focus to the trigger (8.1)", focusBack === "download-rejected-button", `active=${focusBack ?? (await page.evaluate(() => document.activeElement?.tagName))}`);
   await axeScan(page, "findings");
   await page.goto(`${mixedUrl}/findings`);
   await page.getByTestId("findings-table").waitFor();
@@ -200,12 +200,12 @@ try {
   const nf = await page.goto(`${BASE}/batches/00000000-0000-7000-8000-00000000beef`, { waitUntil: "networkidle" });
   const nfText = (await page.textContent("main")) ?? "";
   ok("unknown batch -> not-found boundary renders", /couldn't find/i.test(nfText), nfText.replace(/\s+/g, " ").slice(0, 80));
-  gap("BUG-UI-2a: unknown batch answers HTTP 404 (streaming currently yields 200)", nf?.status() === 404, `status=${nf?.status()}`);
-  gap("BUG-UI-2b: batch-scoped not-found copy is used (layout notFound() falls through to the generic (app) page)", /find that batch/i.test(nfText));
+  ok("BUG-UI-2a (fixed): unknown batch answers HTTP 404", nf?.status() === 404, `status=${nf?.status()}`);
+  ok("BUG-UI-2b (fixed): batch-scoped not-found copy is used", /find that batch/i.test(nfText));
   const nf2 = await page.goto(`${BASE}/this-route-does-not-exist`);
   ok("unknown route -> 404 page", nf2?.status() === 404, `status=${nf2?.status()}`);
   const badId = await page.goto(`${BASE}/batches/not-a-uuid`, { waitUntil: "networkidle" });
-  ok("malformed batch id -> not-found boundary (not an unhandled error page)", /couldn't find/i.test((await page.textContent("main")) ?? "") && !/Application error|unhandled/i.test(await page.textContent("body")), `status=${badId?.status()}`);
+  ok("malformed batch id -> not-found boundary with HTTP 404 (not an unhandled error page)", badId?.status() === 404 && /find that batch/i.test((await page.textContent("main")) ?? "") && !/Application error|unhandled/i.test(await page.textContent("body")), `status=${badId?.status()}`);
   await axeScan(page, "404 page");
   await page.goto(`${BASE}/ledger`);
   await page.waitForURL(/\/forbidden/);
@@ -225,7 +225,7 @@ try {
   const dzCount = await mp.getByTestId("dropzone").count();
   const dzDisabled = dzCount > 0 ? (await mp.getByTestId("dropzone").getAttribute("aria-disabled")) === "true" : false;
   const submitDisabled = (await mp.getByTestId("upload-submit").count()) > 0 ? await mp.getByTestId("upload-submit").isDisabled() : false;
-  gap("D12: at 768px Upload is disabled with a desktop-only note", mobileNote && (dzDisabled || submitDisabled), `note=${mobileNote} dropzones=${dzCount} dropzoneDisabled=${dzDisabled} submitDisabled=${submitDisabled}`);
+  ok("D12 (fixed): at 768px Upload is disabled with a desktop-only note", mobileNote && (dzDisabled || submitDisabled), `note=${mobileNote} dropzones=${dzCount} dropzoneDisabled=${dzDisabled} submitDisabled=${submitDisabled}`);
   ok("mobile: no horizontal overflow on batches list", await (async () => { await mp.goto(`${BASE}/batches`); await mp.getByTestId("app-shell").waitFor(); return mp.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1); })());
   await mobile.close();
 
@@ -235,8 +235,7 @@ try {
   await page.getByTestId("ledger-table").waitFor();
   const ledgerMissing = await testidsPresent(page, ["ledger-table", "ledger-head", "verify-button", "integrity-banner-"]);
   ok("ledger testids (ledger-table, ledger-head, verify-button, integrity-banner-*)", ledgerMissing.length === 0, ledgerMissing.join(","));
-  const ledgerRowTestid = (await page.locator('[data-testid^="ledger-row-"]').count()) > 0;
-  if (!ledgerRowTestid) note("section 9.5 testid ledger-row-{seq}", "not present; rows use data-row-id instead (cosmetic deviation from docs/ux-design.md 9.5)");
+  ok("COS-1 (fixed): section 9.5 testid ledger-row-{seq} present", (await page.locator('[data-testid^="ledger-row-"]').count()) > 0);
   await axeScan(page, "ledger explorer");
   await page.getByTestId("verify-button").click();
   await page.getByTestId("verify-dialog").waitFor();
@@ -266,6 +265,9 @@ try {
   await axeScan(page, "login");
 
   ok("no uncaught page errors during the run", pageErrors.length === 0, pageErrors.slice(0, 3).join(" | "));
+  // ux-design 8.1 gate: zero serious/critical axe violations across every scanned page state.
+  const axeBlocking = Object.entries(axeSummary).flatMap(([label, s]) => s.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${label}: ${v.id}(${v.impact},${v.nodes})`));
+  ok("axe: zero serious/critical violations across all page states (ux 8.1)", axeBlocking.length === 0, axeBlocking.slice(0, 8).join("; "));
 } catch (err) {
   failed += 1;
   results.push({ name: "ERROR", pass: false, detail: err instanceof Error ? (err.stack ?? err.message) : String(err) });
