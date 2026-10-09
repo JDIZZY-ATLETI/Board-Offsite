@@ -55,6 +55,14 @@ export function parseDateField(raw: string): FieldParse<IsoDate> {
   return { ok: true, value: `${yyyy}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}` as IsoDate };
 }
 
+/** True for a real calendar date written YYYY-MM-DD (API boundary check, QA BUG-API-1). */
+export function isValidIsoDate(s: string): s is IsoDate {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+  const [yyyy, mm, dd] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  return mm >= 1 && mm <= 12 && dd >= 1 && yyyy >= 1900 && yyyy <= 2999 && dd <= daysInMonth(yyyy, mm);
+}
+
 export function yearOf(d: IsoDate): number {
   return Number(d.slice(0, 4));
 }

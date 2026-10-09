@@ -5,6 +5,7 @@ import { limitSchema } from "@/lib/api/pagination";
 import { canAccessEmployer, employerScope } from "@/lib/auth/roles";
 import { requireRole, requireSession } from "@/lib/auth/session";
 import { looksLikeBinary } from "@/lib/events/decode";
+import { isValidIsoDate } from "@/lib/events/fields";
 import { ingest } from "@/lib/pipeline/ingest";
 import { getJobRunner } from "@/lib/pipeline/jobs";
 import { runBatch } from "@/lib/pipeline/run";
@@ -33,6 +34,7 @@ const uploadFields = z.object({
   executionDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine(isValidIsoDate, "executionDate must be a real calendar date (YYYY-MM-DD)")
     .optional(),
   sourceSystem: z.enum(SOURCE_SYSTEMS).optional(),
 });
@@ -65,14 +67,18 @@ export const POST = withApi(async (req, { app, session, url, log }) => {
     throw new ApiError(415, "UNSUPPORTED_MEDIA_TYPE", "file must be a .csv (text/csv)");
   }
   if (file.size > app.config.maxUploadBytes) throw new ApiError(413, "PAYLOAD_TOO_LARGE", `file exceeds ${app.config.maxUploadBytes} bytes`);
+  if (file.size === 0) throw new ApiError(400, "EMPTY_FILE", "file is empty (0 bytes)");
   const bytes = Buffer.from(await file.arrayBuffer());
   const kind = looksLikeBinary(bytes);
   if (kind) throw new ApiError(415, "UNSUPPORTED_MEDIA_TYPE", `file looks like a ${kind} archive/binary, not CSV`);
+  // Delimiter-agnostic pre-flight: CRLF, LF and CR all terminate a line (QA COS-3).
   let lines = 0;
   let longest = 0;
   let run = 0;
-  for (const b of bytes) {
-    if (b === 0x0a) {
+  for (let i = 0; i < bytes.length; i++) {
+    const b = bytes[i];
+    if (b === 0x0a || b === 0x0d) {
+      if (b === 0x0d && bytes[i + 1] === 0x0a) i += 1;
       lines += 1;
       longest = Math.max(longest, run);
       run = 0;
