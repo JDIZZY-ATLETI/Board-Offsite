@@ -11,14 +11,16 @@ export interface RejectedCsvDialogProps {
   rejectedRows: number;
   open: boolean;
   onOpenChange(open: boolean): void;
+  returnFocusTo?: React.RefObject<HTMLElement | null>;
 }
 
 /** Decision D9: the Rejected rows CSV (full SINs) needs a confirmation; the download is audit-logged server-side. */
-export function RejectedCsvDialog({ batchId, rejectedRows, open, onOpenChange }: RejectedCsvDialogProps) {
+export function RejectedCsvDialog({ batchId, rejectedRows, open, onOpenChange, returnFocusTo }: RejectedCsvDialogProps) {
   return (
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
+      returnFocusTo={returnFocusTo}
       title="Download rejected rows?"
       body={
         <p>
@@ -50,12 +52,13 @@ export interface RejectedCsvButtonProps {
 
 export function RejectedCsvButton({ batchId, rejectedRows, variant = "outline", size = "sm", className }: RejectedCsvButtonProps) {
   const [open, setOpen] = React.useState(false);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
   return (
     <>
-      <Button variant={variant} size={size} className={className} onClick={() => setOpen(true)} data-testid="download-rejected-button">
+      <Button ref={triggerRef} variant={variant} size={size} className={className} onClick={() => setOpen(true)} data-testid="download-rejected-button">
         <Download aria-hidden="true" /> Download rejected rows (CSV)
       </Button>
-      <RejectedCsvDialog batchId={batchId} rejectedRows={rejectedRows} open={open} onOpenChange={setOpen} />
+      <RejectedCsvDialog batchId={batchId} rejectedRows={rejectedRows} open={open} onOpenChange={setOpen} returnFocusTo={triggerRef} />
     </>
   );
 }

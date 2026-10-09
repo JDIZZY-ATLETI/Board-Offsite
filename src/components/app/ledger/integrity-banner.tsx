@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { formatDateTime, formatDuration, formatInt, formatRelative } from "@/lib/ui/format";
 import { INTEGRITY_MAP, TOKEN_CLASSES } from "@/lib/ui/status-map";
 import { integrityState } from "@/lib/ui/integrity";
+import { DESKTOP_ONLY_NOTE, useIsDesktop } from "@/lib/ui/use-is-desktop";
 import type { LastVerification } from "@/lib/queries/ledger";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -35,6 +36,7 @@ export function IntegrityBanner({ head, result, canVerify, showVerify = true, va
   const [verifying, setVerifying] = React.useState(false);
   const [local, setLocal] = React.useState<LastVerification | null>(result);
   React.useEffect(() => setLocal(result), [result]);
+  const isDesktop = useIsDesktop();
 
   const { state, stale } = integrityState(local);
   const entry = INTEGRITY_MAP[state];
@@ -70,7 +72,7 @@ export function IntegrityBanner({ head, result, canVerify, showVerify = true, va
   const testState = verifying ? "verifying" : state === "ok" ? (stale ? "stale" : "verified") : state;
 
   const verifyButton = showVerify ? (
-    canVerify ? (
+    canVerify && isDesktop ? (
       <Button size="sm" variant={state === "tampered" ? "destructive" : "outline"} onClick={() => setConfirmOpen(true)} disabled={verifying || head.seq === 0} data-testid="verify-button">
         <ShieldCheck aria-hidden="true" />
         {state === "ok" ? "Verify again" : "Verify integrity"}
@@ -85,7 +87,7 @@ export function IntegrityBanner({ head, result, canVerify, showVerify = true, va
             </Button>
           </span>
         </TooltipTrigger>
-        <TooltipContent>Admins can run verification</TooltipContent>
+        <TooltipContent>{canVerify ? DESKTOP_ONLY_NOTE : "Admins can run verification"}</TooltipContent>
       </Tooltip>
     )
   ) : null;

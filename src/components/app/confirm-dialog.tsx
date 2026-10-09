@@ -20,11 +20,13 @@ export interface ConfirmDialogProps {
   typeToConfirm?: string;
   requireReason?: boolean;
   onConfirm(input: { reason?: string }): void | Promise<void>;
+  /** Element to focus when the dialog closes; needed when it is opened without a DialogTrigger (ux 8.1). */
+  returnFocusTo?: React.RefObject<HTMLElement | null>;
   "data-testid"?: string;
 }
 
 /** docs/ux-design.md section 4.18. Focus trapped; Esc cancels; confirm disabled until valid. */
-export function ConfirmDialog({ open, onOpenChange, title, body, confirmLabel = "Confirm", cancelLabel = "Cancel", tone = "default", typeToConfirm, requireReason, onConfirm, ...rest }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, onOpenChange, title, body, confirmLabel = "Confirm", cancelLabel = "Cancel", tone = "default", typeToConfirm, requireReason, onConfirm, returnFocusTo, ...rest }: ConfirmDialogProps) {
   const [typed, setTyped] = React.useState("");
   const [reason, setReason] = React.useState("");
   const [busy, setBusy] = React.useState(false);
@@ -49,7 +51,14 @@ export function ConfirmDialog({ open, onOpenChange, title, body, confirmLabel = 
   };
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent data-testid={rest["data-testid"] ?? "confirm-dialog"}>
+      <AlertDialogContent
+        data-testid={rest["data-testid"] ?? "confirm-dialog"}
+        onCloseAutoFocus={(e) => {
+          if (!returnFocusTo?.current) return;
+          e.preventDefault();
+          returnFocusTo.current.focus();
+        }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           {body ? <AlertDialogDescription asChild><div>{body}</div></AlertDialogDescription> : null}

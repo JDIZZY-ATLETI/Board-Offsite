@@ -93,7 +93,7 @@ export function BatchesTableLive({ batches, nextCursor, prevCursors, role, showE
     { id: "warnings", header: "Warn", accessorFn: (b) => b.counts.warnings, cell: ({ row }) => (row.original.counts.rows ? <span className={cn(row.original.counts.warnings > 0 && "font-medium text-held-text")}>{formatInt(row.original.counts.warnings)}</span> : <span className="text-ink-faint">—</span>), meta: { align: "right", width: "5rem", headerTitle: "Warnings" } },
     {
       id: "actions",
-      header: "",
+      header: () => <span className="sr-only">Actions</span>,
       enableSorting: false,
       cell: ({ row }) => <RowActions batch={row.original} role={role} />,
       meta: { width: "3rem", align: "right" },
@@ -188,7 +188,18 @@ export function BatchesTableLive({ batches, nextCursor, prevCursors, role, showE
 }
 
 function RowActions({ batch, role }: { batch: BatchSummary; role: Role }) {
+  const router = useRouter();
   const [rejectedOpen, setRejectedOpen] = React.useState(false);
+  const retry = async () => {
+    const res = await fetch(`/api/batches/${batch.batchId}/retry`, { method: "POST" });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+      toast.error("Retry didn't start", { description: err?.error?.message ?? `HTTP ${res.status}` });
+      return;
+    }
+    toast.success(`Batch ${shortBatchId(batch.batchId)} re-queued.`);
+    router.refresh();
+  };
   return (
     <>
       <DropdownMenu>
@@ -205,7 +216,7 @@ function RowActions({ batch, role }: { batch: BatchSummary; role: Role }) {
             <Link href={`/batches/${batch.batchId}/findings`}>Open findings</Link>
           </DropdownMenuItem>
           {batch.counts.rejected > 0 ? <DropdownMenuItem onSelect={() => setRejectedOpen(true)}>Download rejected rows</DropdownMenuItem> : null}
-          {role === "Admin" && batch.status === "FAILED" ? <DropdownMenuItem disabled>Retry (available in a later phase)</DropdownMenuItem> : null}
+          {role === "Admin" && batch.status === "FAILED" ? <DropdownMenuItem onSelect={retry}>Retry processing</DropdownMenuItem> : null}
         </DropdownMenuContent>
       </DropdownMenu>
       <RejectedCsvDialog batchId={batch.batchId} rejectedRows={batch.counts.rejected} open={rejectedOpen} onOpenChange={setRejectedOpen} />

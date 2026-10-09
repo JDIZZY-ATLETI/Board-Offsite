@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { EMPLOYER_NAMES } from "@/lib/auth/dev-session";
 import { formatBytes, formatDateTime, shortBatchId } from "@/lib/ui/format";
 import { headerTemplateCsv, preflightHeader, readHead, sha256Hex, type PreflightResult } from "@/lib/ui/preflight";
+import { DESKTOP_ONLY_NOTE, useIsDesktop } from "@/lib/ui/use-is-desktop";
 import { FileDropzone } from "./file-dropzone";
 import type { Role } from "@/types";
 
@@ -62,7 +63,8 @@ export function UploadForm({ role, employerId: fixedEmployer, maxBytes, maxRows,
     }
   }, []);
 
-  const blocked = !file || !sha || !preflight || (preflight.state === "error" && !(isAdmin && uploadAnyway)) || preflight.state === "empty" || progress !== null || !employerId;
+  const isDesktop = useIsDesktop();
+  const blocked = !isDesktop || !file || !sha || !preflight || (preflight.state === "error" && !(isAdmin && uploadAnyway)) || preflight.state === "empty" || progress !== null || !employerId;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +135,12 @@ export function UploadForm({ role, employerId: fixedEmployer, maxBytes, maxRows,
           <h2 id="step-file" className="flex items-center gap-2 text-h2">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand text-caption text-white">1</span> File
           </h2>
-          <FileDropzone maxBytes={maxBytes} maxRows={maxRows} file={file} onFile={onFile} sha256={sha} preflight={preflight} progress={progress} disabled={progress?.phase === "uploading" || progress?.phase === "queued"} />
+          {!isDesktop ? (
+            <Alert variant="info" title="Read-only on small screens" data-testid="desktop-only-note">
+              {DESKTOP_ONLY_NOTE}.
+            </Alert>
+          ) : null}
+          <FileDropzone maxBytes={maxBytes} maxRows={maxRows} file={file} onFile={onFile} sha256={sha} preflight={preflight} progress={progress} disabled={!isDesktop || progress?.phase === "uploading" || progress?.phase === "queued"} />
           {preflight?.state === "error" && isAdmin ? (
             <div className="flex items-center gap-2">
               <Checkbox id="force-header" checked={uploadAnyway} onCheckedChange={(c) => setUploadAnyway(Boolean(c))} />

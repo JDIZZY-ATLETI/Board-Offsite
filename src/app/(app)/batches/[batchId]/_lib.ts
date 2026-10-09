@@ -17,7 +17,11 @@ export interface BatchPageData {
   heldCount: number;
 }
 
-/** Deduped per request across layout + page. Unknown or out-of-scope batches render the segment's not-found. */
+/**
+ * Deduped per request across layout + page. Unknown or out-of-scope batches throw `notFound()` from the
+ * `[batchId]` layout; `batches/not-found.tsx` renders it with a real 404 status because no `loading.tsx`
+ * boundary sits above that layout (the dashboard and batches-list skeletons live in their own route groups).
+ */
 export const loadBatchPage = cache(async (batchId: string): Promise<BatchPageData> => {
   if (!UUID.test(batchId)) notFound();
   const session = await requirePageSession();
