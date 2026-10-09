@@ -166,4 +166,16 @@ Open spec questions for HOOPP: LastName/FirstName mandatory (I1), case sensitivi
 
 ## 10. Commits
 
-See the "Commit hashes" section appended below after committing.
+Branch `main`, not pushed. Base: `94fd2f8` (Web Developer Phase 1 complete).
+
+| Hash | Commit |
+|---|---|
+| `89683bb` | test(qa): rule conformance boundary probes for L0/L1/I42; fix stateful regex in hasUnresolvedPlaceholders |
+| `31bb4d5` | test(qa): adversarial POST /api/batches inputs and state-machine legality |
+| `77138e5` | test(qa): ledger integrity under concurrency, verify edge ranges, atomic append, immutability triggers |
+| `75211bc` | test(qa): security role matrix, employer scoping, PRIVATE visibility, dev-auth bridge/CSRF, traversal, raw-SIN leak sweep |
+| `8773fad` | test(perf): opt-in pipeline performance smoke; exclude perf/e2e from default vitest run |
+| `beba1a6` | test(e2e): Phase-1 QA browser suite with axe-core scans |
+| `a299e80` | ci: surface npm audit (non-blocking) and add e2e job |
+| `6257f3d` | docs(qa): Phase 1 QA report + E2E/axe artifacts |
+| (this) | docs(qa): record commit hashes |
