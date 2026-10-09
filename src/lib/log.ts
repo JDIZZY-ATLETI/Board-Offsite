@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import pino, { type Logger, type LoggerOptions, type DestinationStream } from "pino";
 
 /** Any field named sin/SIN at any depth is redacted; never log raw SIN. */
@@ -33,8 +35,15 @@ export function createLogger(opts: CreateLoggerOptions = {}): Logger {
   };
   if (opts.stream) return pino(options, opts.stream);
   if (opts.pretty) {
-    // pino-pretty is a dev dependency; loaded via transport so production builds never require it.
-    return pino({ ...options, transport: { target: "pino-pretty", options: { colorize: true } } });
+    // pino-pretty is a dev dependency loaded via transport. Inside Next.js server bundles pino cannot resolve the
+    // bare name, so hand it the absolute package directory; fall back to JSON logs when it is not installed.
+    const target = path.join(process.cwd(), "node_modules", "pino-pretty");
+    if (!existsSync(target)) return pino(options);
+    try {
+      return pino({ ...options, transport: { target, options: { colorize: true } } });
+    } catch {
+      return pino(options);
+    }
   }
   return pino(options);
 }

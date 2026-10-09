@@ -49,7 +49,13 @@ export async function createAppContext(overrides: AppContextOverrides = {}): Pro
 const g = globalThis as unknown as { __hooppAppContext?: Promise<AppContext> };
 
 export function getAppContext(): Promise<AppContext> {
-  if (!g.__hooppAppContext) g.__hooppAppContext = createAppContext();
+  if (!g.__hooppAppContext) {
+    // Do not cache a failed start-up: the next request retries instead of replaying the same error.
+    g.__hooppAppContext = createAppContext().catch((err) => {
+      g.__hooppAppContext = undefined;
+      throw err;
+    });
+  }
   return g.__hooppAppContext;
 }
 
