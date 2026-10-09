@@ -51,8 +51,8 @@ export function IntegrityBanner({ head, result, canVerify, showVerify = true, va
         const err = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
         throw new Error(err?.error?.message ?? `HTTP ${res.status}`);
       }
-      const r = (await res.json()) as VerificationResult & { ledgerSeq: number };
-      setLocal({ ok: r.ok, checked: r.checked, headSeq: r.headSeq, headHash: r.headHash, verifiedAt: new Date().toISOString(), durationMs: r.durationMs, firstBadSeq: r.firstBadSeq, reason: r.reason, ledgerSeq: r.ledgerSeq, partial: false });
+      const r = (await res.json()) as VerificationResult & { ledgerSeq: number | null };
+      setLocal({ ok: r.ok, checked: r.checked, headSeq: r.headSeq, headHash: r.headHash, verifiedAt: new Date().toISOString(), durationMs: r.durationMs, firstBadSeq: r.firstBadSeq, reason: r.reason, ledgerSeq: r.ledgerSeq ?? 0, partial: false });
       if (r.ok) toast.success(`Chain verified — ${formatInt(r.checked)} entries OK.`);
       else toast.error(`Integrity failure at #${formatInt(r.firstBadSeq ?? 0)}.`, { duration: Infinity });
       onVerified?.(r);

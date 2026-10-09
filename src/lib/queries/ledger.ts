@@ -17,9 +17,14 @@ export async function getLedgerEntry(ctx: AppContext, seq: number): Promise<(Led
   return { ...e, recomputed: recomputeHashes(e) };
 }
 
-/** Verifies and records the outcome on the system stream (architecture section 9.4). */
-export async function verifyLedger(ctx: AppContext, p: VerifyParams, actor: string): Promise<VerificationResult & { ledgerSeq: number }> {
+/**
+ * Verifies and records the outcome on the system stream (architecture section 9.4). A run that checked
+ * nothing (empty chain, range beyond the head, unknown stream) is not evidence and is not ledgered
+ * (`ledgerSeq: null`, QA GAP-LEDGER-1).
+ */
+export async function verifyLedger(ctx: AppContext, p: VerifyParams, actor: string): Promise<VerificationResult & { ledgerSeq: number | null }> {
   const result = await ctx.ledger.verify(p);
+  if (result.checked === 0 && result.ok) return { ...result, ledgerSeq: null };
   const entry = await ctx.ledger.append({
     streamId: SYSTEM_STREAM,
     eventType: "ChainAnchorPublished",

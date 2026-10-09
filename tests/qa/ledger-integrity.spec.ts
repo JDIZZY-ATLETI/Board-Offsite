@@ -115,9 +115,20 @@ describe("QA/ledger: verify() parameter edge cases", () => {
     const unknownStream = await t.ctx.ledger.verify({ streamId: "member:nope" });
     expect(unknownStream).toMatchObject({ ok: true, checked: 0 });
   });
-  it.fails("GAP-LEDGER-1: a reversed or empty range should not report ok:true (ambiguous success); recommend 400 at the API", async () => {
-    const r = await api.verify(ADMIN, JSON.stringify({ fromSeq: 5, toSeq: 2 }));
-    expectErrorEnvelope(r, 400);
+  it("GAP-LEDGER-1 (fixed): a reversed range is 400 at the API; a range that checks nothing is ok:true/checked:0 but is NOT ledgered", async () => {
+    expectErrorEnvelope(await api.verify(ADMIN, JSON.stringify({ fromSeq: 5, toSeq: 2 })), 400, "VALIDATION_ERROR");
+    const head = (await t.ctx.ledger.head()).seq;
+    const before = (await t.ctx.ledger.list({ streamId: "system", eventType: "ChainAnchorPublished", limit: 200 })).items.length;
+    for (const body of [{ fromSeq: head + 1, toSeq: head + 1 }, { streamId: "member:nope" }]) {
+      const r = await api.verify(ADMIN, JSON.stringify(body));
+      expect(r.status, JSON.stringify(body)).toBe(200);
+      expect(r.body).toMatchObject({ ok: true, checked: 0, ledgerSeq: null });
+    }
+    expect((await t.ctx.ledger.head()).seq).toBe(head);
+    expect((await t.ctx.ledger.list({ streamId: "system", eventType: "ChainAnchorPublished", limit: 200 })).items.length).toBe(before);
+    // A real verification is still ledgered.
+    const real = await api.verify(ADMIN, JSON.stringify({ fromSeq: 1, toSeq: 2 }));
+    expect(real.body).toMatchObject({ ok: true, checked: 2, ledgerSeq: head + 1 });
   });
   it("API: fromSeq/toSeq must be positive integers; streamId length is capped", async () => {
     expectErrorEnvelope(await api.verify(ADMIN, JSON.stringify({ fromSeq: -1 })), 400, "VALIDATION_ERROR");
