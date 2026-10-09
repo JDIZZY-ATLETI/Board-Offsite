@@ -1,0 +1,242 @@
+{
+  "base": "http://localhost:3000",
+  "at": "2026-10-09T19:45:47.147Z",
+  "failed": 0,
+  "results": [
+    {
+      "name": "shell testids on dashboard",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "one <h1> on dashboard",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "landmarks: header/nav[aria-label]/main#main/footer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "skip link is first in tab order and becomes visible on focus",
+      "pass": true,
+      "detail": "{\"text\":\"Skip to main content\",\"visible\":true,\"outline\":\"solid\",\"shadow\":\"rgb(255, 255, 255) 0px 0px 0px 2px, rgb(37, 126, 244) 0px 0px 0px 5px, rgba(0, 0, 0, 0) 0px 0px 0px 0px\"}"
+    },
+    {
+      "name": "focus visible on next focusable (outline or box-shadow)",
+      "pass": true,
+      "detail": "{\"tag\":\"A\",\"outline\":\"solid\",\"outlineWidth\":\"2px\",\"shadow\":\"rgb(255, 255, 255) 0px 0px 0px 2px, rgb(37, 126, 244) 0px 0px 0px 5px, rgba(0, 0, 0, 0) 0px 0px 0px 0px\"}"
+    },
+    {
+      "name": "upload testids",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "mixed-100-rows reaches VALIDATED",
+      "pass": true,
+      "detail": "01a12232-1b2c-72cb-b250-6af20f4c293a"
+    },
+    {
+      "name": "preflight testid present on upload (section 9.5)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "aria-live region announces the status change",
+      "pass": true,
+      "detail": "initial=status-badge-PARSED live=\"Batch is now Validated\""
+    },
+    {
+      "name": "live region is aria-live=polite + aria-atomic",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "polling stops on terminal status (no GET /api/batches/{id} for 7.5 s after VALIDATED)",
+      "pass": true,
+      "detail": "polls before=1 after=1"
+    },
+    {
+      "name": "auto-refresh indicator gone after VALIDATED",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "batch overview testids",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "stepper: Parsed done, Validated current",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "findings testids (findings-table, severity-badge-*, finding/facets, download-rejected-button)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "findings table renders rows",
+      "pass": true,
+      "detail": "41 rows"
+    },
+    {
+      "name": "DataTable keyboard: ArrowDown moves focus to the next row",
+      "pass": true,
+      "detail": "01a12232-1fad-7e1b-b8e7-242efcb03f62 -> 01a12232-1fad-7e1b-b8e7-242f45de4dc2"
+    },
+    {
+      "name": "DataTable keyboard: End/Home jump to last/first row",
+      "pass": true,
+      "detail": "end=01a12232-1fb2-732c-b427-aaab831f96fb home=01a12232-1fad-7e1b-b8e7-242efcb03f62"
+    },
+    {
+      "name": "DataTable uses a roving tabindex (exactly one row tabbable)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sortable headers expose aria-sort",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "table has a caption and a labelled scroll region",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "D9: rejected CSV requires a confirm dialog mentioning full SINs",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "D9 dialog traps focus (active element inside dialog)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "BUG-UI-3: Esc closes the dialog and returns focus to the trigger (8.1)",
+      "pass": "gap",
+      "detail": "active=BODY"
+    },
+    {
+      "name": "records testids (records-table, masked-sin, outcome-badge-*)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "records never shows 9 contiguous digits",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "batches list testids",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "HTML in a name cell renders as text (no element injected, no dialog)",
+      "pass": true,
+      "detail": "img=0 text=true"
+    },
+    {
+      "name": "formula payload rendered as inert text in findings",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "unknown batch -> not-found boundary renders",
+      "pass": true,
+      "detail": "We couldn't find that pageThe link may be out of date, or the item may have been"
+    },
+    {
+      "name": "BUG-UI-2a: unknown batch answers HTTP 404 (streaming currently yields 200)",
+      "pass": "gap",
+      "detail": "status=200"
+    },
+    {
+      "name": "BUG-UI-2b: batch-scoped not-found copy is used (layout notFound() falls through to the generic (app) page)",
+      "pass": "gap",
+      "detail": ""
+    },
+    {
+      "name": "unknown route -> 404 page",
+      "pass": true,
+      "detail": "status=404"
+    },
+    {
+      "name": "malformed batch id -> not-found boundary (not an unhandled error page)",
+      "pass": true,
+      "detail": "status=200"
+    },
+    {
+      "name": "Submitter /ledger -> /forbidden page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "D12: at 768px Upload is disabled with a desktop-only note",
+      "pass": "gap",
+      "detail": "note=false dropzones=1 dropzoneDisabled=false submitDisabled=true"
+    },
+    {
+      "name": "mobile: no horizontal overflow on batches list",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ledger testids (ledger-table, ledger-head, verify-button, integrity-banner-*)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "section 9.5 testid ledger-row-{seq}",
+      "pass": null,
+      "detail": "not present; rows use data-row-id instead (cosmetic deviation from docs/ux-design.md 9.5)"
+    },
+    {
+      "name": "Verify returns OK; banner verified",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ledger page exposes a live region / status role for verify progress (8.1)",
+      "pass": true,
+      "detail": "2 live/status/alert nodes"
+    },
+    {
+      "name": "DataTable keyboard: Enter on a ledger row opens the entry drawer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "entry drawer recomputes hashes on open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Esc closes the drawer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Reviewer sees Verify disabled",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Reviewer /upload -> /forbidden (server-enforced)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no uncaught page errors during the run",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}
