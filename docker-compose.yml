@@ -1,0 +1,21 @@
+# Optional: real Postgres 16 for DB_DRIVER=postgres. PGlite (default) needs no containers.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hoopp-ledger-pg
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: hoopp_ledger
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d hoopp_ledger"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
