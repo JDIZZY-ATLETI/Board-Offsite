@@ -3,9 +3,13 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
+  esbuild: { jsx: "automatic" },
   test: {
     environment: "node",
-    include: ["tests/**/*.spec.ts"],
+    // Globals let Testing Library register its afterEach(cleanup) automatically.
+    globals: true,
+    // UI specs opt into jsdom with a `// @vitest-environment jsdom` pragma.
+    include: ["tests/**/*.spec.ts", "tests/**/*.spec.tsx"],
     setupFiles: ["tests/setup.ts"],
     testTimeout: 120_000,
     hookTimeout: 120_000,
