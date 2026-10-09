@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 
 const query = z.object({
   streamId: z.string().min(1).max(200).optional(),
+  streamKind: z.enum(["batch", "member", "system"]).optional(),
   batchId: z.string().uuid().optional(),
   eventType: z.enum(LEDGER_EVENT_TYPES as [string, ...string[]]).optional(),
   fromSeq: z.coerce.number().int().positive().optional(),

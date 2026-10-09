@@ -3,3 +3,4 @@ export * from "./reports";
 export * from "./findings";
 export * from "./records";
 export * from "./ledger";
+export * from "./dashboard";

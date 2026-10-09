@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, gte, lt, lte, max } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, like, lt, lte, max } from "drizzle-orm";
 import { uuidv7 } from "uuidv7";
 import { ZERO64 } from "@/lib/crypto/hash";
 import type { Db, DbOrTx, Tx } from "@/lib/db/client";
@@ -21,6 +21,8 @@ export interface LedgerDeps {
 
 export interface ListEntriesParams {
   streamId?: string;
+  /** Filter by stream family: batch:*, member:* or the system stream. */
+  streamKind?: "batch" | "member" | "system";
   batchId?: string;
   eventType?: LedgerEventType;
   fromSeq?: number;
@@ -161,6 +163,8 @@ export class LedgerService {
     const order = params.order ?? "desc";
     const conds = [];
     if (params.streamId) conds.push(eq(ledgerEntries.streamId, params.streamId));
+    if (params.streamKind === "system") conds.push(eq(ledgerEntries.streamId, "system"));
+    else if (params.streamKind) conds.push(like(ledgerEntries.streamId, `${params.streamKind}:%`));
     if (params.batchId) conds.push(eq(ledgerEntries.batchId, params.batchId));
     if (params.eventType) conds.push(eq(ledgerEntries.eventType, params.eventType));
     if (params.fromSeq !== undefined) conds.push(gte(ledgerEntries.seq, params.fromSeq));

@@ -31,6 +31,7 @@ export async function verifyLedger(ctx: AppContext, p: VerifyParams, actor: stri
       checked: result.checked,
       headSeq: result.headSeq,
       headHash: result.headHash,
+      durationMs: result.durationMs,
       ...(result.firstBadSeq !== undefined ? { firstBadSeq: result.firstBadSeq } : {}),
       ...(result.reason ? { reason: result.reason } : {}),
       ...(p.fromSeq !== undefined ? { fromSeq: p.fromSeq } : {}),
@@ -39,4 +40,42 @@ export async function verifyLedger(ctx: AppContext, p: VerifyParams, actor: stri
     },
   });
   return { ...result, ledgerSeq: entry.seq };
+}
+
+/** Shape consumed by the IntegrityBanner (docs/ux-design.md section 4.13). */
+export interface LastVerification {
+  ok: boolean;
+  checked: number;
+  headSeq: number;
+  headHash: string;
+  verifiedAt: string;
+  durationMs: number | null;
+  firstBadSeq?: number;
+  reason?: string;
+  /** Ledger seq of the ChainAnchorPublished entry that recorded this result. */
+  ledgerSeq: number;
+  /** True when the verification covered a sub-range or a single stream rather than the whole chain. */
+  partial: boolean;
+}
+
+/** Most recent whole-chain verification recorded on the system stream, or null when never verified. */
+export async function getLastVerification(ctx: AppContext): Promise<LastVerification | null> {
+  const page = await ctx.ledger.list({ streamId: SYSTEM_STREAM, eventType: "ChainAnchorPublished", limit: 20, order: "desc" });
+  for (const e of page.items) {
+    const p = e.payload as Record<string, unknown>;
+    if (p.kind !== "verification") continue;
+    return {
+      ok: Boolean(p.ok),
+      checked: Number(p.checked ?? 0),
+      headSeq: Number(p.headSeq ?? 0),
+      headHash: String(p.headHash ?? ""),
+      verifiedAt: e.occurredAt,
+      durationMs: typeof p.durationMs === "number" ? p.durationMs : null,
+      ...(typeof p.firstBadSeq === "number" ? { firstBadSeq: p.firstBadSeq } : {}),
+      ...(typeof p.reason === "string" ? { reason: p.reason } : {}),
+      ledgerSeq: e.seq,
+      partial: p.fromSeq !== undefined || p.toSeq !== undefined || p.streamId !== undefined,
+    };
+  }
+  return null;
 }

@@ -86,3 +86,28 @@ export async function findingCountsByRecord(ctx: AppContext, batchId: string): P
   }
   return m;
 }
+
+export interface FindingFacets {
+  bySeverity: Array<{ value: FindingSeverity; count: number }>;
+  byRule: Array<{ value: string; count: number }>;
+  byField: Array<{ value: string; count: number }>;
+  total: number;
+}
+
+/** Facet counts for the Findings filter bar (docs/ux-design.md section 5.4.2). Respects PRIVATE visibility. */
+export async function findingFacets(ctx: AppContext, batchId: string, includePrivate: boolean): Promise<FindingFacets> {
+  const base = [eq(validationFindings.batchId, batchId)];
+  if (!includePrivate) base.push(eq(validationFindings.visibility, "PUBLIC"));
+  const [sev, rule, field] = await Promise.all([
+    ctx.db.select({ v: validationFindings.severity, n: sql<number>`count(*)` }).from(validationFindings).where(and(...base)).groupBy(validationFindings.severity),
+    ctx.db.select({ v: validationFindings.ruleId, n: sql<number>`count(*)` }).from(validationFindings).where(and(...base)).groupBy(validationFindings.ruleId),
+    ctx.db.select({ v: validationFindings.field, n: sql<number>`count(*)` }).from(validationFindings).where(and(...base)).groupBy(validationFindings.field),
+  ]);
+  const bySeverity = sev.map((r) => ({ value: r.v, count: Number(r.n) })).sort((a, b) => b.count - a.count);
+  return {
+    bySeverity,
+    byRule: rule.map((r) => ({ value: r.v, count: Number(r.n) })).sort((a, b) => b.count - a.count || a.value.localeCompare(b.value)),
+    byField: field.filter((r) => r.v !== null).map((r) => ({ value: r.v as string, count: Number(r.n) })).sort((a, b) => b.count - a.count || a.value.localeCompare(b.value)),
+    total: bySeverity.reduce((s, r) => s + r.count, 0),
+  };
+}
