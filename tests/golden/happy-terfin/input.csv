@@ -1,0 +1,6 @@
+SIN,LastName,FirstName,EventType,EmploymentEndDate,Weeks_CurrentYear,LowContributions_CurrentYear,HighContributions_CurrentYear,AnnualizedEarnings_CurrentYear,PA_CurrentYear,Weeks_PreviousYear,LowContributions_PreviousYear,HighContributions_PreviousYear,AnnualizedEarnings_PreviousYear,PA_PreviousYear
+900000019,CÔTÉ,Renée,TERFIN,02112026,21.00,1513.37,202.50,,6037,52.00,2611.00,401.00,,11041
+900000027,CHEN,Carol,TERFIN,03122026,22.00,1526.74,205.00,,6074,52.00,2622.00,402.00,,11082
+900000035,DIAZ,Dan,TERFIN,04132026,23.00,1540.11,,,6111,52.00,2633.00,403.00,,11123
+900000043,EVANS,Eve,TERFIN,05142026,24.00,1553.48,210.00,,6148,0.00,0.00,,,0
+900000050,FOX,Frank,TERFIN,06152026,0.00,0.00,,,0,52.00,2655.00,405.00,,11205

@@ -1,0 +1,2617 @@
+{
+  "id": "fdd1bf38-b39a-439f-9005-8314e0dd2c28",
+  "prevId": "ebd86f40-1b58-4c98-acb4-456de98335ad",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.batch_status_history": {
+      "name": "batch_status_history",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_status": {
+          "name": "from_status",
+          "type": "batch_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "to_status": {
+          "name": "to_status",
+          "type": "batch_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "batch_status_history_batch_id_batches_batch_id_fk": {
+          "name": "batch_status_history_batch_id_batches_batch_id_fk",
+          "tableFrom": "batch_status_history",
+          "columnsFrom": [
+            "batch_id"
+          ],
+          "tableTo": "batches",
+          "columnsTo": [
+            "batch_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.batches": {
+      "name": "batches",
+      "schema": "",
+      "columns": {
+        "batch_id": {
+          "name": "batch_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employer_id": {
+          "name": "employer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_type": {
+          "name": "file_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_system": {
+          "name": "source_system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'HOOPP_CSV'"
+        },
+        "status": {
+          "name": "status",
+          "type": "batch_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'RECEIVED'"
+        },
+        "execution_date": {
+          "name": "execution_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "raw_file_id": {
+          "name": "raw_file_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_sha256": {
+          "name": "file_sha256",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploaded_by": {
+          "name": "uploaded_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "rows_total": {
+          "name": "rows_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "rows_accepted": {
+          "name": "rows_accepted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "rows_rejected": {
+          "name": "rows_rejected",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "warnings_total": {
+          "name": "warnings_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "infos_total": {
+          "name": "infos_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "failure_reason": {
+          "name": "failure_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ux_batches_employer_sha": {
+          "name": "ux_batches_employer_sha",
+          "columns": [
+            {
+              "expression": "employer_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "file_sha256",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"batches\".\"status\" <> 'FILE_REJECTED'",
+          "concurrently": false
+        },
+        "ix_batches_status_received": {
+          "name": "ix_batches_status_received",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "received_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "ix_batches_received": {
+          "name": "ix_batches_received",
+          "columns": [
+            {
+              "expression": "received_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "batches_raw_file_id_raw_files_raw_file_id_fk": {
+          "name": "batches_raw_file_id_raw_files_raw_file_id_fk",
+          "tableFrom": "batches",
+          "columnsFrom": [
+            "raw_file_id"
+          ],
+          "tableTo": "raw_files",
+          "columnsTo": [
+            "raw_file_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.events_records": {
+      "name": "events_records",
+      "schema": "",
+      "columns": {
+        "record_id": {
+          "name": "record_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "line_number": {
+          "name": "line_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sin_pseudo": {
+          "name": "sin_pseudo",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sin_masked": {
+          "name": "sin_masked",
+          "type": "char(11)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sin_enc": {
+          "name": "sin_enc",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "employment_end_date": {
+          "name": "employment_end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_of_death": {
+          "name": "date_of_death",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_year": {
+          "name": "event_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cy_weeks": {
+          "name": "cy_weeks",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cy_low": {
+          "name": "cy_low",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cy_high": {
+          "name": "cy_high",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cy_ae": {
+          "name": "cy_ae",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cy_pa": {
+          "name": "cy_pa",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "py_weeks": {
+          "name": "py_weeks",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "py_low": {
+          "name": "py_low",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "py_high": {
+          "name": "py_high",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "py_ae": {
+          "name": "py_ae",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "py_pa": {
+          "name": "py_pa",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "raw_values": {
+          "name": "raw_values",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parse_ok": {
+          "name": "parse_ok",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "accepted": {
+          "name": "accepted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "ux_records_batch_line": {
+          "name": "ux_records_batch_line",
+          "columns": [
+            {
+              "expression": "batch_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "line_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "ix_records_batch_sin": {
+          "name": "ix_records_batch_sin",
+          "columns": [
+            {
+              "expression": "batch_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sin_pseudo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "ix_records_sin": {
+          "name": "ix_records_sin",
+          "columns": [
+            {
+              "expression": "sin_pseudo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "events_records_batch_id_batches_batch_id_fk": {
+          "name": "events_records_batch_id_batches_batch_id_fk",
+          "tableFrom": "events_records",
+          "columnsFrom": [
+            "batch_id"
+          ],
+          "tableTo": "batches",
+          "columnsTo": [
+            "batch_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.raw_files": {
+      "name": "raw_files",
+      "schema": "",
+      "columns": {
+        "raw_file_id": {
+          "name": "raw_file_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "original_filename": {
+          "name": "original_filename",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size_bytes": {
+          "name": "size_bytes",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "encoding_detected": {
+          "name": "encoding_detected",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lake_path": {
+          "name": "lake_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.validation_findings": {
+      "name": "validation_findings",
+      "schema": "",
+      "columns": {
+        "finding_id": {
+          "name": "finding_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "record_id": {
+          "name": "record_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "line_number": {
+          "name": "line_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sin_pseudo": {
+          "name": "sin_pseudo",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rule_id": {
+          "name": "rule_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message_id": {
+          "name": "message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "finding_level",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "severity": {
+          "name": "severity",
+          "type": "finding_severity",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "finding_visibility",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PUBLIC'"
+        },
+        "field": {
+          "name": "field",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "year_scope": {
+          "name": "year_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "params": {
+          "name": "params",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "data_import_message": {
+          "name": "data_import_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "portal_message": {
+          "name": "portal_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "override_reasons": {
+          "name": "override_reasons",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "override_reason": {
+          "name": "override_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "override_actor": {
+          "name": "override_actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "override_at": {
+          "name": "override_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calculated": {
+          "name": "calculated",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ix_findings_batch_sev": {
+          "name": "ix_findings_batch_sev",
+          "columns": [
+            {
+              "expression": "batch_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "severity",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "ix_findings_batch_line": {
+          "name": "ix_findings_batch_line",
+          "columns": [
+            {
+              "expression": "batch_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "line_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sort_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "ix_findings_record": {
+          "name": "ix_findings_record",
+          "columns": [
+            {
+              "expression": "record_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "ix_findings_rule": {
+          "name": "ix_findings_rule",
+          "columns": [
+            {
+              "expression": "rule_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "validation_findings_batch_id_batches_batch_id_fk": {
+          "name": "validation_findings_batch_id_batches_batch_id_fk",
+          "tableFrom": "validation_findings",
+          "columnsFrom": [
+            "batch_id"
+          ],
+          "tableTo": "batches",
+          "columnsTo": [
+            "batch_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "validation_findings_record_id_events_records_record_id_fk": {
+          "name": "validation_findings_record_id_events_records_record_id_fk",
+          "tableFrom": "validation_findings",
+          "columnsFrom": [
+            "record_id"
+          ],
+          "tableTo": "events_records",
+          "columnsTo": [
+            "record_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ledger_entries": {
+      "name": "ledger_entries",
+      "schema": "",
+      "columns": {
+        "seq": {
+          "name": "seq",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "entry_id": {
+          "name": "entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stream_id": {
+          "name": "stream_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stream_seq": {
+          "name": "stream_seq",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload_hash": {
+          "name": "payload_hash",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prev_hash_global": {
+          "name": "prev_hash_global",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prev_hash_stream": {
+          "name": "prev_hash_stream",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_hash": {
+          "name": "entry_hash",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "ix_ledger_stream": {
+          "name": "ix_ledger_stream",
+          "columns": [
+            {
+              "expression": "stream_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "stream_seq",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "ix_ledger_batch": {
+          "name": "ix_ledger_batch",
+          "columns": [
+            {
+              "expression": "batch_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "ix_ledger_type_time": {
+          "name": "ix_ledger_type_time",
+          "columns": [
+            {
+              "expression": "event_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "ledger_entries_entry_id_unique": {
+          "name": "ledger_entries_entry_id_unique",
+          "columns": [
+            "entry_id"
+          ],
+          "nullsNotDistinct": false
+        },
+        "ledger_entries_entry_hash_unique": {
+          "name": "ledger_entries_entry_hash_unique",
+          "columns": [
+            "entry_hash"
+          ],
+          "nullsNotDistinct": false
+        },
+        "ux_ledger_stream_seq": {
+          "name": "ux_ledger_stream_seq",
+          "columns": [
+            "stream_id",
+            "stream_seq"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ledger_heads": {
+      "name": "ledger_heads",
+      "schema": "",
+      "columns": {
+        "stream_id": {
+          "name": "stream_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "last_seq": {
+          "name": "last_seq",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_hash": {
+          "name": "last_hash",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.approvals": {
+      "name": "approvals",
+      "schema": "",
+      "columns": {
+        "approval_id": {
+          "name": "approval_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "update_set_id": {
+          "name": "update_set_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decision": {
+          "name": "decision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content_hash_at_decision": {
+          "name": "content_hash_at_decision",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ledger_entry_id": {
+          "name": "ledger_entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "ux_approvals_one_final": {
+          "name": "ux_approvals_one_final",
+          "columns": [
+            {
+              "expression": "update_set_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"approvals\".\"decision\" = 'APPROVED'",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "approvals_update_set_id_ariel_update_sets_update_set_id_fk": {
+          "name": "approvals_update_set_id_ariel_update_sets_update_set_id_fk",
+          "tableFrom": "approvals",
+          "columnsFrom": [
+            "update_set_id"
+          ],
+          "tableTo": "ariel_update_sets",
+          "columnsTo": [
+            "update_set_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "approvals_ledger_entry_id_ledger_entries_entry_id_fk": {
+          "name": "approvals_ledger_entry_id_ledger_entries_entry_id_fk",
+          "tableFrom": "approvals",
+          "columnsFrom": [
+            "ledger_entry_id"
+          ],
+          "tableTo": "ledger_entries",
+          "columnsTo": [
+            "entry_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_approvals_decision": {
+          "name": "ck_approvals_decision",
+          "value": "\"approvals\".\"decision\" IN ('APPROVED','REJECTED')"
+        },
+        "ck_approvals_reason": {
+          "name": "ck_approvals_reason",
+          "value": "\"approvals\".\"decision\" <> 'REJECTED' OR \"approvals\".\"reason\" IS NOT NULL"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ariel_update_items": {
+      "name": "ariel_update_items",
+      "schema": "",
+      "columns": {
+        "item_id": {
+          "name": "item_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "update_set_id": {
+          "name": "update_set_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sin_pseudo": {
+          "name": "sin_pseudo",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "member_display": {
+          "name": "member_display",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "employer_id": {
+          "name": "employer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "record_type": {
+          "name": "record_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operation": {
+          "name": "operation",
+          "type": "ariel_operation",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_key": {
+          "name": "target_key",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fields": {
+          "name": "fields",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "before_values": {
+          "name": "before_values",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_fields": {
+          "name": "source_fields",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "derivation_rule": {
+          "name": "derivation_rule",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "explanation": {
+          "name": "explanation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ledger_entry_id": {
+          "name": "ledger_entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "ix_items_set_member": {
+          "name": "ix_items_set_member",
+          "columns": [
+            {
+              "expression": "update_set_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sin_pseudo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sort_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "ix_items_member": {
+          "name": "ix_items_member",
+          "columns": [
+            {
+              "expression": "sin_pseudo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "ariel_update_items_update_set_id_ariel_update_sets_update_set_id_fk": {
+          "name": "ariel_update_items_update_set_id_ariel_update_sets_update_set_id_fk",
+          "tableFrom": "ariel_update_items",
+          "columnsFrom": [
+            "update_set_id"
+          ],
+          "tableTo": "ariel_update_sets",
+          "columnsTo": [
+            "update_set_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "ariel_update_items_ledger_entry_id_ledger_entries_entry_id_fk": {
+          "name": "ariel_update_items_ledger_entry_id_ledger_entries_entry_id_fk",
+          "tableFrom": "ariel_update_items",
+          "columnsFrom": [
+            "ledger_entry_id"
+          ],
+          "tableTo": "ledger_entries",
+          "columnsTo": [
+            "entry_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ariel_update_sets": {
+      "name": "ariel_update_sets",
+      "schema": "",
+      "columns": {
+        "update_set_id": {
+          "name": "update_set_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "update_set_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'BUILDING'"
+        },
+        "item_count": {
+          "name": "item_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "member_count": {
+          "name": "member_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "artifacts": {
+          "name": "artifacts",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "built_at": {
+          "name": "built_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ariel_update_sets_batch_id_batches_batch_id_fk": {
+          "name": "ariel_update_sets_batch_id_batches_batch_id_fk",
+          "tableFrom": "ariel_update_sets",
+          "columnsFrom": [
+            "batch_id"
+          ],
+          "tableTo": "batches",
+          "columnsTo": [
+            "batch_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "ariel_update_sets_batch_id_unique": {
+          "name": "ariel_update_sets_batch_id_unique",
+          "columns": [
+            "batch_id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.exports": {
+      "name": "exports",
+      "schema": "",
+      "columns": {
+        "export_id": {
+          "name": "export_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "update_set_id": {
+          "name": "update_set_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "exported_at": {
+          "name": "exported_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "json_path": {
+          "name": "json_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "csv_path": {
+          "name": "csv_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "json_sha256": {
+          "name": "json_sha256",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "csv_sha256": {
+          "name": "csv_sha256",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ledger_entry_id": {
+          "name": "ledger_entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "exports_update_set_id_ariel_update_sets_update_set_id_fk": {
+          "name": "exports_update_set_id_ariel_update_sets_update_set_id_fk",
+          "tableFrom": "exports",
+          "columnsFrom": [
+            "update_set_id"
+          ],
+          "tableTo": "ariel_update_sets",
+          "columnsTo": [
+            "update_set_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "exports_ledger_entry_id_ledger_entries_entry_id_fk": {
+          "name": "exports_ledger_entry_id_ledger_entries_entry_id_fk",
+          "tableFrom": "exports",
+          "columnsFrom": [
+            "ledger_entry_id"
+          ],
+          "tableTo": "ledger_entries",
+          "columnsTo": [
+            "entry_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.audit_log": {
+      "name": "audit_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target": {
+          "name": "target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip": {
+          "name": "ip",
+          "type": "inet",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.member_projections": {
+      "name": "member_projections",
+      "schema": "",
+      "columns": {
+        "sin_pseudo": {
+          "name": "sin_pseudo",
+          "type": "char(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "sin_masked": {
+          "name": "sin_masked",
+          "type": "char(11)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "employer_ids": {
+          "name": "employer_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "latest_event": {
+          "name": "latest_event",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ariel_status": {
+          "name": "ariel_status",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pending_items": {
+          "name": "pending_items",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "exported_items": {
+          "name": "exported_items",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_ledger_seq": {
+          "name": "last_ledger_seq",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stream_head_hash": {
+          "name": "stream_head_hash",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timeline": {
+          "name": "timeline",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.projection_checkpoints": {
+      "name": "projection_checkpoints",
+      "schema": "",
+      "columns": {
+        "projection_name": {
+          "name": "projection_name",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "last_seq": {
+          "name": "last_seq",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.addresses": {
+      "name": "addresses",
+      "schema": "ariel_mock",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "effective_start_date": {
+          "name": "effective_start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "addresses_member_id_members_member_id_fk": {
+          "name": "addresses_member_id_members_member_id_fk",
+          "tableFrom": "addresses",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "tableTo": "members",
+          "schemaTo": "ariel_mock",
+          "columnsTo": [
+            "member_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.contribution_tx": {
+      "name": "contribution_tx",
+      "schema": "ariel_mock",
+      "columns": {
+        "tx_id": {
+          "name": "tx_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employment_id": {
+          "name": "employment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "begin_date": {
+          "name": "begin_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_date": {
+          "name": "payment_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_date": {
+          "name": "target_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "declaration_date": {
+          "name": "declaration_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "indicator": {
+          "name": "indicator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary_attribute": {
+          "name": "summary_attribute",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "contribution_tx_employment_id_employments_employment_id_fk": {
+          "name": "contribution_tx_employment_id_employments_employment_id_fk",
+          "tableFrom": "contribution_tx",
+          "columnsFrom": [
+            "employment_id"
+          ],
+          "tableTo": "employments",
+          "schemaTo": "ariel_mock",
+          "columnsTo": [
+            "employment_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.employers": {
+      "name": "employers",
+      "schema": "ariel_mock",
+      "columns": {
+        "employer_id": {
+          "name": "employer_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "year_end_closed_indicator": {
+          "name": "year_end_closed_indicator",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.employment_type_history": {
+      "name": "employment_type_history",
+      "schema": "ariel_mock",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employment_id": {
+          "name": "employment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effective_date": {
+          "name": "effective_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "employment_type_history_employment_id_employments_employment_id_fk": {
+          "name": "employment_type_history_employment_id_employments_employment_id_fk",
+          "tableFrom": "employment_type_history",
+          "columnsFrom": [
+            "employment_id"
+          ],
+          "tableTo": "employments",
+          "schemaTo": "ariel_mock",
+          "columnsTo": [
+            "employment_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.employments": {
+      "name": "employments",
+      "schema": "ariel_mock",
+      "columns": {
+        "employment_id": {
+          "name": "employment_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "employer_id": {
+          "name": "employer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "permanency_date": {
+          "name": "permanency_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "termination_date": {
+          "name": "termination_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "termination_code": {
+          "name": "termination_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_annual_data_update": {
+          "name": "last_annual_data_update",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_information": {
+          "name": "other_information",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "employment_type": {
+          "name": "employment_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "termination_data_update": {
+          "name": "termination_data_update",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "employments_member_id_members_member_id_fk": {
+          "name": "employments_member_id_members_member_id_fk",
+          "tableFrom": "employments",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "tableTo": "members",
+          "schemaTo": "ariel_mock",
+          "columnsTo": [
+            "member_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "employments_employer_id_employers_employer_id_fk": {
+          "name": "employments_employer_id_employers_employer_id_fk",
+          "tableFrom": "employments",
+          "columnsFrom": [
+            "employer_id"
+          ],
+          "tableTo": "employers",
+          "schemaTo": "ariel_mock",
+          "columnsTo": [
+            "employer_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.members": {
+      "name": "members",
+      "schema": "ariel_mock",
+      "columns": {
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "sin_enc": {
+          "name": "sin_enc",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sin_pseudo": {
+          "name": "sin_pseudo",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_of_birth": {
+          "name": "date_of_birth",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_of_death": {
+          "name": "date_of_death",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sub_status": {
+          "name": "sub_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status_effective_date": {
+          "name": "status_effective_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sub_status_effective_date": {
+          "name": "sub_status_effective_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calculation_indicators": {
+          "name": "calculation_indicators",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        }
+      },
+      "indexes": {
+        "ix_mock_members_sin": {
+          "name": "ix_mock_members_sin",
+          "columns": [
+            {
+              "expression": "sin_pseudo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.membership_status_history": {
+      "name": "membership_status_history",
+      "schema": "ariel_mock",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sub_status": {
+          "name": "sub_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "effective_date": {
+          "name": "effective_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "membership_status_history_member_id_members_member_id_fk": {
+          "name": "membership_status_history_member_id_members_member_id_fk",
+          "tableFrom": "membership_status_history",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "tableTo": "members",
+          "schemaTo": "ariel_mock",
+          "columnsTo": [
+            "member_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.pension_adjustments": {
+      "name": "pension_adjustments",
+      "schema": "ariel_mock",
+      "columns": {
+        "pa_id": {
+          "name": "pa_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "employer_id": {
+          "name": "employer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "calculation_year": {
+          "name": "calculation_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "calculation_date": {
+          "name": "calculation_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_date": {
+          "name": "entry_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pension_adjustments_member_id_members_member_id_fk": {
+          "name": "pension_adjustments_member_id_members_member_id_fk",
+          "tableFrom": "pension_adjustments",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "tableTo": "members",
+          "schemaTo": "ariel_mock",
+          "columnsTo": [
+            "member_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.rate_tables": {
+      "name": "rate_tables",
+      "schema": "ariel_mock",
+      "columns": {
+        "table_name": {
+          "name": "table_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "year": {
+          "name": "year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "numeric(14, 4)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "rate_tables_table_name_year_pk": {
+          "name": "rate_tables_table_name_year_pk",
+          "columns": [
+            "table_name",
+            "year"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.salary_rates": {
+      "name": "salary_rates",
+      "schema": "ariel_mock",
+      "columns": {
+        "tx_id": {
+          "name": "tx_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employment_id": {
+          "name": "employment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rate": {
+          "name": "rate",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effective_date": {
+          "name": "effective_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_date": {
+          "name": "entry_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "indicator": {
+          "name": "indicator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary_attribute": {
+          "name": "summary_attribute",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "salary_rates_employment_id_employments_employment_id_fk": {
+          "name": "salary_rates_employment_id_employments_employment_id_fk",
+          "tableFrom": "salary_rates",
+          "columnsFrom": [
+            "employment_id"
+          ],
+          "tableTo": "employments",
+          "schemaTo": "ariel_mock",
+          "columnsTo": [
+            "employment_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.service_breaks": {
+      "name": "service_breaks",
+      "schema": "ariel_mock",
+      "columns": {
+        "break_id": {
+          "name": "break_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employment_id": {
+          "name": "employment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "service_breaks_employment_id_employments_employment_id_fk": {
+          "name": "service_breaks_employment_id_employments_employment_id_fk",
+          "tableFrom": "service_breaks",
+          "columnsFrom": [
+            "employment_id"
+          ],
+          "tableTo": "employments",
+          "schemaTo": "ariel_mock",
+          "columnsTo": [
+            "employment_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "ariel_mock.service_tx": {
+      "name": "service_tx",
+      "schema": "ariel_mock",
+      "columns": {
+        "tx_id": {
+          "name": "tx_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employment_id": {
+          "name": "employment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(8, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "begin_date": {
+          "name": "begin_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_date": {
+          "name": "payment_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_date": {
+          "name": "target_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "declaration_date": {
+          "name": "declaration_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "indicator": {
+          "name": "indicator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary_attribute": {
+          "name": "summary_attribute",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "service_tx_employment_id_employments_employment_id_fk": {
+          "name": "service_tx_employment_id_employments_employment_id_fk",
+          "tableFrom": "service_tx",
+          "columnsFrom": [
+            "employment_id"
+          ],
+          "tableTo": "employments",
+          "schemaTo": "ariel_mock",
+          "columnsTo": [
+            "employment_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.ariel_operation": {
+      "name": "ariel_operation",
+      "schema": "public",
+      "values": [
+        "UPDATE",
+        "CREATE",
+        "UPSERT_ADD",
+        "CLOSE",
+        "DELETE",
+        "SET_FLAG"
+      ]
+    },
+    "public.batch_status": {
+      "name": "batch_status",
+      "schema": "public",
+      "values": [
+        "RECEIVED",
+        "PARSED",
+        "VALIDATED",
+        "LEDGERED",
+        "PROJECTION_BUILT",
+        "PENDING_APPROVAL",
+        "APPROVED",
+        "REJECTED",
+        "EXPORTED",
+        "FAILED",
+        "FILE_REJECTED"
+      ]
+    },
+    "public.finding_level": {
+      "name": "finding_level",
+      "schema": "public",
+      "values": [
+        "L0",
+        "L1",
+        "L2"
+      ]
+    },
+    "public.finding_severity": {
+      "name": "finding_severity",
+      "schema": "public",
+      "values": [
+        "FILE_ERROR",
+        "COMPLETE_MEMBER_ERROR",
+        "WARNING",
+        "INFORMATION"
+      ]
+    },
+    "public.finding_visibility": {
+      "name": "finding_visibility",
+      "schema": "public",
+      "values": [
+        "PUBLIC",
+        "PRIVATE"
+      ]
+    },
+    "public.update_set_status": {
+      "name": "update_set_status",
+      "schema": "public",
+      "values": [
+        "BUILDING",
+        "PENDING_APPROVAL",
+        "APPROVED",
+        "REJECTED",
+        "EXPORTED"
+      ]
+    }
+  },
+  "schemas": {
+    "ariel_mock": "ariel_mock"
+  },
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

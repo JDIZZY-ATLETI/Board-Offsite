@@ -1,0 +1,21 @@
+import path from "node:path";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  resolve: { alias: { "@": path.resolve(__dirname, "src") } },
+  test: {
+    environment: "node",
+    include: ["tests/**/*.spec.ts"],
+    setupFiles: ["tests/setup.ts"],
+    testTimeout: 120_000,
+    hookTimeout: 120_000,
+    pool: "forks",
+    coverage: {
+      provider: "v8",
+      include: ["src/lib/**/*.ts"],
+      exclude: ["src/lib/lake/adls-store.ts", "src/lib/db/index.ts", "src/lib/pipeline/jobs.ts"],
+      reporter: ["text", "json-summary", "html"],
+      reportsDirectory: "coverage",
+    },
+  },
+});

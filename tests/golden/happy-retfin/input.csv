@@ -1,0 +1,4 @@
+SIN,LastName,FirstName,EventType,EmploymentEndDate,Weeks_CurrentYear,LowContributions_CurrentYear,HighContributions_CurrentYear,AnnualizedEarnings_CurrentYear,PA_CurrentYear,Weeks_PreviousYear,LowContributions_PreviousYear,HighContributions_PreviousYear,AnnualizedEarnings_PreviousYear,PA_PreviousYear
+900000217,BAKER,Ben,RETFIN,06302026,21.00,1780.77,,,6777,52.00,2831.00,421.00,,11861
+900000225,CHEN,Carol,RETFIN,01312026,22.00,1794.14,255.00,,6814,52.00,2842.00,422.00,,11902
+900000233,DIAZ,Dan,RETFIN,08312026,0.00,0.00,,48000,0,52.00,2853.00,423.00,,11943

@@ -1,0 +1,155 @@
+import type { EventsRecord, FindingSeverity, RecordOutcome, RuleTiming, ValidationFinding } from "@/types";
+import { L0_RULES, L1_RULES, L2_RULES } from "./registry";
+import { renderMessage } from "./render";
+import type { FindingDraft, Rule, RuleContext } from "./types";
+
+export interface EngineDeps {
+  newId: () => string;
+  now: () => Date;
+}
+
+export interface EvaluationResult {
+  fileFindings: ValidationFinding[];
+  /** Findings per record id, each list in deterministic order. */
+  recordFindings: Map<string, ValidationFinding[]>;
+  outcomes: Map<string, RecordOutcome>;
+  timings: RuleTiming[];
+}
+
+export function buildFinding(
+  rule: Rule,
+  draft: FindingDraft,
+  record: EventsRecord | null,
+  batchId: string,
+  deps: EngineDeps,
+  sortOrder: number,
+): ValidationFinding {
+  const messageId = draft.messageIdOverride ?? (typeof rule.messageId === "function" ? rule.messageId(draft) : rule.messageId);
+  return {
+    findingId: deps.newId(),
+    batchId,
+    recordId: record?.recordId ?? null,
+    lineNumber: record?.lineNumber ?? null,
+    sinPseudo: record?.sinPseudo ?? null,
+    ruleId: rule.id,
+    messageId,
+    level: rule.level,
+    severity: rule.severity,
+    visibility: rule.visibility,
+    field: draft.field ?? null,
+    yearScope: draft.yearScope ?? null,
+    params: draft.params,
+    dataImportMessage: renderMessage(rule.dataImportMessage, draft.params),
+    portalMessage: renderMessage(rule.portalMessage, draft.params),
+    overrideReasons: [...rule.overrideReasons],
+    calculated: draft.calculated,
+    createdAt: deps.now().toISOString(),
+    sortOrder,
+  };
+}
+
+function isEnabled(rule: Rule, ctx: RuleContext): boolean {
+  return rule.enabledByDefault && !ctx.config.disabled.has(rule.id);
+}
+
+export function outcomeOf(findings: ValidationFinding[]): RecordOutcome {
+  const blocking: FindingSeverity[] = ["FILE_ERROR", "COMPLETE_MEMBER_ERROR"];
+  return findings.some((f) => blocking.includes(f.severity)) ? "REJECTED" : "ACCEPTED";
+}
+
+class Timer {
+  private readonly map = new Map<string, RuleTiming>();
+  record(rule: Rule, ms: number, findings: number) {
+    const t = this.map.get(rule.id) ?? { ruleId: rule.id, level: rule.level, evaluations: 0, findings: 0, durationMs: 0 };
+    t.evaluations += 1;
+    t.findings += findings;
+    t.durationMs += ms;
+    this.map.set(rule.id, t);
+  }
+  list(): RuleTiming[] {
+    return [...this.map.values()].map((t) => ({ ...t, durationMs: Math.round(t.durationMs * 1000) / 1000 }));
+  }
+}
+
+/** Runs L0 rules once over the whole file. Any finding rejects the file. */
+export function runFileRules(ctx: RuleContext, deps: EngineDeps, timer = new Timer()): { findings: ValidationFinding[]; timings: RuleTiming[] } {
+  const findings: ValidationFinding[] = [];
+  for (const rule of L0_RULES) {
+    if (!isEnabled(rule, ctx) || !rule.appliesTo(null, ctx)) continue;
+    const t0 = performance.now();
+    const drafts = rule.evaluate(null, ctx);
+    timer.record(rule, performance.now() - t0, drafts.length);
+    drafts.forEach((d, i) => findings.push(buildFinding(rule, d, null, ctx.batch.batchId, deps, i)));
+  }
+  return { findings, timings: timer.list() };
+}
+
+/** Runs L1 then runnable L2 rules for one record. All rules run so the employer sees every problem. */
+export function runRecordRules(record: EventsRecord, ctx: RuleContext, deps: EngineDeps, timer = new Timer()): ValidationFinding[] {
+  const out: ValidationFinding[] = [];
+  let sinBlank = false;
+  for (const level of [L1_RULES, L2_RULES]) {
+    for (const rule of level) {
+      if (!isEnabled(rule, ctx)) continue;
+      if (rule.requiresAriel) continue;
+      // I2 suppresses SIN-keyed rules for the row (architecture section 7.3 exception a).
+      if (sinBlank && (rule.id === "I10" || rule.level === "L2")) continue;
+      if (!rule.appliesTo(record, ctx)) continue;
+      const t0 = performance.now();
+      let drafts: FindingDraft[];
+      try {
+        drafts = rule.evaluate(record, ctx);
+      } catch (err) {
+        // Architecture section 10.5: one bad rule must not sink the batch.
+        timer.record(rule, performance.now() - t0, 1);
+        out.push(systemRuleError(rule, err, record, ctx, deps));
+        continue;
+      }
+      timer.record(rule, performance.now() - t0, drafts.length);
+      if (rule.id === "I2" && drafts.length > 0) sinBlank = true;
+      drafts.forEach((d, i) => out.push(buildFinding(rule, d, record, ctx.batch.batchId, deps, i)));
+    }
+  }
+  return out;
+}
+
+const SYS_RULE_ERROR: Rule = {
+  id: "SYS-RULE-ERROR",
+  label: "SYS-RULE-ERROR",
+  messageId: "SYS-RULE-ERROR",
+  level: "L1",
+  severity: "COMPLETE_MEMBER_ERROR",
+  visibility: "PRIVATE",
+  section: ["EVENTS"],
+  tool: "DataImport",
+  overrideReasons: [],
+  dataImportMessage: "Rule {rule} failed: {error}",
+  portalMessage: "A validation rule could not be evaluated for this record. HOOPP has been notified.",
+  enabledByDefault: true,
+  requiresAriel: false,
+  appliesTo: () => false,
+  evaluate: () => [],
+};
+
+function systemRuleError(rule: Rule, err: unknown, record: EventsRecord, ctx: RuleContext, deps: EngineDeps): ValidationFinding {
+  const message = err instanceof Error ? err.message : String(err);
+  return buildFinding(SYS_RULE_ERROR, { params: { rule: rule.id, error: message } }, record, ctx.batch.batchId, deps, 0);
+}
+
+export function evaluateRecords(ctx: RuleContext, deps: EngineDeps): EvaluationResult {
+  const timer = new Timer();
+  const recordFindings = new Map<string, ValidationFinding[]>();
+  const outcomes = new Map<string, RecordOutcome>();
+  for (const record of ctx.file.records) {
+    const findings = runRecordRules(record, ctx, deps, timer);
+    recordFindings.set(record.recordId, findings);
+    outcomes.set(record.recordId, outcomeOf(findings));
+  }
+  return { fileFindings: [], recordFindings, outcomes, timings: timer.list() };
+}
+
+export function buildSinCounts(records: EventsRecord[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const r of records) if (r.sin) m.set(r.sin, (m.get(r.sin) ?? 0) + 1);
+  return m;
+}
