@@ -8,5 +8,6 @@ export function renderMessage(template: string, params: FindingParams): string {
 }
 
 export function hasUnresolvedPlaceholders(text: string): boolean {
-  return PLACEHOLDER_RE.test(text);
+  // Fresh regex: the shared /g pattern keeps lastIndex between calls and would skip matches.
+  return /\{[^{}]+\}/.test(text);
 }
