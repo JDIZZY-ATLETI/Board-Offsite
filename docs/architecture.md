@@ -1508,6 +1508,7 @@ Response shapes for `BatchSummary`, `RecordSummary`, `VerificationResult` are zo
 ### 13.1 Auth placeholder and roles
 
 - v1 ships `AuthProvider` interface with `HeaderAuthProvider` (dev): reads `x-user-id`, `x-role`, `x-employer-id` headers set by a dev login page (cookie-backed session, `httpOnly`, `SameSite=Lax`). Production implementation: `EntraIdAuthProvider` (OIDC via `next-auth`/MSAL) — §16.
+- Header trust boundary (QA BUG-SEC-1): `src/middleware.ts` deletes every inbound `x-user-id` / `x-user-role` / `x-role` / `x-employer-id` header on every request and, outside production only, re-populates them from the dev session cookie. A route handler or server component therefore only ever sees an identity the middleware itself set. `HeaderAuthProvider.getSession()` additionally returns `null` whenever `NODE_ENV=production`, so header identities cannot mint a session there even if the middleware matcher were bypassed; in-process tests (no middleware) keep passing the headers directly.
 - Roles: `EmployerSubmitter` (upload for own employer, view own batches/findings, download own Rejected Individuals, override warnings only if enabled), `Reviewer` (all read, override, approve/reject, export), `Admin` (everything + config, retry/reopen, verify, audit, mock reset).
 - Authorization is enforced in route handlers via `requireRole()` and in data access via an employer scope filter for Submitters. Never in the UI only.
 

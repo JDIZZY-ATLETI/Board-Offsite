@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { middleware } from "@/middleware";
 import { decodeDevSession, DEV_SESSION_COOKIE, encodeDevSession } from "@/lib/auth/dev-session";
+import { IDENTITY_HEADERS } from "@/lib/auth/identity-headers";
 import { HeaderAuthProvider } from "@/lib/auth/session";
 import { validationFindings } from "@/lib/db/schema";
 import { decodeBytes } from "@/lib/events/decode";
@@ -200,23 +201,47 @@ describe("QA/security: dev session cookie + middleware bridge", () => {
     env.NODE_ENV = "test";
     expect(mw({ method: "POST", origin: "https://evil.example", path: "/api/auth/dev-login" }).status).toBe(200);
   });
-  it("an explicit x-user-id header wins over the cookie (documented dev behaviour)", () => {
+  /** True when the middleware rewrote the request and none of the identity headers survived. */
+  const strippedAll = (res: Response) => {
+    const override = res.headers.get("x-middleware-override-headers");
+    if (override === null) return false;
+    const names = override.split(",").map((s) => s.trim().toLowerCase());
+    return IDENTITY_HEADERS.every((h) => !names.includes(h) && forwarded(res, h) === null);
+  };
+  it("dev: client-supplied x-user-* / x-role headers are stripped even when a cookie is present (cookie wins)", () => {
     env.NODE_ENV = "test";
-    const res = mw({ cookie: cookieFor({ userId: "jsmith", role: "EmployerSubmitter", employerId: "0235" }), headers: { "x-user-id": "spoof", "x-user-role": "Admin" } });
-    expect(forwarded(res, "x-user-id")).toBeNull();
+    const res = mw({ cookie: cookieFor({ userId: "jsmith", role: "EmployerSubmitter", employerId: "0235" }), headers: { "x-user-id": "spoof", "x-user-role": "Admin", "x-role": "Admin" } });
+    expect(forwarded(res, "x-user-id")).toBe("jsmith");
+    expect(forwarded(res, "x-user-role")).toBe("EmployerSubmitter");
+    expect(forwarded(res, "x-role")).toBeNull();
+    expect(res.headers.get("x-middleware-override-headers")).not.toContain("x-role");
+  });
+  it("dev: client-supplied identity headers WITHOUT a cookie are stripped (handler sees an anonymous request)", () => {
+    env.NODE_ENV = "test";
+    const res = mw({ headers: { "x-user-id": "spoof", "x-user-role": "Admin", "x-role": "Admin", "x-employer-id": "0235" } });
+    expect(res.status).toBe(200);
+    expect(strippedAll(res)).toBe(true);
   });
   it("production: middleware does not bridge cookies", () => {
     env.NODE_ENV = "production";
     const res = mw({ cookie: cookieFor({ userId: "admin", role: "Admin", employerId: null }) });
     expect(forwarded(res, "x-user-id")).toBeNull();
+    expect(strippedAll(res)).toBe(true);
   });
-  it.fails("BUG-SEC-1 (Critical): in production the x-user-* headers are still trusted end-to-end; a browser can forge Admin", async () => {
+  it("BUG-SEC-1 (fixed): in production forged x-user-* headers are stripped by the middleware AND refused by HeaderAuthProvider", async () => {
     env.NODE_ENV = "production";
-    const res = mw({ headers: { "x-user-id": "attacker", "x-user-role": "Admin" } });
-    // Middleware must strip (or the provider must refuse) identity headers that did not come from a trusted source.
-    const stripped = res.headers.get("x-middleware-override-headers") !== null && forwarded(res, "x-user-id") === null && !res.headers.get("x-middleware-override-headers")!.includes("x-user-id");
-    const session = await new HeaderAuthProvider().getSession(new Request("http://x/", { headers: { "x-user-id": "attacker", "x-user-role": "Admin" } }));
-    expect(stripped || session === null).toBe(true);
+    const res = mw({ headers: { "x-user-id": "attacker", "x-user-role": "Admin", "x-role": "Admin" }, method: "POST", path: "/api/ledger/verify" });
+    expect(res.status).toBe(200);
+    expect(strippedAll(res)).toBe(true);
+    const forged = new Request("http://x/", { headers: { "x-user-id": "attacker", "x-user-role": "Admin" } });
+    expect(await new HeaderAuthProvider().getSession(forged)).toBeNull();
+    // Defence in depth: the route handler itself answers 401 in production even when called without the middleware.
+    expectErrorEnvelope(await api.verify(ADMIN, "{}"), 401, "UNAUTHENTICATED");
+  });
+  it("non-production: HeaderAuthProvider still accepts middleware-populated headers (in-process tests, dev bridge)", async () => {
+    env.NODE_ENV = "test";
+    const s = await new HeaderAuthProvider().getSession(new Request("http://x/", { headers: { "x-user-id": "jsmith", "x-user-role": "EmployerSubmitter", "x-employer-id": "0235" } }));
+    expect(s).toEqual({ userId: "jsmith", role: "EmployerSubmitter", employerId: "0235", actor: "user:jsmith" });
   });
 });
 

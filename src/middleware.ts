@@ -1,17 +1,23 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { decodeDevSession, DEV_SESSION_COOKIE } from "@/lib/auth/dev-session";
+import { IDENTITY_HEADERS } from "@/lib/auth/identity-headers";
 
 /**
- * Dev auth bridge: when a request carries the dev session cookie and no explicit `x-user-id`
- * header, copy the cookie facts onto the request headers that `HeaderAuthProvider` reads.
- * Disabled in production, where an Entra ID provider replaces header auth (architecture section 16).
+ * Identity-header boundary (architecture section 13.1, QA BUG-SEC-1).
+ *
+ * Inbound `x-user-*` / `x-role` headers are NEVER trusted: every request has them stripped before it
+ * reaches a route handler or page, so the only identity a handler can observe is the one this middleware
+ * bridged from the dev session cookie (non-production only). In production nothing is bridged and
+ * `HeaderAuthProvider` additionally refuses every header identity, so a bypassed matcher cannot mint a session.
  */
 export function middleware(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") return NextResponse.next();
-  if (req.headers.get("x-user-id")) return NextResponse.next();
+  const headers = new Headers(req.headers);
+  for (const name of IDENTITY_HEADERS) headers.delete(name);
+
+  if (process.env.NODE_ENV === "production") return NextResponse.next({ request: { headers } });
 
   const session = decodeDevSession(req.cookies.get(DEV_SESSION_COOKIE)?.value);
-  if (!session) return NextResponse.next();
+  if (!session) return NextResponse.next({ request: { headers } });
 
   // Cookie-authenticated mutations must come from our own origin (CSRF guard; SameSite=Lax covers the rest).
   if (req.method !== "GET" && req.method !== "HEAD") {
@@ -21,11 +27,9 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  const headers = new Headers(req.headers);
   headers.set("x-user-id", session.userId);
   headers.set("x-user-role", session.role);
   if (session.employerId) headers.set("x-employer-id", session.employerId);
-  else headers.delete("x-employer-id");
   return NextResponse.next({ request: { headers } });
 }
 

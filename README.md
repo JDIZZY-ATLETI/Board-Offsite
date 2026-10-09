@@ -76,8 +76,10 @@ npm run dev                        # http://localhost:3000 -> redirects to /logi
 
 `/login` (non-production only) offers seeded personas; picking one sets an `httpOnly` cookie that
 `src/middleware.ts` maps onto the `x-user-id` / `x-user-role` / `x-employer-id` headers the
-`HeaderAuthProvider` already reads, so pages and API routes share one auth path. Explicit headers (curl)
-still work and take precedence. Cookie-authenticated non-GET requests must come from the same origin.
+`HeaderAuthProvider` already reads, so pages and API routes share one auth path. Client-supplied
+`x-user-*` / `x-role` headers are **stripped** by the middleware on every request (the cookie is the only
+identity source over HTTP; in production the header provider refuses everything until the Entra ID provider
+ships). Cookie-authenticated non-GET requests must come from the same origin.
 
 | Persona | User id | Role | Scope | Can |
 | --- | --- | --- | --- | --- |
@@ -111,14 +113,19 @@ Golden inputs to try: `tests/golden/happy-terfin/input.csv` (VALIDATED, all acce
 
 ## Dev authentication
 
-`AUTH_MODE=header`: send `x-user-id`, `x-user-role` (`EmployerSubmitter` | `Reviewer` | `Admin`) and, for
-submitters, `x-employer-id`. Example upload:
+`AUTH_MODE=header`: route handlers read `x-user-id`, `x-user-role` (`EmployerSubmitter` | `Reviewer` |
+`Admin`) and, for submitters, `x-employer-id` - but only the middleware may set them (it strips whatever a
+client sends). From the command line, log in once through `POST /api/auth/dev-login` (non-production only)
+and reuse the cookie:
 
 ```powershell
-curl.exe -X POST "http://localhost:3000/api/batches?wait=true" `
-  -H "x-user-id: jsmith" -H "x-user-role: EmployerSubmitter" -H "x-employer-id: 0235" `
+curl.exe -c .data/cookies.txt -X POST http://localhost:3000/api/auth/dev-login `
+  -H "content-type: application/json" -d "{\"userId\":\"jsmith\",\"role\":\"EmployerSubmitter\",\"employerId\":\"0235\"}"
+curl.exe -b .data/cookies.txt -X POST "http://localhost:3000/api/batches?wait=true" `
   -F "file=@tests/golden/happy-terfin/input.csv;type=text/csv" -F "employerId=0235"
 ```
+
+In-process tests call the route handlers directly and keep passing the headers themselves.
 
 ## API (Phase 1)
 

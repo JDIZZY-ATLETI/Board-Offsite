@@ -7,10 +7,13 @@ export interface AuthProvider {
 
 /**
  * Dev-only header auth (architecture section 13.1): `x-user-id`, `x-user-role` (alias `x-role`),
- * `x-employer-id`. Production swaps in an Entra ID provider behind the same interface.
+ * `x-employer-id`. `src/middleware.ts` strips these from every inbound request and re-populates them from
+ * the dev session cookie, so over HTTP they can only originate from the middleware. In production the
+ * provider refuses header identities outright (QA BUG-SEC-1); an Entra ID provider replaces it there.
  */
 export class HeaderAuthProvider implements AuthProvider {
   async getSession(req: Request): Promise<Session | null> {
+    if (process.env.NODE_ENV === "production") return null;
     const userId = req.headers.get("x-user-id")?.trim();
     const roleRaw = (req.headers.get("x-user-role") ?? req.headers.get("x-role"))?.trim();
     const employerId = req.headers.get("x-employer-id")?.trim() || null;
