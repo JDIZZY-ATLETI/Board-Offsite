@@ -8,6 +8,29 @@ export interface DecodedText {
 
 const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf]);
 
+export type EncodingProblem = "UTF16_LE" | "UTF16_BE" | "NUL_BYTES";
+
+/**
+ * The layout mandates ANSI (windows-1252); UTF-16 (with or without BOM) and any other NUL-bearing content
+ * is not an Events file and must be rejected at L0 (QA BUG-PIPE-1/2) - NUL cannot be stored in text/jsonb.
+ */
+export function detectEncodingProblem(bytes: Buffer): EncodingProblem | null {
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) return "UTF16_LE";
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) return "UTF16_BE";
+  let even = 0;
+  let odd = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    if (bytes[i] !== 0) continue;
+    if (i % 2 === 0) even += 1;
+    else odd += 1;
+  }
+  const nul = even + odd;
+  if (nul === 0) return null;
+  // ASCII-range UTF-16 has a NUL in every other byte; a few stray NULs are just corrupt text.
+  if (nul * 2 >= bytes.length * 0.8) return odd >= even ? "UTF16_LE" : "UTF16_BE";
+  return "NUL_BYTES";
+}
+
 /**
  * The layout mandates ANSI (windows-1252). Pure-ASCII and valid UTF-8 input decode identically, so we
  * prefer UTF-8 when it is valid and fall back to windows-1252 (which never fails) otherwise.

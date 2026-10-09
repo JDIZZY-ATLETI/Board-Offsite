@@ -1,4 +1,5 @@
 import { expect } from "vitest";
+import type { EncodingProblem } from "@/lib/events/decode";
 import { buildRecord } from "@/lib/events/record";
 import { buildFinding, buildSinCounts, type EngineDeps } from "@/lib/rules/engine";
 import { hasUnresolvedPlaceholders } from "@/lib/rules/render";
@@ -27,6 +28,7 @@ export interface CtxOptions {
   header?: string[];
   rows?: RawEventsRow[];
   records?: EventsRecord[];
+  encodingProblem?: EncodingProblem | null;
   i42ApplyToRetfin?: boolean;
   disabled?: string[];
 }
@@ -35,7 +37,7 @@ export function ctxOf(o: CtxOptions = {}): RuleContext {
   const records = o.records ?? [];
   return {
     batch: { batchId: "00000000-0000-7000-8000-000000000000", employerId: "0235", executionDate: o.executionDate ?? "2026-10-08" },
-    file: { header: o.header ?? [...EVENTS_CSV_COLUMNS], rows: o.rows ?? [], records },
+    file: { header: o.header ?? [...EVENTS_CSV_COLUMNS], rows: o.rows ?? [], records, encodingProblem: o.encodingProblem ?? null },
     config: { i42ApplyToRetfin: o.i42ApplyToRetfin ?? true, disabled: new Set(o.disabled ?? []) },
     now: () => o.executionDate ?? "2026-10-08",
     sinCounts: buildSinCounts(records),

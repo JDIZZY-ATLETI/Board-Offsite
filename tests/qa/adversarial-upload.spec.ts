@@ -4,11 +4,11 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { batches, batchStatusHistory, eventsRecords, rawFiles } from "@/lib/db/schema";
 import { ingest } from "@/lib/pipeline/ingest";
-import { runBatch } from "@/lib/pipeline/run";
+import { PipelineError, runBatch, sanitizeFailureReason } from "@/lib/pipeline/run";
 import { canTransition, InvalidTransitionError, TRANSITIONS, transitionBatch } from "@/lib/pipeline/state-machine";
 import { BATCH_STATUSES, type BatchStatus } from "@/types";
 import { goldenInput } from "../helpers/fixtures";
-import { ADMIN, api, csvBytes, expectErrorEnvelope, expectLegalBatchState, HEADER, manyRows, SUB_0235, upload, uploadRaw, validRow } from "../helpers/qa-api";
+import { ADMIN, api, csvBytes, expectErrorEnvelope, expectLegalBatchState, HEADER, manyRows, REVIEWER, SUB_0235, upload, uploadRaw, validRow } from "../helpers/qa-api";
 import { createTestContext, type TestContext } from "../helpers/test-context";
 
 /**
@@ -19,8 +19,6 @@ import { createTestContext, type TestContext } from "../helpers/test-context";
 let t: TestContext;
 const F = { employerId: "0235", executionDate: "2026-10-08" };
 const created: string[] = [];
-/** Batches deliberately left in an illegal state by the BUG-PIPE-2 probe; excluded from the legality sweep. */
-const orphaned: string[] = [];
 
 async function up(bytes: Buffer, opts: { filename?: string; type?: string; fields?: Record<string, string>; headers?: Record<string, string> } = {}) {
   const r = await upload(bytes, opts.headers ?? ADMIN, opts.fields ?? F, { filename: opts.filename, type: opts.type });
@@ -34,8 +32,14 @@ beforeAll(async () => {
 afterAll(() => t.cleanup());
 
 describe("QA/upload: degenerate files", () => {
-  it("0-byte file is accepted at the boundary and ends FILE_REJECTED (I51 EMPTY_FILE) with no records", async () => {
+  it("COS-2 (fixed): a 0-byte file is refused at the boundary with 400 EMPTY_FILE and no batch is created", async () => {
+    const before = (await t.ctx.db.select({ id: batches.batchId }).from(batches)).length;
     const r = await up(Buffer.alloc(0), { filename: "empty.csv" });
+    expectErrorEnvelope(r, 400, "EMPTY_FILE");
+    expect((await t.ctx.db.select({ id: batches.batchId }).from(batches)).length).toBe(before);
+  });
+  it("whitespace-only file -> FILE_REJECTED (I51 EMPTY_FILE) with no records", async () => {
+    const r = await up(Buffer.from(" "), { filename: "space.csv" });
     expect(r.status).toBe(200);
     expect(r.body.status).toBe("FILE_REJECTED");
     await expectLegalBatchState(t, r.body.batchId);
@@ -95,33 +99,96 @@ describe("QA/upload: not-a-CSV payloads", () => {
     expect(r.body.status).toBe("FILE_REJECTED");
     await expectLegalBatchState(t, r.body.batchId);
   });
-  it.fails("BUG-PIPE-1: UTF-16 / NUL-bearing files should be FILE_REJECTED (or 415), not FAILED", async () => {
-    const r = await up(Buffer.from(HEADER + "\r\n", "utf16le"), { filename: "utf16.csv" });
-    expect(r.body.status).toBe("FILE_REJECTED");
+  it("BUG-PIPE-1 (fixed): UTF-16 LE/BE with or without BOM -> FILE_REJECTED with I51 UNSUPPORTED_ENCODING, never FAILED", async () => {
+    const variants: Array<[string, Buffer, string]> = [
+      ["utf16le-nobom", Buffer.from(HEADER + "\r\n", "utf16le"), "UTF16_LE"],
+      ["utf16le-bom", Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(HEADER + " \r\n", "utf16le")]), "UTF16_LE"],
+      ["utf16be-bom", Buffer.concat([Buffer.from([0xfe, 0xff]), Buffer.from(HEADER + "\r\n", "utf16le").swap16()]), "UTF16_BE"],
+      ["utf16be-nobom", Buffer.from(HEADER + "  \r\n", "utf16le").swap16(), "UTF16_BE"],
+    ];
+    for (const [name, bytes, detected] of variants) {
+      const r = await up(bytes, { filename: `${name}.csv` });
+      expect(r.status, name).toBe(200);
+      expect(r.body.status, name).toBe("FILE_REJECTED");
+      await expectLegalBatchState(t, r.body.batchId);
+      const f = await api.findings(SUB_0235, r.body.batchId);
+      expect(f.body.items.map((x: { messageId: string }) => x.messageId), name).toEqual(["4887"]);
+      expect(f.body.items[0].calculated, name).toMatchObject({ reason: "UNSUPPORTED_ENCODING", detected });
+      const b = await api.getBatch(SUB_0235, r.body.batchId);
+      expect(b.body.failureReason ?? null).toBeNull();
+      expect(b.body.statusHistory.map((h: { toStatus: string }) => h.toStatus)).toEqual(["RECEIVED", "FILE_REJECTED"]);
+    }
   });
-  it("BUG-PIPE-1 current behaviour: NUL bytes reach jsonb, the insert fails, batch -> FAILED and failureReason leaks the SQL statement via the API", async () => {
-    // Different bytes from the it.fails probe above: a FAILED batch still deduplicates identical content (noted in the report).
-    const r = await up(Buffer.from(HEADER + " \r\n", "utf16le"), { filename: "utf16-current.csv" });
-    expect(r.status).toBe(200);
-    expect(r.body.status).toBe("FAILED");
-    await expectLegalBatchState(t, r.body.batchId);
-    const b = await api.getBatch(SUB_0235, r.body.batchId);
-    expect(b.body.failureReason).toMatch(/insert into "validation_findings"/);
+  it("BUG-PIPE-2 (fixed): a NUL byte inside a data cell -> 200 FILE_REJECTED (I51 NUL_BYTES), no orphan, and the bytes can be re-uploaded", async () => {
+    const bytes = csvBytes([validRow(17, { LastName: "AB\u0000LE" })]);
+    const nul = await up(bytes, { filename: "nul-cell.csv" });
+    expect(nul.status).toBe(200);
+    expect(nul.body.status).toBe("FILE_REJECTED");
+    await expectLegalBatchState(t, nul.body.batchId);
+    const f = await api.findings(ADMIN, nul.body.batchId);
+    expect(f.body.items[0].calculated).toMatchObject({ reason: "UNSUPPORTED_ENCODING", detected: "NUL_BYTES" });
+    expect(f.text).not.toContain("\\u0000");
+    // FILE_REJECTED never deduplicates, so a corrected re-upload of the same bytes is not shadowed.
+    const again = await up(bytes, { filename: "nul-cell-2.csv" });
+    expect(again.body.duplicate).toBe(false);
+    expect(again.body.batchId).not.toBe(nul.body.batchId);
   });
-  it("BUG-PIPE-2 current behaviour: a NUL byte inside a data cell -> HTTP 500 and the batch is orphaned in RECEIVED (illegal terminal state)", async () => {
-    const before = new Set((await t.ctx.db.select({ id: batches.batchId }).from(batches)).map((b) => b.id));
-    const nul = await upload(csvBytes([validRow(17, { LastName: "AB\u0000LE" })]), ADMIN, F, { filename: "nul-cell.csv" });
-    expectErrorEnvelope(nul, 500, "INTERNAL_ERROR");
-    const orphan = (await t.ctx.db.select().from(batches)).find((b) => !before.has(b.batchId));
-    expect(orphan, "batch row was created before the failure").toBeTruthy();
-    expect(orphan!.status).toBe("RECEIVED");
-    // The error handler itself failed: the failureReason it tried to persist carried the NUL from the SQL params.
-    expect(orphan!.failureReason).toBeNull();
-    expect(t.logs.some((l) => l.includes("batch failed"))).toBe(true);
-    // And the orphan now shadows any re-upload of the same bytes for this employer.
-    const again = await upload(csvBytes([validRow(17, { LastName: "AB\u0000LE" })]), ADMIN, F, { filename: "nul-cell-2.csv" });
-    expect(again.body).toMatchObject({ duplicate: true, batchId: orphan!.batchId });
-    orphaned.push(orphan!.batchId);
+  it("SEC-INFO-1 (fixed): an unexpected pipeline error lands in FAILED with a sanitised failureReason (reference only, full error in the log)", async () => {
+    const r = await ingest(t.ctx, { bytes: csvBytes([validRow(18)]), filename: "driver-error.csv", employerId: "0235", submittedBy: "user:qa", executionDate: "2026-10-08" });
+    if (r.duplicate) throw new Error("unexpected duplicate");
+    created.push(r.batchId);
+    const origPut = t.ctx.lake.put.bind(t.ctx.lake);
+    t.ctx.lake.put = async (p, data, opts) => {
+      if (p.startsWith("bronze/")) throw new Error(`insert into "events_records" ("record_id") values ($1) params: 900000018,SECRET-DRIVER-DETAIL`);
+      return origPut(p, data, opts);
+    };
+    try {
+      expect(await runBatch(t.ctx, r.batchId)).toBe("FAILED");
+    } finally {
+      t.ctx.lake.put = origPut;
+    }
+    const b = await api.getBatch(SUB_0235, r.batchId);
+    expect(b.body.status).toBe("FAILED");
+    expect(b.body.failureReason).toMatch(/^Processing failed unexpectedly\. Reference [0-9a-f-]{36}/);
+    expect(b.text).not.toMatch(/insert into|params:|SECRET-DRIVER-DETAIL|900000018/);
+    expect(t.logs.some((l) => l.includes("SECRET-DRIVER-DETAIL") && l.includes("failureRef"))).toBe(true);
+    expect(sanitizeFailureReason(new PipelineError("raw file sha256 mismatch\u0000x"), "ref")).toBe("raw file sha256 mismatch x");
+    expect(sanitizeFailureReason("select 1", "ref-1")).toBe("Processing failed unexpectedly. Reference ref-1 - details are in the server log.");
+  });
+  it("BUG-PIPE-3 (fixed): a FAILED batch deduplicates, and Admin POST /retry (architecture section 11) re-runs it to VALIDATED on the same batchId", async () => {
+    const bytes = csvBytes([validRow(19)]);
+    const r = await ingest(t.ctx, { bytes, filename: "retry.csv", employerId: "0235", submittedBy: "user:qa", executionDate: "2026-10-08" });
+    if (r.duplicate) throw new Error("unexpected duplicate");
+    created.push(r.batchId);
+    const origPut = t.ctx.lake.put.bind(t.ctx.lake);
+    t.ctx.lake.put = async (p, data, opts) => {
+      if (p.startsWith("silver/")) throw new Error("disk full");
+      return origPut(p, data, opts);
+    };
+    try {
+      expect(await runBatch(t.ctx, r.batchId)).toBe("FAILED");
+    } finally {
+      t.ctx.lake.put = origPut;
+    }
+    // Same bytes still point at the FAILED batch (unique index); the way out is the Admin retry.
+    expect((await up(bytes, { filename: "retry-again.csv" })).body).toMatchObject({ duplicate: true, batchId: r.batchId });
+    expectErrorEnvelope(await api.retry(SUB_0235, r.batchId), 403, "FORBIDDEN");
+    expectErrorEnvelope(await api.retry(REVIEWER, r.batchId), 403, "FORBIDDEN");
+    expectErrorEnvelope(await api.retry({}, r.batchId), 401, "UNAUTHENTICATED");
+    expectErrorEnvelope(await api.retry(ADMIN, "00000000-0000-7000-8000-00000000beef"), 404, "NOT_FOUND");
+    expectErrorEnvelope(await api.retry(ADMIN, "nope"), 400);
+    const retried = await api.retry(ADMIN, r.batchId);
+    expect(retried.status).toBe(200);
+    expect(retried.body).toEqual({ batchId: r.batchId, status: "VALIDATED" });
+    const b = await api.getBatch(ADMIN, r.batchId);
+    expect(b.body.status).toBe("VALIDATED");
+    expect(b.body.failureReason ?? null).toBeNull();
+    expect(b.body.counts).toMatchObject({ rows: 1, accepted: 1, rejected: 0 });
+    expect(b.body.statusHistory.map((h: { toStatus: string }) => h.toStatus)).toEqual(["RECEIVED", "PARSED", "FAILED", "RECEIVED", "PARSED", "VALIDATED"]);
+    expect(await t.ctx.db.select().from(eventsRecords).where(eq(eventsRecords.batchId, r.batchId))).toHaveLength(1);
+    expectErrorEnvelope(await api.retry(ADMIN, r.batchId), 409, "INVALID_STATE");
+    const { auditLog } = await import("@/lib/db/schema");
+    expect((await t.ctx.db.select().from(auditLog)).some((a) => a.action === "BATCH_RETRY" && a.target === `batch:${r.batchId}`)).toBe(true);
   });
   it("wrong extension / wrong content type -> 415; charset suffix on text/csv is fine; empty type allowed", async () => {
     expectErrorEnvelope(await up(csvBytes([validRow(2)]), { filename: "events.txt" }), 415);
@@ -216,9 +283,13 @@ describe("QA/upload: filenames, fields and formula injection", () => {
     const r = await up(csvBytes([validRow(121)]), { fields: { ...F, sourceSystem: "WORKDAY" } });
     expect((await api.getBatch(ADMIN, r.body.batchId)).body.sourceSystem).toBe("WORKDAY");
   });
-  it.fails("BUG-API-1: executionDate only passes a shape regex; an impossible date (2026-13-45) should be 400 but is accepted", async () => {
-    const r = await up(csvBytes([validRow(122)]), { fields: { employerId: "0235", executionDate: "2026-13-45" } });
-    expectErrorEnvelope(r, 400, "VALIDATION_ERROR");
+  it("BUG-API-1 (fixed): executionDate must be a real calendar date; impossible dates are 400", async () => {
+    for (const bad of ["2026-13-45", "2026-02-30", "2025-02-29", "2026-00-10", "2026-04-31"]) {
+      expectErrorEnvelope(await up(csvBytes([validRow(122)]), { fields: { employerId: "0235", executionDate: bad } }), 400, "VALIDATION_ERROR");
+    }
+    const ok = await up(csvBytes([validRow(123)]), { fields: { employerId: "0235", executionDate: "2024-02-29" } });
+    expect(ok.status).toBe(200);
+    expect((await api.getBatch(ADMIN, ok.body.batchId)).body.executionDate).toBe("2024-02-29");
   });
   it("CSV formula injection in name cells is neutralised in the Rejected Individuals CSV and stays inert JSON in the API", async () => {
     const payloads: Array<[string, boolean]> = [
@@ -354,7 +425,7 @@ describe("QA/state-machine", () => {
   it("every batch created by this suite ended in a legal state via legal transitions", async () => {
     expect(created.length).toBeGreaterThan(20);
     const seen = new Set<string>();
-    for (const id of [...new Set(created)].filter((x) => !orphaned.includes(x))) seen.add((await expectLegalBatchState(t, id)).status);
+    for (const id of [...new Set(created)]) seen.add((await expectLegalBatchState(t, id)).status);
     expect([...seen].sort()).toEqual(["FAILED", "FILE_REJECTED", "VALIDATED"]);
   });
   it("the whole ledger still verifies after every adversarial upload", async () => {

@@ -4,6 +4,8 @@ import { defineRule } from "../../types";
 /**
  * I51_ValidateFileHeaderLayout / 4887: any header label outside the layout, a duplicated label, or an
  * empty file rejects the whole file (architecture section 18 Q2). Missing columns are allowed.
+ * A file whose bytes cannot be an ANSI/UTF-8 CSV (UTF-16, NUL bytes) has no readable header and is
+ * rejected here with `reason=UNSUPPORTED_ENCODING` - the spec has no dedicated encoding rule (QA BUG-PIPE-1).
  */
 export const I51 = defineRule({
   id: "I51",
@@ -15,6 +17,7 @@ export const I51 = defineRule({
   dataImportMessage: "The imported file contains invalid column headers.",
   portalMessage: "The imported file contains invalid column headers.",
   evaluate(_record, ctx) {
+    if (ctx.file.encodingProblem) return [{ params: {}, calculated: { reason: "UNSUPPORTED_ENCODING", detected: ctx.file.encodingProblem } }];
     const h = analyseHeader(ctx.file.header);
     if (h.empty) return [{ params: {}, calculated: { reason: "EMPTY_FILE" } }];
     if (h.unknown.length > 0) {

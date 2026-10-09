@@ -1,6 +1,6 @@
 import { parse } from "csv-parse/sync";
 import { EVENTS_CSV_COLUMNS, OPTIONAL_CSV_COLUMNS, type AnyCsvColumn, type EncodingDetected, type RawEventsRow, type RawValues } from "@/types";
-import { decodeBytes } from "./decode";
+import { decodeBytes, detectEncodingProblem, type EncodingProblem } from "./decode";
 
 export interface HeaderAnalysis {
   /** Header labels as observed (trimmed, BOM removed). */
@@ -20,6 +20,8 @@ export interface ParsedEventsFile {
   rows: RawEventsRow[];
   /** Physical lines in the file including the header. */
   lineCount: number;
+  /** Set when the bytes cannot be an ANSI/UTF-8 CSV (UTF-16, NUL bytes); header and rows are then empty. */
+  encodingProblem: EncodingProblem | null;
 }
 
 const KNOWN: ReadonlySet<string> = new Set<string>([...EVENTS_CSV_COLUMNS, ...OPTIONAL_CSV_COLUMNS]);
@@ -69,27 +71,69 @@ export function mapRow(header: string[], cells: string[], lineNumber: number): R
  * that I50 can observe extra cells. Never throws on content; structural issues surface as header flags.
  */
 export function parseEventsCsv(bytes: Buffer): ParsedEventsFile {
+  const encodingProblem = detectEncodingProblem(bytes);
+  if (encodingProblem) {
+    return { encoding: "windows-1252", delimiter: ",", header: analyseHeader(undefined), rows: [], lineCount: 0, encodingProblem };
+  }
   const { text, encoding } = decodeBytes(bytes);
-  const lineCount = text === "" ? 0 : text.split(/\r\n|\n|\r/).filter((l, i, arr) => !(i === arr.length - 1 && l === "")).length;
-  let records: Array<{ record: string[]; info: { lines: number } }>;
+  const lineCount = countLines(text);
+  let records: ParsedRecord[];
   try {
     records = parse(text, {
       delimiter: ",",
+      // Mixed CRLF / LF / CR files are common from spreadsheet round-trips (QA BUG-PARSE-1).
+      record_delimiter: ["\r\n", "\n", "\r"],
       bom: true,
       relax_column_count: true,
       relax_quotes: true,
       skip_empty_lines: true,
       trim: false,
       info: true,
-    }) as unknown as Array<{ record: string[]; info: { lines: number } }>;
+    }) as unknown as ParsedRecord[];
   } catch {
     // Unparseable structure (e.g. unterminated quote): treat as a file with an unreadable header.
-    return { encoding, delimiter: ",", header: analyseHeader(undefined), rows: [], lineCount };
+    return { encoding, delimiter: ",", header: analyseHeader(undefined), rows: [], lineCount, encodingProblem: null };
   }
   if (records.length === 0) {
-    return { encoding, delimiter: ",", header: analyseHeader(undefined), rows: [], lineCount };
+    return { encoding, delimiter: ",", header: analyseHeader(undefined), rows: [], lineCount, encodingProblem: null };
   }
   const header = analyseHeader(records[0].record);
-  const rows = records.slice(1).map((r) => mapRow(header.observed, r.record, r.info.lines));
-  return { encoding, delimiter: ",", header, rows, lineCount };
+  // csv-parse `info.lines` is the line on which the record ENDS and counts CR and LF of a quoted CRLF
+  // separately, so rows after a multi-line cell drift (QA BUG-PARSE-2). Recover the physical start line.
+  let excess = 0;
+  const rows: RawEventsRow[] = [];
+  records.forEach((r, i) => {
+    const nl = newlinesInside(r.record);
+    if (i > 0) rows.push(mapRow(header.observed, r.record, r.info.lines - excess - nl.counted));
+    excess += nl.counted - nl.physical;
+  });
+  return { encoding, delimiter: ",", header, rows, lineCount, encodingProblem: null };
+}
+
+interface ParsedRecord {
+  record: string[];
+  info: { lines: number; bytes: number };
+}
+
+/** Physical line count, delimiter-agnostic (CRLF / LF / CR), ignoring a trailing terminator. */
+export function countLines(text: string): number {
+  return text === "" ? 0 : text.split(/\r\n|\n|\r/).filter((l, i, arr) => !(i === arr.length - 1 && l === "")).length;
+}
+
+/** Newlines inside quoted cells: as csv-parse counts them (CR and LF each) vs physical line breaks. */
+function newlinesInside(cells: string[]): { counted: number; physical: number } {
+  let crlf = 0;
+  let lone = 0;
+  for (const cell of cells) {
+    for (let i = 0; i < cell.length; i++) {
+      const c = cell.charCodeAt(i);
+      if (c === 13) {
+        if (cell.charCodeAt(i + 1) === 10) {
+          crlf += 1;
+          i += 1;
+        } else lone += 1;
+      } else if (c === 10) lone += 1;
+    }
+  }
+  return { counted: 2 * crlf + lone, physical: crlf + lone };
 }

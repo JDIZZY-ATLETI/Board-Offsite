@@ -19,6 +19,24 @@ const ACTOR = systemActor("pipeline");
 const INSERT_CHUNK = 200;
 const LEDGER_CHUNK = 500;
 
+/** A pipeline failure whose message is safe to show users (no SQL, parameters or cell values). */
+export class PipelineError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PipelineError";
+  }
+}
+
+/**
+ * `failureReason` is visible to Submitters, so only `PipelineError` messages pass through; anything else
+ * (driver errors carry the SQL statement and bind parameters) is replaced by a reference that is logged
+ * together with the full error (QA BUG-PIPE-1 / SEC-INFO-1).
+ */
+export function sanitizeFailureReason(err: unknown, ref: string): string {
+  const text = err instanceof PipelineError ? err.message : `Processing failed unexpectedly. Reference ${ref} - details are in the server log.`;
+  return text.replace(/[\u0000-\u001f\u007f]+/g, " ").slice(0, 500);
+}
+
 type BatchRow = typeof batches.$inferSelect;
 type RawFileRow = typeof rawFiles.$inferSelect;
 
@@ -116,7 +134,7 @@ export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchS
   try {
     const bytes = await ctx.lake.get(rawFile.lakePath);
     const actualSha = sha256Hex(bytes);
-    if (actualSha !== rawFile.sha256) throw new Error(`raw file sha256 mismatch: manifest ${rawFile.sha256} vs lake ${actualSha}`);
+    if (actualSha !== rawFile.sha256) throw new PipelineError(`raw file sha256 mismatch: manifest ${rawFile.sha256} vs lake ${actualSha}`);
     const parsed = parseEventsCsv(bytes);
     state.lineCount = parsed.lineCount;
     state.encoding = parsed.encoding;
@@ -126,7 +144,7 @@ export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchS
     const records = parsed.rows.map((row) => buildRecord(row, { batchId, pseudonymKey: ctx.config.sinPseudonymKey, newId: ctx.newId }));
     const ruleCtx: RuleContext = {
       batch: { batchId, employerId: batch.employerId, executionDate: batch.executionDate as IsoDate },
-      file: { header: parsed.header.observed, rows: parsed.rows, records },
+      file: { header: parsed.header.observed, rows: parsed.rows, records, encodingProblem: parsed.encodingProblem },
       config: { i42ApplyToRetfin: ctx.config.i42ApplyToRetfin, disabled: ctx.config.rulesDisabled },
       now: () => batch.executionDate as IsoDate,
       sinCounts: buildSinCounts(records),
@@ -154,13 +172,19 @@ export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchS
     log.info({ accepted: state.counts.accepted, rejected: state.counts.rejected }, "batch validated");
     return "VALIDATED";
   } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err);
-    log.error({ err }, "batch failed");
-    const [current] = await ctx.db.select({ status: batches.status }).from(batches).where(eq(batches.batchId, batchId));
-    if (current && current.status !== "FAILED" && current.status !== "FILE_REJECTED") {
-      await ctx.db.transaction((tx) =>
-        transitionBatch(tx, { batchId, from: current.status, to: "FAILED", actor: ACTOR, at: ctx.clock().toISOString(), note: reason.slice(0, 500), failureReason: reason.slice(0, 2000) }),
-      );
+    // Any exception lands the batch in FAILED (architecture section 10.5); the full error stays in the log.
+    const failureRef = ctx.newId();
+    log.error({ err, failureRef }, "batch failed");
+    const reason = sanitizeFailureReason(err, failureRef);
+    try {
+      const [current] = await ctx.db.select({ status: batches.status }).from(batches).where(eq(batches.batchId, batchId));
+      if (current && current.status !== "FAILED" && current.status !== "FILE_REJECTED") {
+        await ctx.db.transaction((tx) =>
+          transitionBatch(tx, { batchId, from: current.status, to: "FAILED", actor: ACTOR, at: ctx.clock().toISOString(), note: reason, failureReason: reason }),
+        );
+      }
+    } catch (transitionErr) {
+      log.error({ err: transitionErr, failureRef }, "could not record the FAILED transition");
     }
     try {
       await writeExecutionReport(ctx, state, "FAILED", reason);
@@ -192,6 +216,15 @@ async function rejectFile(ctx: AppContext, state: RunState, findings: Validation
   });
 }
 
+/** Bronze/silver are write-once; an Admin retry of a FAILED batch reuses artifacts the failed attempt already wrote. */
+async function putOnce(ctx: AppContext, path: string, data: string | Buffer): Promise<void> {
+  if (await ctx.lake.exists(path)) {
+    ctx.logger.warn({ path }, "lake artifact already exists from a previous attempt; reusing it");
+    return;
+  }
+  await ctx.lake.put(path, data);
+}
+
 async function stepParse(ctx: AppContext, state: RunState, parsed: ParsedEventsFile, records: EventsRecord[]): Promise<void> {
   const { batch, paths } = state;
   const at = ctx.clock().toISOString();
@@ -203,10 +236,10 @@ async function stepParse(ctx: AppContext, state: RunState, parsed: ParsedEventsF
     lineCount: parsed.lineCount,
     rows: parsed.rows.length,
   };
-  await ctx.lake.put(paths.bronze.header, JSON.stringify(headerJson, null, 2));
-  await ctx.lake.put(paths.bronze.records, ndjson(records.map(publicRecord)));
+  await putOnce(ctx, paths.bronze.header, JSON.stringify(headerJson, null, 2));
+  await putOnce(ctx, paths.bronze.records, ndjson(records.map(publicRecord)));
   const parseErrors = records.filter((r) => !recordParseOk(r) || r.extraValues.length > 0).map((r) => ({ lineNumber: r.lineNumber, sinMasked: r.sinMasked, extraValues: r.extraValues, rawValues: maskedRawValues(r) }));
-  await ctx.lake.put(paths.bronze.parseErrors, ndjson(parseErrors));
+  await putOnce(ctx, paths.bronze.parseErrors, ndjson(parseErrors));
   state.outputs.push(paths.bronze.header, paths.bronze.records, paths.bronze.parseErrors);
 
   await ctx.db.transaction(async (tx) => {
@@ -280,9 +313,9 @@ async function stepValidate(
   state.counts.warnings = allFindings.filter((f) => f.severity === "WARNING").length;
   state.counts.infos = allFindings.filter((f) => f.severity === "INFORMATION").length;
 
-  await ctx.lake.put(paths.silver.findings, ndjson(allFindings));
-  await ctx.lake.put(paths.silver.accepted, ndjson(accepted.map(publicRecord)));
-  await ctx.lake.put(paths.silver.rejected, buildRejectedIndividualsCsv(parsed.header.observed, rejected, parsed.encoding));
+  await putOnce(ctx, paths.silver.findings, ndjson(allFindings));
+  await putOnce(ctx, paths.silver.accepted, ndjson(accepted.map(publicRecord)));
+  await putOnce(ctx, paths.silver.rejected, buildRejectedIndividualsCsv(parsed.header.observed, rejected, parsed.encoding));
   state.outputs.push(paths.silver.findings, paths.silver.accepted, paths.silver.rejected);
 
   await ctx.db.transaction(async (tx) => {

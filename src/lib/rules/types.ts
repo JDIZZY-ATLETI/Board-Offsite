@@ -1,3 +1,4 @@
+import type { EncodingProblem } from "@/lib/events/decode";
 import type { AnyCsvColumn, EventsRecord, FindingParams, FindingSeverity, FindingVisibility, IsoDate, RawEventsRow, YearScope } from "@/types";
 
 export type RuleLevel = "L0" | "L1" | "L2";
@@ -13,7 +14,7 @@ export interface RulesConfig {
 
 export interface RuleContext {
   batch: { batchId: string; employerId: string; executionDate: IsoDate };
-  file: { header: string[]; rows: RawEventsRow[]; records: EventsRecord[] };
+  file: { header: string[]; rows: RawEventsRow[]; records: EventsRecord[]; encodingProblem?: EncodingProblem | null };
   config: RulesConfig;
   /** Injected clock (deterministic tests). Defaults to the batch execution date. */
   now: () => IsoDate;

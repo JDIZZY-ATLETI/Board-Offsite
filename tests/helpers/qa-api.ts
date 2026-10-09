@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { expect } from "vitest";
 import { GET as listBatchesRoute, POST as uploadRoute } from "@/app/api/batches/route";
 import { GET as getBatchRoute } from "@/app/api/batches/[batchId]/route";
+import { POST as retryBatchRoute } from "@/app/api/batches/[batchId]/retry/route";
 import { GET as getFindingsRoute } from "@/app/api/batches/[batchId]/findings/route";
 import { GET as getRecordsRoute } from "@/app/api/batches/[batchId]/records/route";
 import { GET as getReportRoute } from "@/app/api/batches/[batchId]/reports/[name]/route";
@@ -87,6 +88,7 @@ export const api = {
   health: (h: Record<string, string> = {}) => toResult(healthRoute(new Request(`${BASE}/health`, { headers: h }), params({})) as unknown as Promise<Response>),
   listBatches: (h: Record<string, string>, qs = "") => toResult(listBatchesRoute(new Request(`${BASE}/batches${qs}`, { headers: h }), params({})) as unknown as Promise<Response>),
   getBatch: (h: Record<string, string>, id: string) => toResult(getBatchRoute(new Request(`${BASE}/batches/${id}`, { headers: h }), params({ batchId: id })) as unknown as Promise<Response>),
+  retry: (h: Record<string, string>, id: string, wait = true) => toResult(retryBatchRoute(new Request(`${BASE}/batches/${id}/retry${wait ? "?wait=true" : ""}`, { method: "POST", headers: h }), params({ batchId: id })) as unknown as Promise<Response>),
   findings: (h: Record<string, string>, id: string, qs = "") => toResult(getFindingsRoute(new Request(`${BASE}/batches/${id}/findings${qs}`, { headers: h }), params({ batchId: id })) as unknown as Promise<Response>),
   records: (h: Record<string, string>, id: string, qs = "") => toResult(getRecordsRoute(new Request(`${BASE}/batches/${id}/records${qs}`, { headers: h }), params({ batchId: id })) as unknown as Promise<Response>),
   report: (h: Record<string, string>, id: string, name: string) => toResult(getReportRoute(new Request(`${BASE}/batches/${id}/reports/${encodeURIComponent(name)}`, { headers: h }), params({ batchId: id, name })) as unknown as Promise<Response>),

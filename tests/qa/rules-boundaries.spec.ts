@@ -305,7 +305,7 @@ const ROW = Object.values(VALID_TERFIN).join(",");
 function l0(bytes: Buffer) {
   const parsed = parseEventsCsv(bytes);
   const records = parsed.rows.map((row) => buildRecord(row, { batchId: "b", pseudonymKey: KEY, newId: () => "r" }));
-  const ctx = ctxOf({ header: parsed.header.observed, rows: parsed.rows, records });
+  const ctx = ctxOf({ header: parsed.header.observed, rows: parsed.rows, records, encodingProblem: parsed.encodingProblem });
   const { findings } = runFileRules(ctx, deps);
   return { parsed, findings, ids: findings.map((f) => f.messageId), calc: findings[0]?.calculated };
 }
@@ -316,12 +316,16 @@ describe("QA/rules: L0 header & file-structure probes (I50/130, I51/4887)", () =
     expect(l0(text(`${HEADER}\r\n${ROW}\r\n`)).ids).toEqual([]);
     expect(l0(text(`${HEADER}\n${ROW}\n`)).ids).toEqual([]);
   });
-  it.fails("BUG-PARSE-1: mixed CRLF/LF line endings (first break CRLF) glue two rows into one -> false I50 file rejection", () => {
+  it("BUG-PARSE-1 (fixed): mixed CRLF/LF/CR line endings in any order parse as separate rows with correct line numbers", () => {
     const mixed = l0(text(`${HEADER}\r\n${ROW}\n${ROW.replace("900000019", "900000027")}\r\n`));
     expect(mixed.ids).toEqual([]);
     expect(mixed.parsed.rows.map((r) => r.lineNumber)).toEqual([2, 3]);
+    const three = l0(text(`${HEADER}\n${ROW}\r${ROW.replace("900000019", "900000027")}\r\n${ROW.replace("900000019", "900000035")}\n`));
+    expect(three.ids).toEqual([]);
+    expect(three.parsed.rows.map((r) => r.lineNumber)).toEqual([2, 3, 4]);
+    expect(three.parsed.lineCount).toBe(4);
   });
-  it("mixed line endings with the first break LF parse correctly (asymmetry documented in BUG-PARSE-1)", () => {
+  it("mixed line endings with the first break LF parse correctly", () => {
     const mixed = l0(text(`${HEADER}\n${ROW}\r\n${ROW.replace("900000019", "900000027")}\n`));
     expect(mixed.ids).toEqual([]);
     expect(mixed.parsed.rows).toHaveLength(2);
@@ -385,9 +389,20 @@ describe("QA/rules: L0 header & file-structure probes (I50/130, I51/4887)", () =
     expect(l0(text(`${HEADER.replace(/,/g, ";")}\r\n${ROW.replace(/,/g, ";")}\r\n`)).ids).toEqual(["4887"]);
     expect(l0(text(`${HEADER.replace(/,/g, "\t")}\r\n${ROW.replace(/,/g, "\t")}\r\n`)).ids).toEqual(["4887"]);
   });
-  it("UTF-16 and invalid UTF-8 bytes never throw; they end as I51 (header unreadable)", () => {
-    expect(l0(Buffer.from(`${HEADER}\r\n${ROW}\r\n`, "utf16le")).ids).toEqual(["4887"]);
+  it("UTF-16 (LE/BE, with/without BOM) and NUL-bearing bytes never throw; they end as I51 UNSUPPORTED_ENCODING (BUG-PIPE-1/2)", () => {
+    const le = l0(Buffer.from(`${HEADER}\r\n${ROW}\r\n`, "utf16le"));
+    expect(le.ids).toEqual(["4887"]);
+    expect(le.calc).toMatchObject({ reason: "UNSUPPORTED_ENCODING", detected: "UTF16_LE" });
+    expect(le.parsed.rows).toHaveLength(0);
+    expect(l0(Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(`${HEADER}\r\n`, "utf16le")])).calc).toMatchObject({ reason: "UNSUPPORTED_ENCODING", detected: "UTF16_LE" });
+    expect(l0(Buffer.from([0xfe, 0xff, 0x00, 0x53, 0x00, 0x49, 0x00, 0x4e])).calc).toMatchObject({ reason: "UNSUPPORTED_ENCODING", detected: "UTF16_BE" });
+    expect(l0(Buffer.from([0x00, 0x53, 0x00, 0x49, 0x00, 0x4e, 0x00, 0x2c])).calc).toMatchObject({ reason: "UNSUPPORTED_ENCODING", detected: "UTF16_BE" });
     expect(l0(Buffer.from([0xff, 0xfe, 0x00, 0xc3, 0x28, 0x2c, 0x0a])).ids).toEqual(["4887"]);
+    const nul = l0(text(`${HEADER}\r\n${ROW.replace("ABLE", "AB\u0000LE")}\r\n`));
+    expect(nul.ids).toEqual(["4887"]);
+    expect(nul.calc).toMatchObject({ reason: "UNSUPPORTED_ENCODING", detected: "NUL_BYTES" });
+    // Plain windows-1252 bytes above 0x7f are NOT an encoding problem.
+    expect(l0(text(`${HEADER}\r\n${ROW.replace("ABLE", "L\u00c9VESQUE")}\r\n`)).ids).toEqual([]);
   });
   it("empty, 0-byte and whitespace-only files -> I51 EMPTY_FILE; header-only -> clean with zero rows", () => {
     expect(l0(Buffer.alloc(0)).calc).toMatchObject({ reason: "EMPTY_FILE" });
@@ -407,9 +422,14 @@ describe("QA/rules: L0 header & file-structure probes (I50/130, I51/4887)", () =
     expect(multi.ids).toEqual([]);
     expect(multi.parsed.rows).toHaveLength(2);
   });
-  it.fails("BUG-PARSE-2: line numbers drift by one after a quoted cell containing CRLF (row 2 reported as line 5, not 4)", () => {
+  it("BUG-PARSE-2 (fixed): line numbers stay physical after quoted cells containing CRLF / LF / CR", () => {
     const multi = l0(text(`${HEADER}\r\n${ROW.replace("ABLE", `"AB\r\nLE"`)}\r\n${ROW.replace("900000019", "900000027")}\r\n`));
     expect(multi.parsed.rows.map((r) => r.lineNumber)).toEqual([2, 4]);
+    const twice = l0(text(`${HEADER}\r\n${ROW.replace("ABLE", `"A\r\nB\r\nC"`)}\r\n${ROW.replace("900000019", "900000027").replace("ABLE", `"X\nY"`)}\r\n${ROW.replace("900000019", "900000035")}\r\n`));
+    expect(twice.ids).toEqual([]);
+    expect(twice.parsed.rows.map((r) => r.lineNumber)).toEqual([2, 5, 7]);
+    const lf = l0(text(`${HEADER}\n${ROW.replace("ABLE", `"AB\nLE"`)}\n${ROW.replace("900000019", "900000027")}\n`));
+    expect(lf.parsed.rows.map((r) => r.lineNumber)).toEqual([2, 4]);
   });
   it("an unterminated quote does not throw; the file is rejected at L0 rather than silently mis-parsed", () => {
     const p = l0(text(`${HEADER}\r\n${ROW.replace("ABLE", `"ABLE`)}\r\n`));
