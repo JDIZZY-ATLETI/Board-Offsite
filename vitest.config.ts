@@ -3,7 +3,8 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
-  esbuild: { jsx: "automatic" },
+  // Vite 8 transforms with oxc; tsconfig keeps `jsx: preserve` for Next, so set the runtime here.
+  oxc: { jsx: { runtime: "automatic" } },
   test: {
     environment: "node",
     // Globals let Testing Library register its afterEach(cleanup) automatically.
