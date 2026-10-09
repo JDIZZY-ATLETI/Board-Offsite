@@ -24,6 +24,8 @@ export const envSchema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   LOG_PRETTY: boolish.default(false),
   ALLOW_SUBMITTER_OVERRIDE: boolish.default(false),
+  /** UX decision D5: SIN reveal UI ships hidden until a privacy officer enables it (endpoint arrives in Phase 3). */
+  ALLOW_SIN_REVEAL: boolish.default(false),
   MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(20 * 1024 * 1024),
   MAX_UPLOAD_ROWS: z.coerce.number().int().positive().default(50_000),
   MAX_LINE_LENGTH: z.coerce.number().int().positive().default(4096),
@@ -45,6 +47,7 @@ export interface AppConfig {
   logLevel: string;
   logPretty: boolean;
   allowSubmitterOverride: boolean;
+  allowSinReveal: boolean;
   maxUploadBytes: number;
   maxUploadRows: number;
   maxLineLength: number;
@@ -95,6 +98,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     logLevel: e.LOG_LEVEL,
     logPretty: e.LOG_PRETTY,
     allowSubmitterOverride: e.ALLOW_SUBMITTER_OVERRIDE,
+    allowSinReveal: e.ALLOW_SIN_REVEAL,
     maxUploadBytes: e.MAX_UPLOAD_BYTES,
     maxUploadRows: e.MAX_UPLOAD_ROWS,
     maxLineLength: e.MAX_LINE_LENGTH,
