@@ -1,3 +1,142 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Colour tokens: docs/ux-design.md section 3.2. HSL triplets consumed as hsl(var(--token) / alpha). */
+@layer base {
+  :root {
+    --radius: 8px;
+
+    --background: 0 0% 100%;
+    --surface: 210 20% 98%;
+    --surface-raised: 0 0% 100%;
+    --border: 214 20% 88%;
+    --ink: 222 32% 14%;
+    --ink-muted: 220 10% 40%;
+    --ink-faint: 220 9% 60%;
+    --brand: 214 72% 38%;
+    --brand-hover: 214 72% 32%;
+    --brand-soft: 214 72% 95%;
+    --focus: 214 90% 55%;
+
+    --sev-file: 0 70% 42%;
+    --sev-file-soft: 0 80% 96%;
+    --sev-file-text: 0 70% 30%;
+    --sev-cme: 8 76% 48%;
+    --sev-cme-soft: 8 85% 95%;
+    --sev-cme-text: 8 76% 32%;
+    --sev-warn: 34 92% 44%;
+    --sev-warn-soft: 38 95% 93%;
+    --sev-warn-text: 30 90% 28%;
+    --sev-info: 205 70% 42%;
+    --sev-info-soft: 205 75% 94%;
+    --sev-info-text: 205 70% 28%;
+
+    --ok: 152 60% 32%;
+    --ok-soft: 150 60% 93%;
+    --ok-text: 152 60% 22%;
+
+    --tampered: 350 85% 40%;
+    --tampered-soft: 350 90% 95%;
+    --tampered-text: 350 85% 26%;
+
+    --st-transient: 214 60% 45%;
+    --st-attention: 34 92% 44%;
+    --st-ok: 152 60% 32%;
+    --st-bad: 8 76% 48%;
+
+    --diff-del: 8 76% 48%;
+    --diff-del-soft: 8 85% 95%;
+    --diff-add: 152 60% 32%;
+    --diff-add-soft: 150 60% 93%;
+    --diff-chg-soft: 45 100% 92%;
+  }
+
+  .dark {
+    --background: 222 25% 9%;
+    --surface: 222 22% 12%;
+    --surface-raised: 222 20% 15%;
+    --border: 220 14% 24%;
+    --ink: 210 20% 94%;
+    --ink-muted: 218 12% 68%;
+    --ink-faint: 218 10% 48%;
+    --brand: 214 80% 66%;
+    --brand-hover: 214 80% 72%;
+    --brand-soft: 214 50% 18%;
+    --focus: 214 90% 70%;
+
+    --sev-file: 0 70% 62%;
+    --sev-file-soft: 0 40% 18%;
+    --sev-file-text: 0 80% 85%;
+    --sev-cme: 8 80% 66%;
+    --sev-cme-soft: 8 40% 18%;
+    --sev-cme-text: 8 85% 86%;
+    --sev-warn: 38 92% 62%;
+    --sev-warn-soft: 36 45% 17%;
+    --sev-warn-text: 40 95% 85%;
+    --sev-info: 205 75% 66%;
+    --sev-info-soft: 205 40% 18%;
+    --sev-info-text: 205 80% 86%;
+
+    --ok: 152 55% 58%;
+    --ok-soft: 152 35% 15%;
+    --ok-text: 150 60% 85%;
+
+    --tampered: 350 85% 66%;
+    --tampered-soft: 350 45% 17%;
+    --tampered-text: 350 90% 86%;
+
+    --st-transient: 214 70% 68%;
+    --st-attention: 38 92% 62%;
+    --st-ok: 152 55% 58%;
+    --st-bad: 8 80% 66%;
+
+    --diff-del: 8 80% 66%;
+    --diff-del-soft: 8 40% 18%;
+    --diff-add: 152 55% 58%;
+    --diff-add-soft: 152 35% 15%;
+    --diff-chg-soft: 45 60% 16%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background font-sans text-body text-ink antialiased;
+  }
+
+  /* Focus ring (section 3.5): never removed without replacement. */
+  :focus-visible {
+    @apply outline-none ring-[3px] ring-focus ring-offset-2 ring-offset-background;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "cv11" 1;
+  }
+
+  .text-mono {
+    @apply font-mono text-[0.8125rem] leading-[1.125rem];
+  }
+}
