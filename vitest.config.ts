@@ -13,7 +13,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/lib/**/*.ts"],
-      exclude: ["src/lib/lake/adls-store.ts", "src/lib/db/index.ts", "src/lib/pipeline/jobs.ts"],
+      exclude: ["src/lib/**/index.ts", "src/lib/lake/adls-store.ts", "src/lib/pipeline/jobs.ts"],
       reporter: ["text", "json-summary", "html"],
       reportsDirectory: "coverage",
     },

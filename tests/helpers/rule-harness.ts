@@ -15,10 +15,11 @@ export function rawRow(values: Partial<RawValues>, lineNumber = 2, extraValues: 
   return { lineNumber, values: v, extraValues };
 }
 
+let recCounter = 0;
+
 /** A valid TERFIN record with overrides applied to the raw cells. */
 export function rec(over: Partial<RawValues> = {}, lineNumber = 2): EventsRecord {
-  let n = 0;
-  return buildRecord(rawRow({ ...VALID_TERFIN, ...over }, lineNumber), { batchId: "00000000-0000-7000-8000-000000000000", pseudonymKey: KEY, newId: () => `rec-${++n}` });
+  return buildRecord(rawRow({ ...VALID_TERFIN, ...over }, lineNumber), { batchId: "00000000-0000-7000-8000-000000000000", pseudonymKey: KEY, newId: () => `rec-${++recCounter}` });
 }
 
 export interface CtxOptions {
