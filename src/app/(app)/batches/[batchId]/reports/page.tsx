@@ -70,7 +70,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ batchI
           const ready = !later && have.length > 0;
           const disabledReason = later ? "Available in a later phase" : fileRejected ? "Not produced — the file was rejected" : "Available after validation";
           return (
-            <Card key={c.key} className={cn(!ready && "opacity-70")} data-testid={`report-card-${c.key}`}>
+            <Card key={c.key} className={cn(!ready && "border-dashed bg-surface")} data-testid={`report-card-${c.key}`}>
               <CardHeader>
                 <CardTitle className="flex items-start justify-between gap-2 text-h3">
                   <span>{c.title}</span>

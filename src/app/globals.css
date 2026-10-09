@@ -13,7 +13,8 @@
     --border: 214 20% 88%;
     --ink: 222 32% 14%;
     --ink-muted: 220 10% 40%;
-    --ink-faint: 220 9% 60%;
+    /* 45% keeps faint text >= 4.5:1 on background and surface (ux-design 8.1 contrast gate). */
+    --ink-faint: 220 9% 45%;
     --brand: 214 72% 38%;
     --brand-hover: 214 72% 32%;
     --brand-soft: 214 72% 95%;
@@ -59,7 +60,7 @@
     --border: 220 14% 24%;
     --ink: 210 20% 94%;
     --ink-muted: 218 12% 68%;
-    --ink-faint: 218 10% 48%;
+    --ink-faint: 218 10% 60%;
     --brand: 214 80% 66%;
     --brand-hover: 214 80% 72%;
     --brand-soft: 214 50% 18%;

@@ -83,11 +83,11 @@ export function EntryDrawer({ headSeq }: EntryDrawerProps) {
           <SheetDescription id="entry-drawer-desc">{entry ? entry.eventType : "Hash-chained entry details"}</SheetDescription>
         </SheetHeader>
         <div className="flex items-center gap-1 px-6">
-          <Button variant="outline" size="sm" onClick={() => seq && go(seq - 1)} disabled={!seq || seq <= 1} aria-label="Previous entry (Alt+Left)">
-            <ChevronLeft aria-hidden="true" /> prev global
+          <Button variant="outline" size="sm" onClick={() => seq && go(seq - 1)} disabled={!seq || seq <= 1} aria-label="Previous global entry (Alt+Left)" title="Alt+Left">
+            <ChevronLeft aria-hidden="true" /> Previous global
           </Button>
-          <Button variant="outline" size="sm" onClick={() => seq && go(seq + 1)} disabled={!seq || seq >= headSeq} aria-label="Next entry (Alt+Right)">
-            next global <ChevronRight aria-hidden="true" />
+          <Button variant="outline" size="sm" onClick={() => seq && go(seq + 1)} disabled={!seq || seq >= headSeq} aria-label="Next global entry (Alt+Right)" title="Alt+Right">
+            Next global <ChevronRight aria-hidden="true" />
           </Button>
         </div>
         <div className="px-6 pb-6">

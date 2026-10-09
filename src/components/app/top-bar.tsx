@@ -67,7 +67,7 @@ export function TopBar({ user, env, nav, showDevLogin }: TopBarProps) {
   };
 
   return (
-    <div className="sticky top-0 z-30 flex h-topbar items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur sm:px-6">
+    <header className="sticky top-0 z-30 flex h-topbar items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur sm:px-6">
       <Sheet open={open} onOpenChange={setOpen}>
         <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={() => setOpen(true)}>
           <Menu aria-hidden="true" />
@@ -131,6 +131,6 @@ export function TopBar({ user, env, nav, showDevLogin }: TopBarProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
+    </header>
   );
 }

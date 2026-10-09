@@ -91,7 +91,7 @@ export function SidebarNav({ nav, user, showDevLogin, inSheet = false, onNavigat
   return (
     <div className={cn("flex h-full flex-col bg-surface", isCollapsed ? "w-sidebar-rail" : "w-sidebar")} data-collapsed={isCollapsed}>
       <div className={cn("flex h-topbar items-center gap-2 border-b border-border px-3", isCollapsed && "justify-center")}>
-        <Link href="/" className="flex items-center gap-2 rounded-sm" aria-label="HOOPP Events Ledger home" onClick={onNavigate}>
+        <Link href="/" className="flex items-center gap-2 rounded-sm" aria-label={isCollapsed ? "HOOPP Events Validation ledger home" : undefined} onClick={onNavigate}>
           <span className="flex h-7 w-7 items-center justify-center rounded-sm bg-brand text-white">
             <ShieldCheck aria-hidden="true" className="h-4 w-4" />
           </span>
@@ -103,7 +103,7 @@ export function SidebarNav({ nav, user, showDevLogin, inSheet = false, onNavigat
           ) : null}
         </Link>
       </div>
-      <nav aria-label="Primary" className="flex-1 overflow-y-auto px-2 py-3">
+      <nav aria-label="Sidebar navigation" className="flex-1 overflow-y-auto px-2 py-3">
         {nav.map((group, gi) => (
           <div key={gi} className={cn(gi > 0 && "mt-4")}>
             {group.label && !isCollapsed ? <p className="px-2 pb-1 text-caption font-medium uppercase tracking-wide text-ink-faint">{group.label}</p> : null}

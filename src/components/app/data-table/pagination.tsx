@@ -35,10 +35,10 @@ export function Pagination(props: PaginationProps) {
           {props.hasNext ? " · more available" : ""}
         </span>
         <div className="flex gap-1">
-          <Button variant="outline" size="sm" onClick={props.onPrev} disabled={!props.hasPrev} aria-label="Previous page">
-            <ChevronLeft aria-hidden="true" /> Prev
+          <Button variant="outline" size="sm" onClick={props.onPrev} disabled={!props.hasPrev}>
+            <ChevronLeft aria-hidden="true" /> Previous
           </Button>
-          <Button variant="outline" size="sm" onClick={props.onNext} disabled={!props.hasNext} aria-label="Next page">
+          <Button variant="outline" size="sm" onClick={props.onNext} disabled={!props.hasNext}>
             Next <ChevronRight aria-hidden="true" />
           </Button>
         </div>
@@ -53,10 +53,10 @@ export function Pagination(props: PaginationProps) {
         Showing {formatInt(from)}–{formatInt(to)} of {formatInt(props.total)}
       </span>
       <div className="flex gap-1">
-        <Button variant="outline" size="sm" onClick={() => props.onPageChange(props.pageIndex - 1)} disabled={props.pageIndex === 0} aria-label="Previous page">
-          <ChevronLeft aria-hidden="true" /> Prev
+        <Button variant="outline" size="sm" onClick={() => props.onPageChange(props.pageIndex - 1)} disabled={props.pageIndex === 0}>
+          <ChevronLeft aria-hidden="true" /> Previous
         </Button>
-        <Button variant="outline" size="sm" onClick={() => props.onPageChange(props.pageIndex + 1)} disabled={props.pageIndex >= props.pageCount - 1} aria-label="Next page">
+        <Button variant="outline" size="sm" onClick={() => props.onPageChange(props.pageIndex + 1)} disabled={props.pageIndex >= props.pageCount - 1}>
           Next <ChevronRight aria-hidden="true" />
         </Button>
       </div>

@@ -77,19 +77,22 @@ export function LedgerEntryCard({ entry, recomputed, variant, className }: Ledge
           <p className={cn("text-caption", recomputed.matches ? "text-ok-text" : "text-tampered-text")}>{recomputed.matches ? "Recomputed on open: payloadHash ✓ entryHash ✓" : "Recomputed on open: hash mismatch — this entry does not verify"}</p>
         ) : null}
       </div>
-      <details open={variant === "full"} className="group rounded-md border border-border">
-        <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-small font-medium [&::-webkit-details-marker]:hidden">
-          <ChevronRight aria-hidden="true" className="h-4 w-4 transition-transform group-open:rotate-90" />
-          Payload (JSON)
-          <span className="ml-auto flex items-center gap-1">
-            <CopyButton value={json} label="Copy payload JSON" size="sm" />
-            <Button variant="ghost" size="icon" aria-label="Download entry as .json" onClick={(e) => { e.preventDefault(); download(); }}>
-              <Download aria-hidden="true" />
-            </Button>
-          </span>
-        </summary>
-        <pre className="max-h-96 overflow-auto border-t border-border bg-surface p-3 font-mono text-caption leading-relaxed text-ink">{json}</pre>
-      </details>
+      {/* Copy/download sit beside the <summary>, not inside it: a summary must not contain interactive controls. */}
+      <div className="relative rounded-md border border-border">
+        <details open={variant === "full"} className="group">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 pr-24 text-small font-medium [&::-webkit-details-marker]:hidden">
+            <ChevronRight aria-hidden="true" className="h-4 w-4 transition-transform group-open:rotate-90" />
+            Payload (JSON)
+          </summary>
+          <pre className="max-h-96 overflow-auto border-t border-border bg-surface p-3 font-mono text-caption leading-relaxed text-ink">{json}</pre>
+        </details>
+        <span className="absolute right-2 top-1 flex items-center gap-1">
+          <CopyButton value={json} label="Copy payload JSON" size="sm" />
+          <Button variant="ghost" size="icon" aria-label="Download entry as .json" onClick={download}>
+            <Download aria-hidden="true" />
+          </Button>
+        </span>
+      </div>
     </div>
   );
 }

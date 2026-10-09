@@ -56,6 +56,8 @@ export interface DataTableProps<T> {
   emptyState: Omit<EmptyStateProps, "compact">;
   onRowClick?(row: T): void;
   rowClassName?(row: T): string | undefined;
+  /** Per-row `data-testid` (e.g. `ledger-row-{seq}`, docs/ux-design.md section 9.5). */
+  rowTestId?(row: T): string;
   className?: string;
   "data-testid"?: string;
 }
@@ -82,6 +84,7 @@ export function DataTable<T>({
   emptyState,
   onRowClick,
   rowClassName,
+  rowTestId,
   className,
   ...rest
 }: DataTableProps<T>) {
@@ -227,8 +230,8 @@ export function DataTable<T>({
           }}
           tabIndex={i === focusIndex ? 0 : -1}
           data-row-id={row.id}
+          data-testid={rowTestId?.(row.original)}
           data-state={expandedNow ? "expanded" : undefined}
-          aria-expanded={expandable && canExpand ? expandedNow : undefined}
           onKeyDown={(e) => onRowKeyDown(e, row, i)}
           onFocus={() => setFocusIndex(i)}
           onClick={(e) => {
@@ -298,7 +301,11 @@ export function DataTable<T>({
           <TableHeader className={cn(stickyHeader && "sticky top-0 z-10 bg-surface-raised shadow-[inset_0_-1px_0_0_hsl(var(--border))]")}>
             {table.getHeaderGroups().map((hg) => (
               <TableRow key={hg.id} className="hover:bg-transparent">
-                {expandable ? <TableHead className="w-8" aria-label="Expand" /> : null}
+                {expandable ? (
+                  <TableHead className="w-8">
+                    <span className="sr-only">Expand</span>
+                  </TableHead>
+                ) : null}
                 {hg.headers.map((header) => {
                   const meta = header.column.columnDef.meta;
                   const canSort = header.column.getCanSort() && sorting !== "none";

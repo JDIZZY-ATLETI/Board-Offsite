@@ -101,6 +101,7 @@ export function LedgerTable({ entries, nextCursor, prevCursors, firstBadSeq = nu
       columns={columns}
       data={entries}
       rowId={(e) => String(e.seq)}
+      rowTestId={(e) => `ledger-row-${e.seq}`}
       sorting="none"
       onRowClick={(e) => url.set({ seq: String(e.seq) }, { resetCursor: false })}
       rowClassName={(e) => (firstBadSeq !== null && e.seq >= firstBadSeq ? (e.seq === firstBadSeq ? "bg-tampered-soft" : "bg-tampered-soft/40") : undefined)}

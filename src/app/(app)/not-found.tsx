@@ -6,6 +6,7 @@ export default function AppNotFound() {
   return (
     <EmptyState
       illustration="search"
+      headingLevel="h1"
       title="We couldn't find that page"
       description="The link may be out of date, or the item may have been removed."
       action={

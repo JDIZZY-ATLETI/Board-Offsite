@@ -29,7 +29,7 @@ export function PageHeader({ title, srTitle, description, breadcrumbs, meta, act
     <header data-testid="page-header" className={cn("border-b border-border bg-background", className)}>
       <div className="flex flex-col gap-3 pb-4">
         {breadcrumbs && breadcrumbs.length > 0 ? (
-          <nav aria-label="Breadcrumb" className="text-small text-ink-muted">
+          <nav aria-label="Page breadcrumb" className="text-small text-ink-muted">
             <ol className="flex flex-wrap items-center gap-1">
               {breadcrumbs.map((b, i) => (
                 <li key={i} className="flex items-center gap-1">

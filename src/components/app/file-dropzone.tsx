@@ -25,7 +25,7 @@ export interface FileDropzoneProps {
 
 const PHASE_LABEL = { hashing: "Computing sha256…", uploading: "Uploading…", queued: "Queued — validating…" } as const;
 
-/** docs/ux-design.md section 4.6. Single CSV; keyboard: Enter/Space opens picker, Delete removes. */
+/** docs/ux-design.md section 4.6. Single CSV; keyboard: the browse/Replace buttons open the picker, Delete removes. */
 export function FileDropzone({ maxBytes, maxRows = 50_000, onFile, file, sha256, preflight, progress, disabled, error, className }: FileDropzoneProps) {
   const [rejection, setRejection] = React.useState<string | null>(null);
   const [live, setLive] = React.useState("");
@@ -35,8 +35,9 @@ export function FileDropzone({ maxBytes, maxRows = 50_000, onFile, file, sha256,
     multiple: false,
     maxSize: maxBytes,
     disabled,
-    noClick: Boolean(file),
-    noKeyboard: Boolean(file),
+    // react-dropzone "button inside" pattern: the root is a passive drop target; only the browse button opens the picker.
+    noClick: true,
+    noKeyboard: true,
     onDrop: (accepted, rejected) => {
       if (rejected.length) {
         const r = rejected[0];
@@ -69,12 +70,9 @@ export function FileDropzone({ maxBytes, maxRows = 50_000, onFile, file, sha256,
     <div className={cn("space-y-3", className)}>
       <div
         {...getRootProps({
-          role: "button",
-          tabIndex: disabled ? -1 : 0,
-          "aria-label": file ? `Selected file ${file.name}. Press Delete to remove.` : "Drop your Events CSV here or press Enter to browse",
           "aria-disabled": disabled,
           onKeyDown: (e: React.KeyboardEvent) => {
-            if (file && (e.key === "Delete" || e.key === "Backspace")) {
+            if (file && !disabled && (e.key === "Delete" || e.key === "Backspace") && (e.target as HTMLElement).tagName !== "INPUT") {
               e.preventDefault();
               remove();
             }
@@ -86,7 +84,7 @@ export function FileDropzone({ maxBytes, maxRows = 50_000, onFile, file, sha256,
           "rounded-md border-2 border-dashed p-6 text-center transition-colors",
           isDragActive ? "border-brand bg-brand-soft" : "border-border bg-surface",
           disabled && "cursor-not-allowed opacity-60",
-          !file && !disabled && "cursor-pointer hover:border-brand/60",
+          !file && !disabled && "hover:border-brand/60",
         )}
       >
         <input {...getInputProps()} aria-hidden="true" />
@@ -95,7 +93,7 @@ export function FileDropzone({ maxBytes, maxRows = 50_000, onFile, file, sha256,
             <Upload aria-hidden="true" className="h-8 w-8 text-ink-faint" strokeWidth={1.5} />
             <p className="text-body text-ink">
               Drop your Events CSV here or{" "}
-              <button type="button" onClick={open} disabled={disabled} className="font-medium text-brand underline-offset-2 hover:underline">
+              <button type="button" onClick={open} disabled={disabled} className="font-medium text-brand underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:no-underline" data-testid="dropzone-browse">
                 browse
               </button>
             </p>
