@@ -1,5 +1,6 @@
 import * as React from "react";
-import { ChevronRight, Lock } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Lock, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEVERITY_MAP, TOKEN_CLASSES } from "@/lib/ui/status-map";
 import { formatDecimal, initials as initialsOf } from "@/lib/ui/format";
@@ -24,6 +25,10 @@ export interface FindingCardProps {
   /** Hide the Row / member line (when grouped by row the header already shows it). */
   hideRow?: boolean;
   className?: string;
+  /** Renders the Override action for a pending WARNING (docs/ux-design.md section 4.8 `onOverride`). */
+  onOverride?(finding: ValidationFinding): void;
+  /** Why the action is unavailable (rejected row, batch moved on); shown instead of the button. */
+  overrideBlocked?: string | null;
 }
 
 const VALUE_LABELS: Record<string, string> = {
@@ -56,7 +61,7 @@ function valueEntries(f: ValidationFinding): Array<{ label: string; value: strin
  * docs/ux-design.md section 4.8 / 7.2. Portal message verbatim; "What to do" from finding-hints.ts
  * (falls back to the Portal message when no hint exists). PRIVATE findings carry a Lock tag.
  */
-export function FindingCard({ finding: f, record, compact = false, hideRow = false, className }: FindingCardProps) {
+export function FindingCard({ finding: f, record, compact = false, hideRow = false, className, onOverride, overrideBlocked }: FindingCardProps) {
   const sev = SEVERITY_MAP[f.severity];
   const tone = TOKEN_CLASSES[sev.token];
   const Icon = sev.icon;
@@ -124,10 +129,16 @@ export function FindingCard({ finding: f, record, compact = false, hideRow = fal
           ))}
         </dl>
       ) : null}
-      {f.override ? (
-        <p className="mt-2 text-small text-ok-text">
-          Overridden · {f.override.reason} · by {f.override.actor.replace(/^user:/, "")} · {f.override.at.slice(11, 16)}
-        </p>
+      {f.override ? <OverrideStrip finding={f} /> : null}
+      {!f.override && f.severity === "WARNING" && (onOverride || overrideBlocked) ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-small">
+          {onOverride && !overrideBlocked ? (
+            <button type="button" onClick={() => onOverride(f)} data-testid={`override-button-${f.findingId}`} className="inline-flex h-8 items-center gap-1 rounded-sm border border-held/50 bg-surface-raised px-2.5 font-medium text-held-text hover:bg-held-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" /> Override…
+            </button>
+          ) : null}
+          {overrideBlocked ? <span className="text-ink-muted">{overrideBlocked}</span> : null}
+        </div>
       ) : null}
       <details className="mt-2 text-small">
         <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-sm text-ink-muted hover:text-ink [&::-webkit-details-marker]:hidden">
@@ -166,6 +177,44 @@ export function FindingCard({ finding: f, record, compact = false, hideRow = fal
         </div>
       </details>
     </article>
+  );
+}
+
+/** Amber "overridden" strip (docs/ux-design.md section 5.4.2): reason, actor, time and the ledger entry. */
+export function OverrideStrip({ finding: f, className }: { finding: ValidationFinding; className?: string }) {
+  const o = f.override;
+  if (!o) return null;
+  const actor = o.actor.replace(/^user:/, "");
+  const when = o.at ? `${o.at.slice(0, 10)} ${o.at.slice(11, 16)}` : "";
+  return (
+    <p data-testid={`override-strip-${f.findingId}`} className={cn("mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-sm border border-held/40 bg-held-soft/50 px-2.5 py-1.5 text-small text-held-text", className)}>
+      <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />
+      <span className="font-medium">Overridden</span>
+      <span aria-hidden="true">·</span>
+      <span>{o.reason}</span>
+      {o.note ? (
+        <>
+          <span aria-hidden="true">·</span>
+          <span className="italic">&ldquo;{o.note}&rdquo;</span>
+        </>
+      ) : null}
+      <span aria-hidden="true">·</span>
+      <span>by {actor}</span>
+      {when ? (
+        <>
+          <span aria-hidden="true">·</span>
+          <time dateTime={o.at}>{when}</time>
+        </>
+      ) : null}
+      {o.ledgerSeq ? (
+        <>
+          <span aria-hidden="true">·</span>
+          <Link href={`/ledger?seq=${o.ledgerSeq}`} className="font-mono underline-offset-2 hover:underline">
+            ledger #{o.ledgerSeq}
+          </Link>
+        </>
+      ) : null}
+    </p>
   );
 }
 

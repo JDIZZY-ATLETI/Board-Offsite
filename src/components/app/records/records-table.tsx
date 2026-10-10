@@ -24,7 +24,7 @@ export interface RecordsTableProps {
   nextCursor: string | null;
   prevCursors: string[];
   fileRejected: boolean;
-  counts: { accepted: number; rejected: number; pending: number };
+  counts: { accepted: number; rejected: number; pending: number; held?: number };
 }
 
 type NumCol = "Weeks_CurrentYear" | "LowContributions_CurrentYear" | "HighContributions_CurrentYear" | "AnnualizedEarnings_CurrentYear" | "PA_CurrentYear" | "Weeks_PreviousYear" | "LowContributions_PreviousYear" | "HighContributions_PreviousYear" | "AnnualizedEarnings_PreviousYear" | "PA_PreviousYear";
@@ -158,7 +158,7 @@ export function RecordsTable({ batchId, records, nextCursor, prevCursors, fileRe
       header: "Outcome",
       accessorKey: "outcome",
       cell: ({ row }) => (row.original.outcome === "PENDING" ? <span className="text-caption text-ink-muted">pending</span> : <OutcomeBadge outcome={row.original.outcome} size="sm" />),
-      meta: { width: "8rem" },
+      meta: { width: "10rem" },
     },
     {
       id: "findings",
@@ -191,7 +191,7 @@ export function RecordsTable({ batchId, records, nextCursor, prevCursors, fileRe
         options={[
           { value: "true", label: "Accepted", count: counts.accepted },
           { value: "false", label: "Rejected", count: counts.rejected },
-          ...(counts.pending ? [{ value: "held", label: "Held / pending", count: counts.pending }] : []),
+          ...(counts.held || counts.pending ? [{ value: "held", label: "Held (needs override)", count: (counts.held ?? 0) + counts.pending }] : []),
         ]}
         value={accepted ? [accepted] : []}
         onChange={(v) => url.set({ accepted: v[0] ?? null })}
@@ -229,7 +229,8 @@ export function RecordsTable({ batchId, records, nextCursor, prevCursors, fileRe
         },
       }}
       sorting="client"
-      rowClassName={(r) => (r.outcome === "REJECTED" ? "bg-rejected-soft/40" : r.outcome === "PENDING" ? "bg-held-soft/40" : undefined)}
+      rowClassName={(r) => (r.outcome === "REJECTED" ? "bg-rejected-soft/40" : r.outcome === "HELD" || r.outcome === "PENDING" ? "bg-held-soft/40" : undefined)}
+      rowTestId={(r) => `record-row-${r.lineNumber}`}
       emptyState={
         fileRejected
           ? { title: "Rows were not parsed because the file was rejected", description: "Fix the header noted in Findings and upload again.", illustration: "none" }

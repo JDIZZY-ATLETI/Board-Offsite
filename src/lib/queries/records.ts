@@ -112,6 +112,8 @@ export interface RecordLite {
   lastName: string | null;
   eventType: string | null;
   eventDate: string | null;
+  /** Row outcome so the Findings tab can offer Override only on HELD rows (GAP-OVR-1). */
+  outcome: RecordOutcome | "PENDING";
 }
 
 /** Member facts for a set of line numbers (Findings tab headers). */
@@ -119,12 +121,13 @@ export async function recordsByLineNumbers(ctx: AppContext, batchId: string, lin
   const unique = [...new Set(lines)].filter((n) => Number.isInteger(n) && n > 0);
   if (unique.length === 0) return {};
   const rows = await ctx.db
-    .select({ lineNumber: eventsRecords.lineNumber, sinMasked: eventsRecords.sinMasked, sinPseudo: eventsRecords.sinPseudo, firstName: eventsRecords.firstName, lastName: eventsRecords.lastName, eventType: eventsRecords.eventType, employmentEndDate: eventsRecords.employmentEndDate, dateOfDeath: eventsRecords.dateOfDeath })
+    .select({ lineNumber: eventsRecords.lineNumber, sinMasked: eventsRecords.sinMasked, sinPseudo: eventsRecords.sinPseudo, firstName: eventsRecords.firstName, lastName: eventsRecords.lastName, eventType: eventsRecords.eventType, employmentEndDate: eventsRecords.employmentEndDate, dateOfDeath: eventsRecords.dateOfDeath, outcome: eventsRecords.outcome, accepted: eventsRecords.accepted })
     .from(eventsRecords)
     .where(and(eq(eventsRecords.batchId, batchId), inArray(eventsRecords.lineNumber, unique)));
   const out: Record<number, RecordLite> = {};
   for (const r of rows) {
-    out[r.lineNumber] = { lineNumber: r.lineNumber, sinMasked: r.sinMasked, sinPseudo: r.sinPseudo, firstName: r.firstName, lastName: r.lastName, eventType: r.eventType, eventDate: (r.eventType === "DECFIN" ? r.dateOfDeath : r.employmentEndDate) ?? null };
+    const outcome = (r.outcome as RecordOutcome | null) ?? (r.accepted === null ? "PENDING" : r.accepted ? "ACCEPTED" : "REJECTED");
+    out[r.lineNumber] = { lineNumber: r.lineNumber, sinMasked: r.sinMasked, sinPseudo: r.sinPseudo, firstName: r.firstName, lastName: r.lastName, eventType: r.eventType, eventDate: (r.eventType === "DECFIN" ? r.dateOfDeath : r.employmentEndDate) ?? null, outcome };
   }
   return out;
 }

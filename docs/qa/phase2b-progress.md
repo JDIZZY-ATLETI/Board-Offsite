@@ -15,6 +15,8 @@ Running log for the Phase 2B pass (QA fixes + Phase 2 UI). Base `cec41e7`.
 - Part 1.8 GAP-E2E-2 / FLAKY-E2E-1: both browser suites salt with one extra B2-rejected row and assert API `counts` = golden + 1; D12 waits for hydration; rule-filter menu waits for stability. Overview KPI cards got `kpi-*` testids.
 - Full vitest: 636 passed / 1 skipped / 0 expected-fails.
 
+- Part 2.11 OverrideDrawer (`src/components/app/findings/override-drawer.tsx`: reasons from `GET /api/rules/{id}`, Other->note, single + bulk POST, error copy map `OVERRIDE_ERROR_COPY`), FindingsView Override column/button, bulk selection + `bulk-override-button`, `?override=` facet, `visibility-toggle`, amber `OverrideStrip`, HELD tint/badges in row groups and Records, held counts in Batches list / dashboard mini table, Submitter D6 copy. Browser-verified via `tests/e2e/phase2-qa.mjs` (new, wired to `e2e:qa` + `e2e:phase2`): single override -> ACCEPTED, held 8->7, WarningOverridden ledgered; bulk 2 B43 -> held 5.
+
 ## Next
 
-- Part 2 UI items 11-15. Part 3 tests + gates.
+- Part 2 items 12 (reports views) .. 15. Part 3 unit tests + gates + report.

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
 import { canViewPrivateFindings } from "@/lib/auth/roles";
+import { canOverride as canOverrideWarnings } from "@/lib/pipeline/override";
 import { findingFacets, listFindings } from "@/lib/queries/findings";
 import { recordsByLineNumbers } from "@/lib/queries/records";
 import { enumParam, firstParam, intParam, type SearchParamsInput } from "@/lib/ui/search-params";
@@ -21,10 +22,13 @@ export default async function FindingsPage({ params, searchParams }: { params: P
   const severity = enumParam(sp, "severity", FINDING_SEVERITIES);
   const ruleId = firstParam(sp, "ruleId");
   const lineNumber = intParam(sp, "lineNumber");
+  const override = enumParam(sp, "override", ["pending", "done"] as const);
   const cursor = firstParam(sp, "cursor") ?? null;
   const prev = (firstParam(sp, "prev") ?? "").split("|").filter(Boolean);
+  // docs/ux-design.md D6: Reviewer/Admin override; Submitter only behind ALLOW_SUBMITTER_OVERRIDE (server-enforced too).
+  const canOverride = canOverrideWarnings(ctx, session, batch.employerId);
 
-  const [page, facets] = await Promise.all([listFindings(ctx, batchId, { severity, ruleId: ruleId || undefined, lineNumber, includePrivate, cursor, limit: 200 }), findingFacets(ctx, batchId, includePrivate)]);
+  const [page, facets] = await Promise.all([listFindings(ctx, batchId, { severity, ruleId: ruleId || undefined, lineNumber, override, includePrivate, cursor, limit: 200 }), findingFacets(ctx, batchId, includePrivate)]);
   const records = await recordsByLineNumbers(ctx, batchId, page.items.map((f) => f.lineNumber ?? 0));
 
   return (
@@ -39,6 +43,8 @@ export default async function FindingsPage({ params, searchParams }: { params: P
       rejectedRows={batch.counts.rejected}
       fileRejected={batch.status === "FILE_REJECTED"}
       canSeePrivate={canSeePrivate}
+      canOverride={canOverride}
+      batchStatus={batch.status}
     />
   );
 }

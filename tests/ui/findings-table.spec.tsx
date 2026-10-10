@@ -78,7 +78,7 @@ describe("FindingsView grouping (D1)", () => {
     expect(screen.getByText("ABLE, Anna")).toBeInTheDocument();
     expect(screen.getByText("2 findings")).toBeInTheDocument();
     expect(screen.getByTestId("finding-card-1")).toBeInTheDocument();
-    expect(screen.queryByText("Show HOOPP-internal")).toBeNull();
+    expect(screen.queryByText("Show HOOPP-internal findings")).toBeNull();
   });
 
   it("severity mode renders a table grouped by severity", () => {
@@ -86,7 +86,7 @@ describe("FindingsView grouping (D1)", () => {
     expect(screen.getByTestId("findings-table")).toBeInTheDocument();
     expect(screen.getAllByRole("rowgroup").length).toBeGreaterThan(0);
     expect(screen.getAllByTestId("severity-badge-COMPLETE_MEMBER_ERROR").some((el) => el.textContent?.includes("· 3"))).toBe(true);
-    expect(screen.getByText("Show HOOPP-internal")).toBeInTheDocument();
+    expect(screen.getByText("Show HOOPP-internal findings")).toBeInTheDocument();
   });
 
   it("rule mode groups by rule id via the URL", () => {

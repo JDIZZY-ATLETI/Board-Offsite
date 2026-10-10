@@ -1,0 +1,192 @@
+{
+  "base": "http://localhost:3000",
+  "at": "2026-10-10T02:13:41.446Z",
+  "failed": 5,
+  "results": [
+    {
+      "name": "mixed-100-rows VALIDATED with the golden HELD count",
+      "pass": false,
+      "detail": "{\"rows\":101,\"accepted\":20,\"rejected\":73,\"warnings\":16,\"infos\":4,\"held\":8}"
+    },
+    {
+      "name": "Submitter next-step copy: N warnings need a HOOPP reviewer's override (7.6)",
+      "pass": true,
+      "detail": "Next step8 warnings need a HOOPP reviewer's override before this batch can continue. No action neede"
+    },
+    {
+      "name": "Submitter overview Warnings KPI shows held count",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Submitter sees no Override button (D6)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Submitter sees the 'HOOPP reviewer will choose a reason' copy",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Submitter has no PRIVATE toggle",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Submitter can download the public Summary of validations only",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Reviewer overview: \"8 held rows need an override\"",
+      "pass": true,
+      "detail": "Next step8 held rows need an overrideOpen held rows →"
+    },
+    {
+      "name": "Stepper Validated node carries the held copy",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Batches list status badge reads 'Validated · N held'",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Reviewer sees Override buttons on HELD-row warnings",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Override filter chip reflects ?override=pending",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a B40 warning on a HELD row exists",
+      "pass": true,
+      "detail": "line 77"
+    },
+    {
+      "name": "GAP-OVR-1 in UI: warning on a REJECTED row has no Override button",
+      "pass": true,
+      "detail": "line 61"
+    },
+    {
+      "name": "drawer lists the rule's 7 override reasons verbatim (B40)",
+      "pass": true,
+      "detail": "7"
+    },
+    {
+      "name": "submit disabled until a reason is chosen",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "'Other' requires a note (submit stays disabled)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "listed reason enables submit",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "toast: Override recorded. Row N is now accepted.",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "held count decrements by one",
+      "pass": true,
+      "detail": "held=7"
+    },
+    {
+      "name": "row outcome becomes ACCEPTED",
+      "pass": true,
+      "detail": "ACCEPTED"
+    },
+    {
+      "name": "ledger has a WarningOverridden entry for the finding",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "overridden finding shows the 'Overridden' state in the Override column",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "amber strip: Overridden · reason · by actor · time · ledger #",
+      "pass": false,
+      "detail": "Overridden·The member received a promotion·by rpatel·2026-10-10 02:12·ledger #699"
+    },
+    {
+      "name": "Records tab HELD filter lists the remaining held rows with the HELD badge",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "two pending B43 warnings on HELD rows exist for the bulk flow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "bulk button disabled with nothing selected",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "bulk button enabled with two same-rule warnings selected",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "bulk drawer title names the count",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "toast: 2 overrides recorded.",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "held count decrements by two more",
+      "pass": true,
+      "detail": "held=5"
+    },
+    {
+      "name": "Reviewer sees PRIVATE (INFORMATION) findings by default",
+      "pass": true,
+      "detail": "5 info badges, 2 lock tags"
+    },
+    {
+      "name": "toggle off -> ?visibility=PUBLIC hides INFORMATION/PRIVATE findings",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "toggle on again restores them",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Reports tab: public Summary card enabled with a View link",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "Reports tab: private Summary card for Reviewer",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "unexpected error",
+      "pass": false,
+      "detail": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('summary-report-table') to be visible\u001b[22m\n\n    at C:\\Users\\dizju\\Board-Offsite\\tests\\e2e\\phase2-qa.mjs:210:50"
+    }
+  ]
+}

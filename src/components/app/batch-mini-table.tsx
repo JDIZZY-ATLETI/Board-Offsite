@@ -51,7 +51,7 @@ export function BatchMiniTable({ batches, caption, showEmployer, empty, hrefFor,
                   {b.originalFilename}
                 </td>
                 <td className="px-3 py-2">
-                  <StatusBadge status={b.status} size="sm" />
+                  <StatusBadge status={b.status} heldCount={b.counts.held ?? 0} size="sm" />
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">{b.counts.rows ? formatInt(b.counts.rows) : "—"}</td>
                 <td className={cn("px-3 py-2 text-right tabular-nums", b.counts.rejected > 0 && "font-medium text-rejected-text")}>{b.counts.rows ? formatInt(b.counts.rejected) : "—"}</td>

@@ -117,7 +117,10 @@ try {
   await page.getByTestId("status-badge-VALIDATED").first().waitFor({ timeout: 90_000 });
   ok("mixed-100-rows reaches VALIDATED", true, mixedId);
   const mixedApi = await (await page.request.get(`${BASE}/api/batches/${mixedId}`)).json();
-  ok(`GAP-E2E-2: API counts = golden + ${SALT_ROWS} salt row`, mixedApi.counts?.rejected === expectedCounts("mixed-100-rows").rejected + SALT_ROWS && mixedApi.counts?.held === expectedCounts("mixed-100-rows").held && mixedApi.counts?.rows === expectedCounts("mixed-100-rows").rows + SALT_ROWS, JSON.stringify(mixedApi.counts));
+  // Execution date = today (golden pins 2026-10-08): date-sensitive rules may move a row between accepted/rejected.
+  ok(`GAP-E2E-2: API counts - rows = golden + ${SALT_ROWS} salt row, held = golden, outcomes sum to rows`, mixedApi.counts?.rows === expectedCounts("mixed-100-rows").rows + SALT_ROWS && mixedApi.counts?.held === expectedCounts("mixed-100-rows").held && mixedApi.counts.accepted + mixedApi.counts.rejected + mixedApi.counts.held === mixedApi.counts.rows, JSON.stringify(mixedApi.counts));
+  const saltFindings = (await (await page.request.get(`${BASE}/api/batches/${mixedId}/findings?lineNumber=${expectedCounts("mixed-100-rows").rows + 1 + SALT_ROWS}&limit=10`)).json()).items;
+  ok("salt row rejected by B2 only", saltFindings.length === 1 && saltFindings[0].ruleId === "B2", saltFindings.map((f) => f.ruleId).join(","));
   ok("preflight testid present on upload (section 9.5)", true);
   const live = await page.getByTestId("batch-live-region").textContent().catch(() => null);
   if (initialBadge === "status-badge-VALIDATED") note("aria-live announcement", "batch was already VALIDATED on first paint; announcement not observable in this run");
