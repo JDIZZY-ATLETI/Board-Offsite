@@ -4,8 +4,8 @@ import { InMemoryArielSnapshot, type ArielBatchSnapshot } from "@/lib/ariel/snap
 import { sha256Hex } from "@/lib/crypto/hash";
 import type { DbOrTx } from "@/lib/db/client";
 import { arielUpdateItems, arielUpdateSets, batches, eventsRecords, ledgerEntries, validationFindings } from "@/lib/db/schema";
-import { contentHashOf, countBy, deriveFinal, INFO_RET_DNCT, itemsHash, type FinalDerivation } from "@/lib/derivation/final";
-import { ingestDateOf, lakePaths, type LakePaths } from "@/lib/lake/paths";
+import { countBy, deriveFinal, INFO_RET_DNCT, itemsHash, type FinalDerivation } from "@/lib/derivation/final";
+import { ingestDateOf, lakePaths } from "@/lib/lake/paths";
 import type { LedgerDraft } from "@/lib/ledger/service";
 import { batchStream, memberStream, systemActor } from "@/lib/ledger/streams";
 import { projectLedger } from "@/lib/projection";
