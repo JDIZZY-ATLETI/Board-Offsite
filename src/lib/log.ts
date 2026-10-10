@@ -35,9 +35,10 @@ export function createLogger(opts: CreateLoggerOptions = {}): Logger {
   };
   if (opts.stream) return pino(options, opts.stream);
   if (opts.pretty) {
-    // pino-pretty is a dev dependency loaded via transport. Inside Next.js server bundles pino cannot resolve the
-    // bare name, so hand it the absolute package directory; fall back to JSON logs when it is not installed.
-    const target = path.join(process.cwd(), "node_modules", "pino-pretty");
+    // pino-pretty is a dev dependency loaded in a worker thread. The worker resolves the target as an ES module,
+    // so it must be the entry *file* (a directory import throws ERR_UNSUPPORTED_DIR_IMPORT - Phase 2 QA GAP-ENV-1);
+    // inside the Next.js server bundle the bare name does not resolve either, hence the absolute path.
+    const target = path.join(process.cwd(), "node_modules", "pino-pretty", "index.js");
     if (!existsSync(target)) return pino(options);
     try {
       return pino({ ...options, transport: { target, options: { colorize: true } } });

@@ -54,6 +54,8 @@ export async function overrideFinding(ctx: AppContext, session: Session, finding
   return ctx.db.transaction(async (tx) => {
     const [record] = await tx.select().from(eventsRecords).where(eq(eventsRecords.recordId, row.recordId!));
     if (!record) throw new ApiError(404, "NOT_FOUND", "record not found");
+    // GAP-OVR-1: an override on a rejected row could never release it; refuse instead of writing a dead ledger entry.
+    if (record.outcome === "REJECTED") throw new ApiError(409, "ROW_REJECTED", "This row is rejected by a member error; overriding the warning would not change its outcome. Correct the file and upload again.");
     await tx
       .update(validationFindings)
       .set({ overrideReason: req.reason, overrideActor: session.actor, overrideAt: at, overrideNote: note ?? null })

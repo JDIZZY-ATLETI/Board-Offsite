@@ -19,6 +19,15 @@ function translate(err: unknown): never {
   throw err;
 }
 
+/** GET /api/rules/{ruleId}: one catalogue item (override reasons for the OverrideDrawer); role "any" like GET /api/rules. */
+export const GET = withApi(async (_req, { app, params }) => {
+  const ruleId = z.string().min(1).max(64).parse(params.ruleId);
+  const catalogue = await rulesCatalogue(app);
+  const rule = catalogue.items.find((r) => r.id === ruleId);
+  if (!rule) throw new ApiError(404, "NOT_FOUND", `rule ${ruleId} not found`);
+  return json({ rule, configHash: catalogue.config.hash });
+});
+
 /** PATCH /api/rules/{ruleId} (Admin): enable/disable + tolerance edits, ledgered on the system stream. */
 export const PATCH = withApi(async (req, { app, session, params }) => {
   const s = requireRole(session, "Admin");

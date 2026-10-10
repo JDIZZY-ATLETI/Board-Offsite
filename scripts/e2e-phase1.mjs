@@ -49,11 +49,17 @@ const context = await browser.newContext({ viewport: { width: 1440, height: 900 
 const page = await context.newPage();
 page.on("pageerror", (e) => results.push(`PAGEERROR ${e.message}`));
 // Salt files so re-running against a persistent DB still creates fresh batches (identical bytes are deduplicated).
-const salt = `\r\n`;
 const fs = await import("node:fs");
-// Blank trailing lines are skipped by the parser, so a unique run of CRLFs changes the bytes without adding rows.
-let saltCounter = Date.now() % 1000;
-const salted = (scenario) => Buffer.concat([fs.readFileSync(golden(scenario)), Buffer.from(salt.repeat(2 + (saltCounter++ % 997)))]);
+let saltCounter = Date.now() % 100000;
+// One extra TERFIN row with a SIN unknown to Ariel: the bytes differ per run and the only effect on the counts is
+// exactly +1 rejected row (B2), so expectations are golden + 1 (QA GAP-E2E-2: appending bytes mutated the last row).
+const SALT_ROWS = 1;
+const salted = (scenario) => {
+  const text = fs.readFileSync(golden(scenario)).toString("latin1").replace(/(\r?\n)*$/, "");
+  const sin = String(100000000 + ((Date.now() + saltCounter++) % 899999999)).slice(0, 9);
+  return Buffer.from(`${text}\r\n${sin},SALT,Row,TERFIN,09302026,10.00,980.00,,,1800,,,,,\r\n`, "latin1");
+};
+const expectedCounts = (scenario) => JSON.parse(fs.readFileSync(path.resolve("tests/golden", scenario, "expected-counts.json"), "utf8"));
 
 try {
   // ---- Submitter: dashboard, upload happy-terfin -> VALIDATED via polling ----
@@ -114,7 +120,11 @@ try {
   await waitForStatus(page, "VALIDATED");
   ok("mixed-100-rows reaches VALIDATED", true);
   await shot(page, "batch-overview");
-  ok("Overview shows 38 rejected", (await page.locator("text=Rejected").first().locator("..").textContent())?.includes("38") || (await page.textContent("body"))?.includes("38"));
+  const mixedApi = await (await page.request.get(`${BASE}/api/batches/${mixedUrl.split("/").pop()}`)).json();
+  const wantRejected = expectedCounts("mixed-100-rows").rejected + SALT_ROWS;
+  ok(`API counts.rejected = golden + ${SALT_ROWS} salt row (${wantRejected})`, mixedApi.counts?.rejected === wantRejected, `counts=${JSON.stringify(mixedApi.counts)}`);
+  ok("API counts.held matches the golden", mixedApi.counts?.held === expectedCounts("mixed-100-rows").held, `held=${mixedApi.counts?.held}`);
+  ok(`Overview shows ${wantRejected} rejected`, (await page.getByTestId("kpi-rejected").textContent().catch(() => page.textContent("body")))?.replace(/,/g, "").includes(String(wantRejected)));
 
   await page.goto(`${mixedUrl}/findings`);
   await page.getByTestId("findings-table").waitFor();
@@ -125,9 +135,14 @@ try {
   await page.waitForURL(/group=severity/);
   await page.locator('th[scope="rowgroup"]').first().waitFor();
   ok("group-by-severity renders rowgroup headers", (await page.locator('th[scope="rowgroup"]').count()) > 0);
+  await page.waitForLoadState("networkidle");
   await page.getByTestId("facet-rule").click();
+  await page.getByRole("menu").waitFor();
   const firstRule = page.getByRole("menuitem").filter({ hasNot: page.getByText("All") }).nth(1);
+  await firstRule.waitFor({ state: "visible" });
   const ruleLabel = (await firstRule.textContent())?.trim().split(/\s/)[0];
+  // FLAKY-E2E-1: the menu animates in; wait for it to be stable before clicking.
+  await firstRule.hover();
   await firstRule.click();
   await page.waitForURL(/ruleId=/);
   await page.locator('th[scope="rowgroup"]').first().waitFor();

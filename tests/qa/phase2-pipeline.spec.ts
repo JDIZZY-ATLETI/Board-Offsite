@@ -23,6 +23,12 @@ const B40_REASON = "The member received a promotion";
 const lakeFile = (rel: string) => readFileSync(path.join(t.lakeRoot, ...rel.split("/")));
 const body = (o: unknown) => JSON.stringify(o);
 const findingsOf = (batchId: string) => t.ctx.db.select().from(validationFindings).where(eq(validationFindings.batchId, batchId));
+/** Pending WARNING findings whose row is HELD (no CME on the same line) - the only ones an override can release (GAP-OVR-1). */
+async function heldWarnings() {
+  const all = await findingsOf(mixed);
+  const rejectedLines = new Set(all.filter((f) => f.severity === "COMPLETE_MEMBER_ERROR").map((f) => f.lineNumber));
+  return all.filter((f) => f.severity === "WARNING" && !f.overrideReason && !rejectedLines.has(f.lineNumber)).sort((a, b) => a.lineNumber! - b.lineNumber!);
+}
 async function located(batchId: string) {
   const [b] = await t.ctx.db.select().from(batches).where(eq(batches.batchId, batchId));
   return { b, paths: lakePaths({ employerId: b.employerId, batchId, ingestDate: ingestDateOf(b.receivedAt) }) };
@@ -112,23 +118,32 @@ describe("QA/Phase2: offline re-validation isolation (AC5)", () => {
 });
 
 describe("QA/Phase2: override / HELD semantics beyond AC4", () => {
-  it("a warning on a REJECTED row may be overridden: the row stays REJECTED, heldTotal is unchanged and no MemberRecordValidated is ledgered", async () => {
+  it("GAP-OVR-1 (fixed): a warning on a REJECTED row cannot be overridden - 409 ROW_REJECTED, nothing persisted or ledgered", async () => {
     const all = await findingsOf(mixed);
     const rejectedLines = new Set(all.filter((f) => f.severity === "COMPLETE_MEMBER_ERROR").map((f) => f.lineNumber));
     const w = all.find((f) => f.severity === "WARNING" && !f.overrideReason && rejectedLines.has(f.lineNumber))!;
     expect(w, "a WARNING on a rejected row exists in mixed-100-rows").toBeTruthy();
     const { b: before } = await located(mixed);
-    const r = await api.override(REVIEWER, w.findingId, body({ reason: w.overrideReasons[0] }));
-    expect(r.status, r.text).toBe(200);
-    expect(r.body.rowOutcome).toBe("REJECTED");
-    expect(r.body.heldRemaining).toBe(before.heldTotal);
+    const head0 = (await t.ctx.ledger.head()).seq;
+    expectErrorEnvelope(await api.override(REVIEWER, w.findingId, body({ reason: w.overrideReasons[0] })), 409, "ROW_REJECTED");
+    const [row] = await t.ctx.db.select().from(validationFindings).where(eq(validationFindings.findingId, w.findingId));
+    expect(row.overrideReason).toBeNull();
     const [rec] = await t.ctx.db.select().from(eventsRecords).where(eq(eventsRecords.recordId, w.recordId!));
     expect(rec.outcome).toBe("REJECTED");
-    expect((await t.ctx.ledger.list({ streamId: `member:${rec.sinPseudo}`, eventType: "MemberRecordValidated", limit: 10 })).items).toHaveLength(0);
-    expect((await t.ctx.ledger.list({ streamId: `member:${rec.sinPseudo}`, eventType: "WarningOverridden", limit: 10 })).items[0].payload).toMatchObject({ rowOutcome: "REJECTED", findingId: w.findingId });
+    expect((await t.ctx.ledger.head()).seq).toBe(head0);
+    expect((await located(mixed)).b.heldTotal).toBe(before.heldTotal);
+    // Bulk: the rejected-row item fails per item with the same code while HELD items succeed.
+    // B40 sits on HELD line 78 and REJECTED line 75 (line 77 is left for the "Other" probe below).
+    const held = all.find((f) => f.ruleId === "B40" && f.lineNumber === 78 && !f.overrideReason)!;
+    const rejectedB40 = all.find((f) => f.ruleId === "B40" && !f.overrideReason && rejectedLines.has(f.lineNumber))!;
+    expect(held && rejectedB40, "B40 on both a HELD and a REJECTED row").toBeTruthy();
+    const bulk = await api.bulkOverride(REVIEWER, mixed, body({ findingIds: [rejectedB40.findingId, held.findingId], reason: "Job reclassification" }));
+    expect(bulk.status).toBe(207);
+    expect(bulk.body.results[0]).toMatchObject({ ok: false, status: 409, code: "ROW_REJECTED" });
+    expect(bulk.body.results[1]).toMatchObject({ ok: true });
   });
   it("an Other reason needs a note; the note is trimmed, returned, persisted and ledgered", async () => {
-    const f = (await findingsOf(mixed)).find((x) => x.ruleId === "B40" && !x.overrideReason)!;
+    const f = (await heldWarnings()).find((x) => x.ruleId === "B40")!;
     expectErrorEnvelope(await api.override(REVIEWER, f.findingId, body({ reason: "Other - please provide explanation", note: "   " })), 422, "NOTE_REQUIRED");
     const r = await api.override(REVIEWER, f.findingId, body({ reason: "Other - please provide explanation", note: "  promoted to team lead  " }));
     expect(r.status, r.text).toBe(200);
@@ -140,7 +155,7 @@ describe("QA/Phase2: override / HELD semantics beyond AC4", () => {
     expect(entry.items.find((e) => e.seq === r.body.ledgerSeq)?.payload).toMatchObject({ note: "promoted to team lead", reason: "Other - please provide explanation" });
   });
   it("overrides are refused once the batch has left VALIDATED (422 BATCH_NOT_VALIDATED)", async () => {
-    const f = (await findingsOf(mixed)).find((x) => x.severity === "WARNING" && !x.overrideReason)!;
+    const f = (await heldWarnings())[0];
     await t.ctx.db.update(batches).set({ status: "LEDGERED" }).where(eq(batches.batchId, mixed));
     try {
       expectErrorEnvelope(await api.override(REVIEWER, f.findingId, body({ reason: f.overrideReasons[0] })), 422, "BATCH_NOT_VALIDATED");
@@ -151,8 +166,7 @@ describe("QA/Phase2: override / HELD semantics beyond AC4", () => {
     expect(row.overrideReason).toBeNull();
   });
   it("bulk override is per item (not atomic): a bad id in the middle does not roll back the others; each success is its own ledger entry", async () => {
-    const all = await findingsOf(mixed);
-    const ids = all.filter((x) => x.ruleId === "B43" && !x.overrideReason).map((x) => x.findingId);
+    const ids = (await heldWarnings()).filter((x) => x.ruleId === "B43").map((x) => x.findingId);
     expect(ids.length).toBeGreaterThanOrEqual(2);
     const head0 = (await t.ctx.ledger.head()).seq;
     const r = await api.bulkOverride(REVIEWER, mixed, body({ findingIds: [ids[0], "00000000-0000-7000-8000-00000000beef", ids[1]], reason: "Job reclassification" }));
@@ -198,19 +212,24 @@ describe("QA/Phase2: rules configuration effect boundary", () => {
     }
     expect((await api.rules()).body.config.hash).toBe(b.rulesConfigHash);
   });
-  it("GAP-RULES-1 (pinned): DELETE on an unknown rule id answers 200 (rule undefined, ledgerSeq null) instead of 404", async () => {
-    const r = await api.deleteRule(ADMIN, "NOPE", "QA probe");
-    expect(r.status).toBe(200);
-    expect(r.body.rule).toBeUndefined();
-    expect(r.body.ledgerSeq).toBeNull();
+  it("GAP-RULES-1 (fixed): DELETE on an unknown rule id answers 404 NOT_FOUND", async () => {
+    expectErrorEnvelope(await api.deleteRule(ADMIN, "NOPE", "QA probe"), 404, "NOT_FOUND");
   });
-  it("GAP-RULES-2 (pinned): tolerances are type-checked only - a negative B40.pct or a B47.min above B47.max is accepted", async () => {
-    const a = await api.patchRule(ADMIN, "B40", body({ tolerances: { "B40.pct": -1 }, reason: "QA probe" }));
-    expect(a.status).toBe(200);
-    const c = await api.patchRule(ADMIN, "B47", body({ tolerances: { "B47.min": 500000 }, reason: "QA probe" }));
-    expect(c.status).toBe(200);
-    await api.deleteRule(ADMIN, "B40", "QA cleanup");
-    await api.deleteRule(ADMIN, "B47", "QA cleanup");
+  it("GAP-RULES-2 (fixed): tolerance ranges are enforced - negative B40.pct, B47.min above B47.max, negative weeks and a positive B43.amount answer 422 INVALID_TOLERANCE without touching the hash", async () => {
+    const hash0 = (await api.rules()).body.config.hash;
+    expectErrorEnvelope(await api.patchRule(ADMIN, "B40", body({ tolerances: { "B40.pct": -1 }, reason: "QA probe" })), 422, "INVALID_TOLERANCE");
+    expectErrorEnvelope(await api.patchRule(ADMIN, "B47", body({ tolerances: { "B47.min": 500000 }, reason: "QA probe" })), 422, "INVALID_TOLERANCE");
+    expectErrorEnvelope(await api.patchRule(ADMIN, "B47", body({ tolerances: { "B47.min": 120000 }, reason: "QA probe" })), 422, "INVALID_TOLERANCE");
+    expectErrorEnvelope(await api.patchRule(ADMIN, "B184a", body({ tolerances: { "B184a.weeks": -1 }, reason: "QA probe" })), 422, "INVALID_TOLERANCE");
+    expectErrorEnvelope(await api.patchRule(ADMIN, "B43", body({ tolerances: { "B43.amount": 2500 }, reason: "QA probe" })), 422, "INVALID_TOLERANCE");
+    expectErrorEnvelope(await api.patchRule(ADMIN, "B31", body({ tolerances: { "B31.windowStart": "13-40" }, reason: "QA probe" })), 422, "INVALID_TOLERANCE");
+    expect((await api.rules()).body.config.hash).toBe(hash0);
+    // In-range values are still accepted (and B47.min/max may move together).
+    const ok = await api.patchRule(ADMIN, "B47", body({ tolerances: { "B47.min": 125000, "B47.max": 130000 }, reason: "QA probe" }));
+    expect(ok.status, ok.text).toBe(200);
+    expect(ok.body.changes).toHaveLength(2);
+    expect((await api.deleteRule(ADMIN, "B47", "QA cleanup")).status).toBe(200);
+    expect((await api.rules()).body.config.hash).toBe(hash0);
   });
   it("the mock Ariel member browser is hidden from Submitters and reseed is Admin-only; reseed is idempotent on the snapshot hash", async () => {
     expectErrorEnvelope(await api.arielMembers(SUB_0235), 403, "FORBIDDEN");

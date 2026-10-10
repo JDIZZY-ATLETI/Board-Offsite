@@ -106,31 +106,63 @@ export function toleranceString(config: Pick<RulesConfig, "tolerances">, key: st
   return typeof v === "string" ? v : fallback;
 }
 
-/** Keys an Admin may override through PATCH /api/rules/{ruleId}, with units for the UI. */
-export const TOLERANCE_KEYS: ReadonlyArray<{ key: string; ruleId: string; unit: string; type: "number" | "string" }> = [
+export interface ToleranceKeyDef {
+  key: string;
+  ruleId: string;
+  unit: string;
+  type: "number" | "string";
+  /** Inclusive bounds for number keys (GAP-RULES-2); the sign of the default is part of the contract. */
+  min?: number;
+  max?: number;
+  /** Human-readable note shown in the Admin UI. */
+  note?: string;
+}
+
+/** Keys an Admin may override through PATCH /api/rules/{ruleId}, with units and ranges for the UI and the API. */
+export const TOLERANCE_KEYS: ReadonlyArray<ToleranceKeyDef> = [
   { key: "B31.windowStart", ruleId: "B31", unit: "MM-DD", type: "string" },
-  { key: "B37.tolerance1Weeks", ruleId: "B37", unit: "weeks", type: "number" },
-  { key: "B37.tolerance2Dollars", ruleId: "B37", unit: "$ (Core Data only)", type: "number" },
-  { key: "B38.toleranceWeeks", ruleId: "B38", unit: "weeks", type: "number" },
-  { key: "B40.pct", ruleId: "B40", unit: "ratio", type: "number" },
-  { key: "B41.pct", ruleId: "B41", unit: "ratio", type: "number" },
-  { key: "B43.amount", ruleId: "B43", unit: "$", type: "number" },
-  { key: "B44.amount", ruleId: "B44", unit: "$", type: "number" },
-  { key: "B47.min", ruleId: "B47", unit: "$", type: "number" },
-  { key: "B47.max", ruleId: "B47", unit: "$", type: "number" },
-  { key: "B53a.pa", ruleId: "B53a", unit: "$", type: "number" },
-  { key: "B53b.pa", ruleId: "B53b", unit: "$", type: "number" },
-  { key: "B184a.weeks", ruleId: "B184a", unit: "weeks", type: "number" },
-  { key: "B184b.weeks", ruleId: "B184b", unit: "weeks", type: "number" },
-  { key: "B184c.weeks", ruleId: "B184c", unit: "weeks", type: "number" },
-  { key: "B185.weeks", ruleId: "B185", unit: "weeks", type: "number" },
-  { key: "B186a.weeks", ruleId: "B186a", unit: "weeks", type: "number" },
-  { key: "B186b.weeks", ruleId: "B186b", unit: "weeks", type: "number" },
-  { key: "B186c.factor", ruleId: "B186c", unit: "ratio", type: "number" },
-  { key: "B214.weeks", ruleId: "B214", unit: "weeks", type: "number" },
-  { key: "B214.minLeaveDays", ruleId: "B214", unit: "days", type: "number" },
+  { key: "B37.tolerance1Weeks", ruleId: "B37", unit: "weeks", type: "number", min: 0, max: 52 },
+  { key: "B37.tolerance2Dollars", ruleId: "B37", unit: "$ (Core Data only)", type: "number", min: 0, max: 100000, note: "Not used by the Events (Final Data) variant" },
+  { key: "B38.toleranceWeeks", ruleId: "B38", unit: "weeks", type: "number", min: -52, max: 0, note: "Floor below the calculated amount; zero or negative" },
+  { key: "B40.pct", ruleId: "B40", unit: "ratio", type: "number", min: 0, max: 10 },
+  { key: "B41.pct", ruleId: "B41", unit: "ratio", type: "number", min: 0, max: 10 },
+  { key: "B43.amount", ruleId: "B43", unit: "$", type: "number", min: -10000000, max: 0, note: "Decrease threshold; zero or negative" },
+  { key: "B44.amount", ruleId: "B44", unit: "$", type: "number", min: -10000000, max: 0, note: "Decrease threshold; zero or negative" },
+  { key: "B47.min", ruleId: "B47", unit: "$", type: "number", min: 0, max: 100000000, note: "Must stay below B47.max" },
+  { key: "B47.max", ruleId: "B47", unit: "$", type: "number", min: 0, max: 100000000, note: "Must stay above B47.min" },
+  { key: "B53a.pa", ruleId: "B53a", unit: "$", type: "number", min: 0, max: 100000 },
+  { key: "B53b.pa", ruleId: "B53b", unit: "$", type: "number", min: 0, max: 100000 },
+  { key: "B184a.weeks", ruleId: "B184a", unit: "weeks", type: "number", min: 0, max: 52 },
+  { key: "B184b.weeks", ruleId: "B184b", unit: "weeks", type: "number", min: 0, max: 52 },
+  { key: "B184c.weeks", ruleId: "B184c", unit: "weeks", type: "number", min: 0, max: 52 },
+  { key: "B185.weeks", ruleId: "B185", unit: "weeks", type: "number", min: -52, max: 0, note: "Zero or negative" },
+  { key: "B186a.weeks", ruleId: "B186a", unit: "weeks", type: "number", min: -52, max: 0, note: "Zero or negative" },
+  { key: "B186b.weeks", ruleId: "B186b", unit: "weeks", type: "number", min: -52, max: 0, note: "Zero or negative" },
+  { key: "B186c.factor", ruleId: "B186c", unit: "ratio", type: "number", min: 0, max: 1 },
+  { key: "B214.weeks", ruleId: "B214", unit: "weeks", type: "number", min: 0, max: 52 },
+  { key: "B214.minLeaveDays", ruleId: "B214", unit: "days", type: "number", min: 0, max: 366 },
 ];
 
 export function toleranceKeysFor(ruleId: string): typeof TOLERANCE_KEYS {
   return TOLERANCE_KEYS.filter((t) => t.ruleId === ruleId);
+}
+
+/**
+ * Validates one tolerance value against its definition; returns the problem or null. Cross-key rules (B47.min <
+ * B47.max) are checked by `validateToleranceSet` against the effective values.
+ */
+export function toleranceProblem(def: ToleranceKeyDef, v: unknown): string | null {
+  if (def.type === "string") return typeof v === "string" && /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(v) ? null : `${def.key} must be MM-DD`;
+  if (typeof v !== "number" || !Number.isFinite(v)) return `${def.key} must be a number`;
+  if (def.min !== undefined && v < def.min) return `${def.key} must be >= ${def.min}`;
+  if (def.max !== undefined && v > def.max) return `${def.key} must be <= ${def.max}`;
+  return null;
+}
+
+/** Cross-key constraints over the effective tolerances after a patch is applied. */
+export function validateToleranceSet(effective: Record<string, number | string>): string | null {
+  const min = effective["B47.min"];
+  const max = effective["B47.max"];
+  if (typeof min === "number" && typeof max === "number" && !(min < max)) return `B47.min (${min}) must be less than B47.max (${max})`;
+  return null;
 }

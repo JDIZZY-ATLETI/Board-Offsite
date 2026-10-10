@@ -4,7 +4,7 @@ import type { DbOrTx } from "@/lib/db/client";
 import { auditLog, rulesConfigOverrides } from "@/lib/db/schema";
 import { SYSTEM_STREAM } from "@/lib/ledger/streams";
 import type { RulesConfigChangedPayload, Session } from "@/types";
-import { buildRulesConfig, readRulesConfigFile, TOLERANCE_KEYS, type RulesConfig, type RulesConfigFile, type RulesConfigOverride } from "./config";
+import { buildRulesConfig, readRulesConfigFile, TOLERANCE_KEYS, toleranceProblem, validateToleranceSet, type RulesConfig, type RulesConfigFile, type RulesConfigOverride } from "./config";
 import { ruleById } from "./registry";
 
 let fileCache: RulesConfigFile | null = null;
@@ -53,12 +53,14 @@ export async function patchRuleConfig(ctx: AppContext, session: Session, ruleId:
   for (const k of Object.keys(patch.tolerances ?? {})) {
     if (!allowedKeys.has(k)) throw new RulesConfigError(422, "UNKNOWN_TOLERANCE", `${k} is not a tolerance of ${ruleId}`);
     const def = TOLERANCE_KEYS.find((t) => t.key === k)!;
-    const v = patch.tolerances![k];
-    if (def.type === "number" && (typeof v !== "number" || !Number.isFinite(v))) throw new RulesConfigError(422, "INVALID_TOLERANCE", `${k} must be a number`);
-    if (def.type === "string" && (typeof v !== "string" || !/^\d{2}-\d{2}$/.test(v))) throw new RulesConfigError(422, "INVALID_TOLERANCE", `${k} must be MM-DD`);
+    const problem = toleranceProblem(def, patch.tolerances![k]);
+    if (problem) throw new RulesConfigError(422, "INVALID_TOLERANCE", problem);
   }
   return ctx.db.transaction(async (tx) => {
     const before = await loadEffectiveRulesConfig(ctx, tx);
+    // GAP-RULES-2: cross-key constraints are checked against the values that would become effective.
+    const crossProblem = validateToleranceSet({ ...before.tolerances, ...(patch.tolerances ?? {}) });
+    if (crossProblem) throw new RulesConfigError(422, "INVALID_TOLERANCE", crossProblem);
     const changes: RulesConfigChangedPayload["changes"] = [];
     const at = ctx.clock().toISOString();
     const upsert = async (key: string, value: unknown, from: unknown) => {
@@ -87,6 +89,7 @@ export async function patchRuleConfig(ctx: AppContext, session: Session, ruleId:
 
 /** Removes every Admin override for a rule (returns to file defaults). */
 export async function resetRuleConfig(ctx: AppContext, session: Session, ruleId: string, reason: string): Promise<{ config: RulesConfig; ledgerSeq: number | null }> {
+  if (!ruleById(ruleId)) throw new RulesConfigError(404, "NOT_FOUND", `rule ${ruleId} not found`);
   return ctx.db.transaction(async (tx) => {
     const before = await loadEffectiveRulesConfig(ctx, tx);
     const rows = await tx.select().from(rulesConfigOverrides).where(eq(rulesConfigOverrides.ruleId, ruleId));

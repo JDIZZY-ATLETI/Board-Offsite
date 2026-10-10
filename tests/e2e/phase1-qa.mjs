@@ -19,9 +19,16 @@ const golden = (s) => readFileSync(path.resolve("tests/golden", s, "input.csv"))
 const results = [];
 const axeSummary = {};
 let failed = 0;
-let saltCounter = Date.now() % 1000;
-// Trailing CRLFs change the bytes (dedup key) without adding rows.
-const salted = (buf) => Buffer.concat([buf, Buffer.from("\r\n".repeat(2 + (saltCounter++ % 997)))]);
+let saltCounter = Date.now() % 100000;
+// One extra TERFIN row with a SIN unknown to Ariel: bytes differ per run (dedup key); the only effect on counts is
+// exactly +1 rejected row via B2 (QA GAP-E2E-2 - appending bytes mutated the last row).
+const SALT_ROWS = 1;
+const salted = (buf) => {
+  const text = buf.toString("latin1").replace(/(\r?\n)*$/, "");
+  const sin = String(100000000 + ((Date.now() + saltCounter++) % 899999999)).slice(0, 9);
+  return Buffer.from(`${text}\r\n${sin},SALT,Row,TERFIN,09302026,10.00,980.00,,,1800,,,,,\r\n`, "latin1");
+};
+const expectedCounts = (s) => JSON.parse(readFileSync(path.resolve("tests/golden", s, "expected-counts.json"), "utf8"));
 
 function ok(name, cond, detail = "") {
   results.push({ name, pass: !!cond, detail });
@@ -109,6 +116,8 @@ try {
   const initialBadge = await page.locator('[data-testid^="status-badge-"]').first().getAttribute("data-testid");
   await page.getByTestId("status-badge-VALIDATED").first().waitFor({ timeout: 90_000 });
   ok("mixed-100-rows reaches VALIDATED", true, mixedId);
+  const mixedApi = await (await page.request.get(`${BASE}/api/batches/${mixedId}`)).json();
+  ok(`GAP-E2E-2: API counts = golden + ${SALT_ROWS} salt row`, mixedApi.counts?.rejected === expectedCounts("mixed-100-rows").rejected + SALT_ROWS && mixedApi.counts?.held === expectedCounts("mixed-100-rows").held && mixedApi.counts?.rows === expectedCounts("mixed-100-rows").rows + SALT_ROWS, JSON.stringify(mixedApi.counts));
   ok("preflight testid present on upload (section 9.5)", true);
   const live = await page.getByTestId("batch-live-region").textContent().catch(() => null);
   if (initialBadge === "status-badge-VALIDATED") note("aria-live announcement", "batch was already VALIDATED on first paint; announcement not observable in this run");
@@ -221,6 +230,8 @@ try {
   await mp.goto(`${BASE}/upload`);
   await mp.getByTestId("app-shell").waitFor();
   await mp.waitForLoadState("networkidle");
+  // FLAKY-E2E-1: `useIsDesktop` resolves after hydration (matchMedia); wait for the note or the disabled dropzone.
+  await mp.locator('text=/desktop browser|1024/i, [data-testid="dropzone"][aria-disabled="true"]').first().waitFor({ timeout: 15_000 }).catch(() => {});
   const mobileNote = (await mp.locator("text=/desktop browser|1024/i").count()) > 0;
   const dzCount = await mp.getByTestId("dropzone").count();
   const dzDisabled = dzCount > 0 ? (await mp.getByTestId("dropzone").getAttribute("aria-disabled")) === "true" : false;

@@ -23,7 +23,9 @@ export interface RuleCatalogueItem {
   dataImportMessage: string;
   portalMessage: string;
   specNote: string | null;
-  tolerances: Array<{ key: string; value: number | string | null; unit: string; type: "number" | "string" }>;
+  /** Every rule in the registry has an evaluator (Phase 1 field restored for the UI, COS-P2-1). */
+  implemented: boolean;
+  tolerances: Array<{ key: string; value: number | string | null; unit: string; type: "number" | "string"; min?: number; max?: number; note?: string }>;
 }
 
 const MULTI_IDS: Record<string, string[]> = { I7: ["6503", "6642"], B112: ["1616", "8112"], B53b: ["7375", "8795"] };
@@ -47,7 +49,8 @@ export function catalogueFor(config: RulesConfig): RuleCatalogueItem[] {
     dataImportMessage: r.dataImportMessage,
     portalMessage: r.portalMessage,
     specNote: r.specNote ?? null,
-    tolerances: toleranceKeysFor(r.id).map((t) => ({ key: t.key, value: config.tolerances[t.key] ?? null, unit: t.unit, type: t.type })),
+    implemented: true,
+    tolerances: toleranceKeysFor(r.id).map((t) => ({ key: t.key, value: config.tolerances[t.key] ?? null, unit: t.unit, type: t.type, ...(t.min !== undefined ? { min: t.min } : {}), ...(t.max !== undefined ? { max: t.max } : {}), ...(t.note ? { note: t.note } : {}) })),
   }));
 }
 

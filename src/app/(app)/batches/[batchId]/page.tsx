@@ -79,10 +79,10 @@ export default async function BatchOverviewPage({ params }: { params: Promise<{ 
       ) : null}
 
       <section aria-label="Counts" className="grid gap-4 sm:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Rows" value={batch.counts.rows} />
-        <StatCard label="Accepted" value={batch.counts.accepted} status={batch.counts.rows ? "ok" : "neutral"} />
-        <StatCard label="Rejected" value={batch.counts.rejected} status={batch.counts.rejected > 0 ? "bad" : "neutral"} href={batch.counts.rejected > 0 ? `${base}/findings?severity=COMPLETE_MEMBER_ERROR` : undefined} footer={rejectedFindings ? `${formatInt(rejectedFindings)} member-error findings` : undefined} />
-        <StatCard label="Warnings" value={batch.counts.warnings} status={batch.counts.warnings > 0 ? "attention" : "neutral"} footer={`${formatInt(heldCount)} held`} />
+        <StatCard label="Rows" value={batch.counts.rows} data-testid="kpi-rows" />
+        <StatCard label="Accepted" value={batch.counts.accepted} status={batch.counts.rows ? "ok" : "neutral"} data-testid="kpi-accepted" />
+        <StatCard label="Rejected" value={batch.counts.rejected} status={batch.counts.rejected > 0 ? "bad" : "neutral"} href={batch.counts.rejected > 0 ? `${base}/findings?severity=COMPLETE_MEMBER_ERROR` : undefined} footer={rejectedFindings ? `${formatInt(rejectedFindings)} member-error findings` : undefined} data-testid="kpi-rejected" />
+        <StatCard label="Warnings" value={batch.counts.warnings} status={heldCount > 0 ? "attention" : "neutral"} footer={`${formatInt(heldCount)} held`} href={heldCount > 0 ? `${base}/findings?severity=WARNING&override=pending` : undefined} data-testid="kpi-warnings" />
         <StatCard label="Info" value={infoCount} />
         <StatCard label="Update items" value={null} format="raw" footer="Available in a later phase" />
       </section>

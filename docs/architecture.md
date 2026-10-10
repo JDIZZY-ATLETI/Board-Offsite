@@ -503,9 +503,9 @@ All seed members belong to employer `0235` unless stated; execution date assumed
 | M13 | 900000013 | MOORE, Mia | **NHH member** | employer 0235 St. Michael's, indicator NHHSTM, merger 2019-07-01; previous-year targets before 2019-07-01 → B223 |
 | M14 | 900000014 | NG, Noah | **Retro paid in year** | RETRO-indicator contribution paymentDate 2026-04-15 → B181/B182 when PA≠0 & zero weeks/contribs |
 | M15 | 900000015 | OWEN, Olivia | **Enrolled Dec 8–31 last year** | permanency 2025-12-15 → B31 when Weeks_CurrentYear = 0 and executionDate year = 2025 (fixture sets executionDate) |
-| M16 | 900000017 | PATEL, Priya | **Concurrent employer** | employments at 0235 (active) and 0359 (active) → B5 applies only to reporting employer |
-| M17 | 900000018 | QUINN, Quentin | **Duplicate SIN in Ariel** | two member rows share SIN → B204 |
-| M18 | 900000019 | ROSS, Rae | **Disability breaks on TERFIN** | breaks DTO 2026-01-10→open, NCS 2026-05-01→open, NCM 2026-11-01→2026-12-15 (starts after end date 2026-09-30) → closure/deletion rules |
+| M16 | 900000017 | QUINN, Quentin | **Concurrent employer** | employments at 0235 (active) and 0359 (active) → B5 applies only to reporting employer |
+| M17 | 900000018 | ROSS, Rae | **Duplicate SIN in Ariel** | two member rows share SIN → B204 |
+| M18 | 900000019 | SINGH, Sam | **Disability breaks on TERFIN** | breaks DTO 2026-01-10→open, NCS 2026-05-01→open, NCM 2026-11-01→2026-12-15 (starts after end date 2026-09-30) → closure/deletion rules |
 
 SIN check: all test SINs must pass Luhn (mod-10) so B3-style checks (not applicable to Events, see §7.9.6) never interfere; the seed generator recomputes the check digit.
 
@@ -973,6 +973,8 @@ Templates use the spec's `{n}` placeholders. `renderMessage(template, params)` r
 ### 7.5 Warning override reasons
 
 Each warning rule exposes `overrideReasons: string[]` exactly as the spec lists them. An override request must quote one of them verbatim (or `"Other - please provide explanation"` + free-text `note` where the spec offers "Other"). Overrides are per finding, actor-attributed, ledgered, and included in the Summary of Validations with the chosen reason.
+
+A warning on a row that is already **REJECTED** (a CME on the same row) cannot be overridden: the API answers `409 ROW_REJECTED` and nothing is persisted or ledgered (Phase 2 QA GAP-OVR-1). Overriding it could never release the row, so the UI hides the action on rejected rows and a ledger entry would only record a decision with no effect. Overrides are accepted only while the batch is `VALIDATED` (`422 BATCH_NOT_VALIDATED`).
 
 ### 7.6 Determinism
 
@@ -1478,8 +1480,14 @@ All routes under `src/app/api/**/route.ts`. JSON bodies validated with zod; erro
 | `GET /api/ariel/members/{sinPseudo}` | Reviewer, Admin | — | `ArielMemberSnapshot` with SIN masked (mock browser) |
 | `GET /api/ariel/members` | Reviewer, Admin | `?employerId=&q=` (name) | list |
 | `GET /api/ariel/rates` | any | — | rate tables |
-| `GET /api/rules` | any | — | rule catalogue (id, label, messageId, level, severity, visibility, overrideReasons, enabled) |
-| `GET /api/config/rules` · `PUT` | Admin | `RulesConfig` | current config (+ ledger `system` entry on change) |
+| `GET /api/rules` | any | — | `{ items: RuleCatalogueItem[], config: { hash, enabled, tolerances, nhh, nhhEmployers, disabled } }` (id, label, messageId(s), level, severity, visibility, overrideReasons, enabled, enabledByDefault, overridden, implemented, tolerances) |
+| `GET /api/rules/{ruleId}` | any | — | one `RuleCatalogueItem` (override reasons for the drawer) |
+| `PATCH /api/rules/{ruleId}` | Admin | `{ enabled?, tolerances?, reason }` | `{ rule, config, changes[], ledgerSeq }`; 404 unknown rule; 422 `UNKNOWN_TOLERANCE` / `INVALID_TOLERANCE` (per-key ranges + `B47.min < B47.max`); ledgered `RulesConfigChanged` on `system` |
+| `DELETE /api/rules/{ruleId}?reason=` | Admin | — | drops every override for the rule (back to file defaults); 404 unknown rule; ledgered |
+| `GET /api/rules/history` | Reviewer, Admin | — | last 100 `RulesConfigChanged` entries (desc) |
+| `POST /api/findings/{findingId}/override` · `POST /api/batches/{batchId}/findings/{findingId}/override` | Reviewer, Admin (Submitter with `ALLOW_SUBMITTER_OVERRIDE`) | `{ reason, note? }` | `{ finding, rowOutcome, heldRemaining, ledgerSeq }`; 422 `REASON_NOT_ALLOWED` / `NOTE_REQUIRED` / `NOT_OVERRIDABLE` / `BATCH_NOT_VALIDATED`; 409 `ALREADY_OVERRIDDEN` / `ROW_REJECTED` |
+| `POST /api/batches/{batchId}/findings/override` | same | `{ findingIds[1..200], reason, note? }` | per-item results; 200 all ok, 207 partial, 422 `NO_OVERRIDE_APPLIED` |
+| `POST /api/ariel/reseed` | Admin, non-production | — | reloads `tests/fixtures/ariel-seed.json` (404 in production) |
 | `GET /api/audit` | Admin | `?actor=&action=&from=&to=` | audit log |
 
 Response shapes for `BatchSummary`, `RecordSummary`, `VerificationResult` are zod schemas exported from `src/lib/schemas/api.ts` and shared with the UI.
@@ -1679,7 +1687,7 @@ Each item states the ambiguity, the **default we build**, and who should confirm
 | Q6 | B31 is CME but has an override reason and message says "select a valid override reason". | Implement as WARNING requiring override. | HOOPP |
 | Q7 | B33 CY service clause says "termination year − 1" (likely copy-paste from PY). | Use termination year for CY. | HOOPP |
 | Q8 | B53b has IDs 7375 (Events) and 8795 (Events_LTD) with no selection rule. | 8795 when FA/ACW inputs were used (situations 2–3), else 7375. | HOOPP |
-| Q9 | Rate tables (YMPE/MGA, PAMAXDB, REDFE, contribution rates per year) are not in the provided documents. | Seed with placeholder 2024–2026 values flagged `placeholder: true`; rules read only from the adapter's rate tables. | HOOPP actuarial/data team |
+| Q9 | Rate tables (YMPE/MGA, PAMAXDB, REDFE, contribution rates per year) are not in the provided documents. | Seed with placeholder **2010–2027** values flagged `placeholder: true`; rules read only from the rate tables frozen in the batch's Ariel snapshot (`{"kind":"rates"}` line, part of `arielSnapshotHash`). A year with no row makes the dependent rule skip (no finding, `ruleSkips` in the execution report) rather than throw. | HOOPP actuarial/data team |
 | Q10 | B186a/b/c define `ValidationYear = Year(ExecutionParameters.StartDate)` while sibling rules use EventYear / EventYear−1 for Events. | Use EventYear and EventYear−1 (consistent with B184/B185 and the message params). | HOOPP |
 | Q11 | B153 sectioned "Contributions Events" but is a Retro rule. | Excluded from Events; listed for confirmation. | HOOPP |
 | Q12 | `Other Information = "Events" + EmploymentEndDate` — apply to DECFIN (which has no EmploymentEndDate on GUI)? | Emit with the event date for all types. | HOOPP |
@@ -1695,6 +1703,9 @@ Each item states the ambiguity, the **default we build**, and who should confirm
 | Q22 | B53b ACW factor calculation (Chapter 2 §4.2C) not available. | Use stored ACW service transaction; finding carries `acwSource`. | HOOPP |
 | Q23 | NHH employer codes table in spec is partially inconsistent (0235 listed for three names). | Config-driven list; confirm codes. | HOOPP |
 | Q24 | Retention periods. | 7 years (regulatory) as placeholder. | HOOPP compliance |
+| Q25 | B184c (`ServiceTerminatedMidYear`) says breaks are carved out up to `(Y+1)-01-01`, but a break running past the termination date would then reduce the expected service below what the member could have accrued before leaving. | Breaks are clipped at **EventDate + 1** (exclusive end of the mid-year window), matching the window the expected service itself is computed over. | HOOPP |
+| Q26 | B184b/B184c and B186a-c use `File.TerminationDate`; for the provisional derivation the Events row has no such field, only the event date (EmploymentEndDate / DateOfDeath). | **Ariel.TerminationDate as written by the provisional derivation = the event date** is used wherever the spec says `File.TerminationDate` or `Ariel.TerminationDate` for the row being validated (sibling rules B5/B109 read the stored Ariel value, which is what they compare against). | HOOPP |
+| Q27 | B40/B41/B43/B44 loop over ValidationYear = EventYear .. EventYear-1 comparing `AE(V)` with `AE(V-1)`; the spec does not say what a year with **no service at all** (CalculateAE = 0, "no data") means. Read literally, B43/B44 would fire on any drop to zero (`0 < prev - 2500`). | A year whose AE evaluates to **0 is skipped** (treated as "no data", not as earnings of $0): B40/B41 cannot fire on it anyway and B43/B44 do not report a decrease. **Needs a HOOPP decision** - if a drop to zero should be reported, remove the `cur.isZero()` guard in `_ae-rules.ts`. Rate-table years outside the seeded range are also skipped (recorded as `RATE_MISSING:<table>:<year>` in the execution report `ruleSkips`), never rejected. | HOOPP |
 
 Assumptions not needing confirmation: single tenant; English only; civil dates in America/Toronto are stored as dates without TZ; Node 22 LTS; Postgres 16; no concurrent edits of the same batch by two reviewers (optimistic `contentHash` suffices).
 
