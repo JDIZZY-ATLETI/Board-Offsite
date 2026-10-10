@@ -45,13 +45,13 @@ const NAV: Array<{ label: string | null; items: NavDef[] }> = [
     items: [
       { label: "Ledger explorer", href: "/ledger", icon: "ledger", roles: REVIEW },
       { label: "Members", href: "/members", icon: "members", roles: REVIEW, phase: 3 },
-      { label: "Mock Ariel", href: "/ariel", icon: "ariel", roles: REVIEW, phase: 2 },
+      { label: "Mock Ariel", href: "/ariel", icon: "ariel", roles: REVIEW },
     ],
   },
   {
     label: "Admin",
     items: [
-      { label: "Rules & config", href: "/admin/rules", icon: "rules", roles: REVIEW, phase: 2 },
+      { label: "Rules & config", href: "/admin/rules", icon: "rules", roles: REVIEW },
       { label: "Roles", href: "/admin/roles", icon: "roles", roles: ADMIN, phase: 4 },
       { label: "Audit log", href: "/admin/audit", icon: "audit", roles: ADMIN, phase: 4 },
     ],
