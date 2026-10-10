@@ -237,7 +237,8 @@ try {
   ok("ledger testids (ledger-table, ledger-head, verify-button, integrity-banner-*)", ledgerMissing.length === 0, ledgerMissing.join(","));
   ok("COS-1 (fixed): section 9.5 testid ledger-row-{seq} present", (await page.locator('[data-testid^="ledger-row-"]').count()) > 0);
   await axeScan(page, "ledger explorer");
-  await page.getByTestId("verify-button").click();
+  // The shell banner and the ledger page both render a verify button; use the one inside <main>.
+  await page.locator("#main").getByTestId("verify-button").click();
   await page.getByTestId("verify-dialog").waitFor();
   await page.getByRole("button", { name: "Verify", exact: true }).click();
   await page.getByTestId("integrity-banner-verified").waitFor({ timeout: 60_000 });
@@ -256,7 +257,13 @@ try {
   ok("Esc closes the drawer", true);
   await login(page, "reviewer");
   await page.goto(`${BASE}/ledger`);
-  ok("Reviewer sees Verify disabled", await page.getByTestId("verify-button").isDisabled());
+  ok("Reviewer sees Verify disabled", await page.locator("#main").getByTestId("verify-button").isDisabled());
+  // Phase 2 (BUG-UI-P2-1 fixed): HELD rows drive the "Next step" copy on the batch overview.
+  await page.goto(mixedUrl);
+  await page.getByTestId("next-step").waitFor();
+  const nextStep = (await page.getByTestId("next-step").textContent()) ?? "";
+  ok("Phase 2: Reviewer overview of a batch with HELD rows says N held rows need an override (not Ledgering)", /\d+ held rows? need an override/.test(nextStep) && !nextStep.includes("Ledgering"), nextStep.replace(/\s+/g, " ").slice(0, 120));
+  ok("Phase 2: Open held rows CTA links to the warnings filter", (await page.getByRole("link", { name: /Open held rows/ }).first().getAttribute("href"))?.includes("severity=WARNING") === true);
   await page.goto(`${BASE}/upload`);
   await page.waitForURL(/\/forbidden/);
   ok("Reviewer /upload -> /forbidden (server-enforced)", true);

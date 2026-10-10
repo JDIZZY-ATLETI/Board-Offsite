@@ -173,7 +173,8 @@ try {
   await page.getByTestId("ledger-table").waitFor();
   const ledgerRows = await page.locator('[data-testid="ledger-table"] tbody tr[data-row-id]').count();
   ok("Ledger explorer lists entries", ledgerRows > 0, `${ledgerRows} rows on page`);
-  await page.getByTestId("verify-button").click();
+  // The shell banner and the ledger page both render a verify button; use the one inside <main>.
+  await page.locator("#main").getByTestId("verify-button").click();
   await page.getByTestId("verify-dialog").waitFor();
   await page.getByRole("button", { name: "Verify", exact: true }).click();
   await page.getByTestId("integrity-banner-verified").waitFor({ timeout: 60_000 });

@@ -1,6 +1,6 @@
 {
   "base": "http://localhost:3000",
-  "at": "2026-10-09T21:07:21.005Z",
+  "at": "2026-10-10T01:34:04.726Z",
   "failed": 0,
   "results": [
     {
@@ -36,7 +36,7 @@
     {
       "name": "mixed-100-rows reaches VALIDATED",
       "pass": true,
-      "detail": "01a1227b-c0d8-7ea5-ab63-fc2feaf7ee5a"
+      "detail": "01a12370-da38-7d4e-8b8d-58750d81c67e"
     },
     {
       "name": "preflight testid present on upload (section 9.5)",
@@ -81,17 +81,17 @@
     {
       "name": "findings table renders rows",
       "pass": true,
-      "detail": "41 rows"
+      "detail": "111 rows"
     },
     {
       "name": "DataTable keyboard: ArrowDown moves focus to the next row",
       "pass": true,
-      "detail": "01a1227b-c4a1-7a87-8ff9-299164652114 -> 01a1227b-c4a2-7327-bc3e-30f9052c983f"
+      "detail": "01a12370-dfe5-79c0-b07c-06e3fc9cef40 -> 01a12370-dfe5-79c0-b07c-06e4f6675ebc"
     },
     {
       "name": "DataTable keyboard: End/Home jump to last/first row",
       "pass": true,
-      "detail": "end=01a1227b-c4a5-7c8d-8947-5a4c251adfe4 home=01a1227b-c4a1-7a87-8ff9-299164652114"
+      "detail": "end=01a12370-e006-7ee8-a28b-a1747c27d3a6 home=01a12370-dfe5-79c0-b07c-06e3fc9cef40"
     },
     {
       "name": "DataTable uses a roving tabindex (exactly one row tabbable)",
@@ -225,6 +225,16 @@
     },
     {
       "name": "Reviewer sees Verify disabled",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Phase 2: Reviewer overview of a batch with HELD rows says N held rows need an override (not Ledgering)",
+      "pass": true,
+      "detail": "Next step8 held rows need an overrideOpen held rows →"
+    },
+    {
+      "name": "Phase 2: Open held rows CTA links to the warnings filter",
       "pass": true,
       "detail": ""
     },

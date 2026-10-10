@@ -13,7 +13,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export interface BatchPageData {
   session: Session;
   batch: BatchDetail;
-  /** Rows still undecided after validation (= HELD in later phases). */
+  /** Rows waiting for a warning override (outcome HELD, Phase 2). */
   heldCount: number;
 }
 
@@ -31,7 +31,7 @@ export const loadBatchPage = cache(async (batchId: string): Promise<BatchPageDat
   let heldCount = 0;
   if (batch.status === "VALIDATED") {
     const c = await recordOutcomeCounts(ctx, batchId);
-    heldCount = c.pending;
+    heldCount = c.held;
   }
   return { session, batch, heldCount };
 });
