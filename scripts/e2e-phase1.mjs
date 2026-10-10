@@ -65,7 +65,7 @@ try {
   // ---- Submitter: dashboard, upload happy-terfin -> VALIDATED via polling ----
   await login(page, "submitter-0235");
   ok("login as Submitter lands on Dashboard", (await page.locator("h1").first().textContent())?.includes("Dashboard"));
-  ok("Submitter nav hides Ledger explorer", (await page.locator('nav[aria-label="Primary"] a', { hasText: "Ledger explorer" }).count()) === 0);
+  ok("Submitter nav hides Ledger explorer", (await page.locator('nav[aria-label="Sidebar navigation"] a', { hasText: "Ledger explorer" }).count()) === 0 && (await page.locator('nav[aria-label="Sidebar navigation"] a', { hasText: "Upload" }).count()) === 1);
   await shot(page, "dashboard");
 
   await page.goto(`${BASE}/upload`);
@@ -142,9 +142,14 @@ try {
   const firstRule = page.getByRole("menuitem").filter({ hasNot: page.getByText("All") }).nth(1);
   await firstRule.waitFor({ state: "visible" });
   const ruleLabel = (await firstRule.textContent())?.trim().split(/\s/)[0];
-  // FLAKY-E2E-1: the menu animates in; wait for it to be stable before clicking.
-  await firstRule.hover();
-  await firstRule.click();
+  // FLAKY-E2E-1: the menu animates in; wait for it to be stable before clicking. Popper can place the menu outside the
+  // viewport on a short page, so fall back to a DOM click (Radix selects items on click).
+  try {
+    await firstRule.hover({ timeout: 5_000 });
+    await firstRule.click({ timeout: 5_000 });
+  } catch {
+    await firstRule.evaluate((el) => el.click());
+  }
   await page.waitForURL(/ruleId=/);
   await page.locator('th[scope="rowgroup"]').first().waitFor();
   const groupHeaders = await page.locator('th[scope="rowgroup"]').allTextContents();
@@ -174,7 +179,8 @@ try {
   await page.getByTestId("report-card-execution").waitFor();
   ok("Reports: execution report viewable", (await page.getByTestId("report-card-execution").getByRole("link", { name: /View/ }).count()) === 1);
   ok("Reports: rejected individuals downloadable", (await page.getByTestId("report-card-rejected").getByTestId("download-rejected-button").count()) === 1);
-  ok("Reports: later-phase cards disabled", (await page.getByTestId("report-card-summary").getByRole("button", { disabled: true }).count()) === 1);
+  // Phase 2 item 12 enabled the Summary card (was a disabled later-phase card in Phase 1).
+  ok("Reports: Summary of validations card enabled with a View link (Phase 2)", (await page.getByTestId("report-card-summary-of-validations.csv").getByRole("link", { name: /View/ }).count()) === 1);
   await page.getByTestId("report-card-execution").getByRole("link", { name: /View/ }).click();
   await page.waitForURL(/reports\/execution-report/);
   ok("Execution report in-app view renders rule timing", (await page.textContent("body"))?.includes("Rule timing"));

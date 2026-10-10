@@ -56,9 +56,11 @@ async function uploadAndWait(page, buf, name) {
   await page.goto(`${BASE}/upload`);
   await page.locator('input[type="file"]').setInputFiles({ name, mimeType: "text/csv", buffer: buf });
   await page.locator('[data-testid^="preflight-"]').first().waitFor();
+  // Admin must pick the employer (Submitters have it fixed); fill after the pre-flight proves the form is hydrated.
+  if ((await page.locator("input#employer").count()) > 0) await page.locator("input#employer").fill("0235");
   await page.locator("text=computing").waitFor({ state: "detached", timeout: 10_000 }).catch(() => {});
   await page.getByTestId("upload-submit").click();
-  await page.waitForURL(/\/batches\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+  await page.waitForURL(/\/batches\/[0-9a-f-]{36}$/, { timeout: 90_000 });
   const url = page.url();
   await page.getByTestId("status-badge-VALIDATED").first().waitFor({ timeout: 90_000 });
   return url;
@@ -79,6 +81,9 @@ async function axeScan(page, label) {
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await context.newPage();
+// Dev-mode compiles on first hit can exceed the 30 s default on a loaded machine.
+page.setDefaultTimeout(60_000);
+page.setDefaultNavigationTimeout(90_000);
 const pageErrors = [];
 page.on("pageerror", (e) => pageErrors.push(e.message));
 
@@ -224,11 +229,13 @@ try {
   await shot(page, "12-summary-private");
   await login(page, "submitter-0235");
   await page.goto(`${mixedUrl}/reports/summary-of-validations.private.csv`);
+  // The server redirect() is streamed and completed client-side after `load`; wait for it like the /ariel check does.
+  await page.waitForURL(/\/forbidden/, { timeout: 15_000 }).catch(() => {});
   ok("Submitter deep-link to the private report -> forbidden", /\/forbidden/.test(page.url()) || (await page.locator("text=/don.t have access|Forbidden|403/i").count()) > 0, page.url());
 
   // ---------- 13: /ariel browser + member page ----------
   await login(page, "reviewer");
-  ok("Reviewer nav shows Mock Ariel and Rules & config", (await page.locator('nav[aria-label="Primary"] a', { hasText: "Mock Ariel" }).count()) === 1 && (await page.locator('nav[aria-label="Primary"] a', { hasText: "Rules & config" }).count()) === 1);
+  ok("Reviewer nav shows Mock Ariel and Rules & config", (await page.locator('nav[aria-label="Sidebar navigation"] a', { hasText: "Mock Ariel" }).count()) === 1 && (await page.locator('nav[aria-label="Sidebar navigation"] a', { hasText: "Rules & config" }).count()) === 1);
   await page.goto(`${BASE}/ariel`);
   await page.getByTestId("ariel-members-table").waitFor();
   const memberRows = await page.locator('[data-testid="ariel-members-table"] tbody tr[data-row-id]').count();
@@ -293,7 +300,7 @@ try {
   ok("B40 re-enabled; hash back to the original", restored.items.find((r) => r.id === "B40").enabled === true && restored.config.hash === hashBefore, `${restored.config.hash.slice(0, 8)} vs ${hashBefore.slice(0, 8)}`);
   await page.getByTestId("rule-tolerance-B47").click();
   await page.getByTestId("tolerance-dialog").waitFor();
-  await page.getByLabel("B47.min").fill("500000");
+  await page.locator("#tol-B47-min").fill("500000");
   await page.getByTestId("rule-change-reason").fill("E2E: invalid tolerance probe");
   await page.getByTestId("rule-change-confirm").click();
   await page.getByRole("alert").waitFor();
@@ -310,6 +317,8 @@ try {
   await page.getByTestId("findings-by-rule").waitFor();
   const fbr = (await page.getByTestId("findings-by-rule").textContent()) ?? "";
   ok("dashboard 'Findings by rule' panel lists rules with counts", /B2|B40|I42|B5/.test(fbr));
+  const fbrRows = await page.locator('[data-testid^="findings-by-rule-"]').count();
+  ok("panel: window label, top-N table rows (<= 8) with severity badges and a rule link into the registry", /Last 30 days/.test(fbr) && fbrRows > 0 && fbrRows <= 8 && (await page.locator('[data-testid="findings-by-rule"] [data-testid^="severity-badge-"]').count()) === fbrRows && (await page.locator('[data-testid="findings-by-rule"] a[href^="/admin/rules?q="]').count()) === fbrRows, `${fbrRows} rows`);
   await axeScan(page, "dashboard (Reviewer, findings by rule)");
   await shot(page, "15-dashboard-findings-by-rule");
   await login(page, "submitter-0235");

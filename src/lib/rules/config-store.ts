@@ -63,8 +63,15 @@ export async function patchRuleConfig(ctx: AppContext, session: Session, ruleId:
     if (crossProblem) throw new RulesConfigError(422, "INVALID_TOLERANCE", crossProblem);
     const changes: RulesConfigChangedPayload["changes"] = [];
     const at = ctx.clock().toISOString();
+    const file = fileRulesConfig();
     const upsert = async (key: string, value: unknown, from: unknown) => {
       changes.push({ ruleId, key, from, to: value });
+      const fileValue = key === "enabled" ? (file.enabled[ruleId] ?? rule.enabledByDefault) : file.tolerances[key];
+      if (value === fileValue) {
+        // Back at the file default: drop the override so equal effective configs always share one hash (GAP-RULES-3).
+        await tx.delete(rulesConfigOverrides).where(and(eq(rulesConfigOverrides.ruleId, ruleId), eq(rulesConfigOverrides.key, key)));
+        return;
+      }
       await tx
         .insert(rulesConfigOverrides)
         .values({ ruleId, key, value, updatedBy: session.actor, updatedAt: at })

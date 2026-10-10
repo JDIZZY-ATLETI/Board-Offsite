@@ -1,6 +1,6 @@
 {
   "base": "http://localhost:3000",
-  "at": "2026-10-10T01:34:04.726Z",
+  "at": "2026-10-10T03:36:21.259Z",
   "failed": 0,
   "results": [
     {
@@ -36,7 +36,17 @@
     {
       "name": "mixed-100-rows reaches VALIDATED",
       "pass": true,
-      "detail": "01a12370-da38-7d4e-8b8d-58750d81c67e"
+      "detail": "01a123dd-c04c-7abb-bad1-6303abe7a20f"
+    },
+    {
+      "name": "GAP-E2E-2: API counts - rows = golden + 1 salt row, held = golden, outcomes sum to rows",
+      "pass": true,
+      "detail": "{\"rows\":101,\"accepted\":20,\"rejected\":73,\"warnings\":16,\"infos\":4,\"held\":8}"
+    },
+    {
+      "name": "salt row rejected by B2 only",
+      "pass": true,
+      "detail": "B2"
     },
     {
       "name": "preflight testid present on upload (section 9.5)",
@@ -81,17 +91,17 @@
     {
       "name": "findings table renders rows",
       "pass": true,
-      "detail": "111 rows"
+      "detail": "112 rows"
     },
     {
       "name": "DataTable keyboard: ArrowDown moves focus to the next row",
       "pass": true,
-      "detail": "01a12370-dfe5-79c0-b07c-06e3fc9cef40 -> 01a12370-dfe5-79c0-b07c-06e4f6675ebc"
+      "detail": "01a123dd-c3d6-7c84-bb92-c3fef5c0495a -> 01a123dd-c3d7-7324-a12e-c37337d42d4e"
     },
     {
       "name": "DataTable keyboard: End/Home jump to last/first row",
       "pass": true,
-      "detail": "end=01a12370-e006-7ee8-a28b-a1747c27d3a6 home=01a12370-dfe5-79c0-b07c-06e3fc9cef40"
+      "detail": "end=01a123dd-c434-7466-a686-df12d6e35267 home=01a123dd-c3d6-7c84-bb92-c3fef5c0495a"
     },
     {
       "name": "DataTable uses a roving tabindex (exactly one row tabbable)",

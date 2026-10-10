@@ -234,7 +234,8 @@ try {
   await mp.getByTestId("app-shell").waitFor();
   await mp.waitForLoadState("networkidle");
   // FLAKY-E2E-1: `useIsDesktop` resolves after hydration (matchMedia); wait for the note or the disabled dropzone.
-  await mp.locator('text=/desktop browser|1024/i, [data-testid="dropzone"][aria-disabled="true"]').first().waitFor({ timeout: 15_000 }).catch(() => {});
+  // (A comma-joined text=/css selector is not a valid Playwright selector and threw straight into the catch -> no wait at all.)
+  await mp.getByTestId("desktop-only-note").waitFor({ timeout: 30_000 }).catch(() => {});
   const mobileNote = (await mp.locator("text=/desktop browser|1024/i").count()) > 0;
   const dzCount = await mp.getByTestId("dropzone").count();
   const dzDisabled = dzCount > 0 ? (await mp.getByTestId("dropzone").getAttribute("aria-disabled")) === "true" : false;

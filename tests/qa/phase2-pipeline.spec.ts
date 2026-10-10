@@ -212,6 +212,24 @@ describe("QA/Phase2: rules configuration effect boundary", () => {
     }
     expect((await api.rules()).body.config.hash).toBe(b.rulesConfigHash);
   });
+  it("GAP-RULES-3 (fixed): toggling a rule off and back on through PATCH returns to the file hash - no redundant override, no overridden tag", async () => {
+    const hash0 = (await api.rules()).body.config.hash;
+    const off = await api.patchRule(ADMIN, "B40", body({ enabled: false, reason: "QA: off" }));
+    expect(off.status, off.text).toBe(200);
+    expect(off.body.config.hash).not.toBe(hash0);
+    const on = await api.patchRule(ADMIN, "B40", body({ enabled: true, reason: "QA: on again" }));
+    expect(on.status, on.text).toBe(200);
+    expect(on.body.changes).toEqual([{ ruleId: "B40", key: "enabled", from: false, to: true }]);
+    expect(on.body.ledgerSeq).toBeTypeOf("number");
+    expect(on.body.config.hash).toBe(hash0);
+    expect((await api.rules()).body.items.find((r: { id: string }) => r.id === "B40")).toMatchObject({ enabled: true, overridden: false });
+    // Same for a tolerance set back to its file value.
+    const t1 = await api.patchRule(ADMIN, "B53a", body({ tolerances: { "B53a.pa": 300 }, reason: "QA: widen" }));
+    expect(t1.status, t1.text).toBe(200);
+    const t2 = await api.patchRule(ADMIN, "B53a", body({ tolerances: { "B53a.pa": 250 }, reason: "QA: back to file" }));
+    expect(t2.status, t2.text).toBe(200);
+    expect(t2.body.config.hash).toBe(hash0);
+  });
   it("GAP-RULES-1 (fixed): DELETE on an unknown rule id answers 404 NOT_FOUND", async () => {
     expectErrorEnvelope(await api.deleteRule(ADMIN, "NOPE", "QA probe"), 404, "NOT_FOUND");
   });

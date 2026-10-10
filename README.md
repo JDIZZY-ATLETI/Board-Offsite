@@ -15,6 +15,13 @@ shadcn-style primitives, app shell with role-filtered navigation, dev login, Das
 pre-flight), Batches list with live polling, Batch detail (Overview / Findings / Records / Reports), Ledger
 Explorer with integrity verification, and the global IntegrityBanner. See "Using the app" below.
 
+Phase 2 (L2 business rules + UI, `docs/ux-design.md` section 9.6 items 11-15) is implemented: the 41 L2 rules
+against a mock Ariel adapter (frozen per batch as a silver snapshot incl. rate tables), warning overrides that
+release HELD rows (drawer, bulk, amber "Overridden" strip, ledgered as `WarningOverridden`), PRIVATE
+(HOOPP-internal) findings with a Reviewer toggle, Summary of validations views, the `/ariel` mock browser,
+the `/admin/rules` registry with change history, and the dashboard "Findings by rule" panel. See
+"Using the app - Phase 2" below and [docs/qa/phase2-report.md](docs/qa/phase2-report.md).
+
 ## Tech stack
 
 | Layer | Technology |
@@ -59,11 +66,12 @@ Postgres-only (PGlite runs as a single superuser).
 | `npm test` / `test:watch` / `test:coverage` | Vitest (in-memory PGlite per test file) |
 | `npm run db:generate` | `drizzle-kit generate` - new SQL migration from `src/lib/db/schema` |
 | `npm run db:migrate` | apply `drizzle/*.sql` through the active driver |
-| `npm run db:seed` | stub (Phase 2 seeds the mock Ariel data set) |
+| `npm run db:seed` | loads the mock Ariel data set (`tests/fixtures/ariel-seed.json`: 68 members, rate tables 2010-2027) into `ariel_mock` |
 | `npm run ledger:verify` | recompute and verify the whole hash chain |
 | `npm run demo:phase1` | Phase 1 acceptance walk-through |
 | `npm run lint:pii` | CI guard: no 9-digit (SIN-shaped) literals under `src/app` / `src/components` |
 | `npm run e2e:phase1` | browser E2E of the Phase 1 UI against `npm run dev` (screenshots to `docs/screenshots/phase1/`) |
+| `npm run e2e:qa` / `e2e:phase2` | QA browser suites (Phase 1 a11y/testids + Phase 2 override, PRIVATE toggle, `/ariel`, `/admin/rules`, dashboard panel) with an axe-core scan per page state; screenshots to `docs/screenshots/phase2/`, results to `docs/qa/*.json` |
 
 ## Using the app
 
@@ -110,6 +118,47 @@ Golden inputs to try: `tests/golden/happy-terfin/input.csv` (VALIDATED, all acce
 
 `npm run e2e:phase1` replays this flow against a running dev server through the installed Chrome
 (playwright-core, no browser download) and writes screenshots to `docs/screenshots/phase1/`.
+
+### Using the app - Phase 2
+
+```powershell
+npm run db:migrate
+npm run db:seed                    # mock Ariel: 68 members (SINs 9000000xx + golden/L members), rate tables 2010-2027
+npm run dev
+```
+
+1. **HELD rows and overrides.** Upload `tests/golden/mixed-100-rows/input.csv` as J. Smith (0235): the batch
+   lands in `Validated · 8 held` - rows whose only findings are WARNINGs wait for a HOOPP reviewer. The
+   Submitter sees "8 warnings need a HOOPP reviewer's override" and the reviewer copy on each warning (D6); no
+   Override button. Log in as R. Patel (Reviewer): the overview says "8 held rows need an override" with an
+   **Open held rows** CTA (`/findings?severity=WARNING&override=pending`). **Override…** opens the drawer
+   (`docs/ux-design.md` 4.9): the rule's reasons verbatim, "Other" requires a note, submit posts
+   `POST /api/batches/{id}/findings/{findingId}/override`; the toast reads "Override recorded. Row N is now
+   accepted.", the row flips HELD -> ACCEPTED, the finding shows the amber **Overridden · reason · by · time ·
+   ledger #** strip and a `WarningOverridden` ledger entry. Select two or more pending warnings of one rule for
+   the bulk drawer (per-item results, 207 on partial failure). Warnings on rows already rejected by a member
+   error are not overridable (`ROW_REJECTED`).
+2. **HOOPP-internal (PRIVATE) findings.** Reviewers/Admins see INFORMATION / PRIVATE findings with a lock
+   tag; the **Show HOOPP-internal findings** toggle writes `?visibility=PUBLIC` to hide them. Submitters never
+   receive them (API, CSV or UI). Reports tab: **Summary of validations** (public) and **Summary of validations
+   (incl. HOOPP-internal)** (Reviewer/Admin, Visibility column) are viewable in-app and downloadable; the
+   private deep link is server-redirected to `/forbidden` for Submitters.
+3. **Mock Ariel browser** (`/ariel`, Reviewer/Admin): the seeded members (masked SIN, never the full SIN),
+   the rate tables with placeholder chips for years outside the published range, and (Admin, dev only)
+   **Reseed**. A row opens `/ariel/members/{sinPseudo}` with employments, service, contributions, salary and
+   PA sections under a "Mock data" banner.
+4. **Rules & config** (`/admin/rules`): the 59-rule registry with enabled switch, severity, visibility, message
+   id, override reasons and tolerances; the effective config hash is shown in the header. Admins toggle a rule
+   or edit tolerances through a dialog that requires a reason (ledgered as `RulesConfigChanged` on the `system`
+   stream, listed under **Change history**); out-of-range values are refused inline (`INVALID_TOLERANCE`).
+   Changes apply to batches received from then on - validated batches keep the hash they were checked with.
+   **Reset to file** removes a rule's overrides; setting a value back to its file default drops the override
+   so the hash returns to the file hash. Reviewers see the page read-only.
+5. **Dashboard "Findings by rule"** (Reviewer/Admin): the top 8 rules by finding count over batches received
+   in the last 30 days (findings, distinct rows, batches, overridden), each linking into the registry.
+
+`npm run e2e:qa` replays all of this (plus the Phase 1 QA suite) against a running dev server with an
+axe-core scan on every page state; screenshots land in `docs/screenshots/phase2/`.
 
 ## Dev authentication
 

@@ -251,7 +251,8 @@ export function RulesTable({ items, canEdit, overriddenKeys }: RulesTableProps) 
             </div>
           ),
         }}
-        rowClassName={(r) => (!r.enabled ? "opacity-70" : undefined)}
+        // Disabled rules are tinted, not faded: opacity pushed badge/muted text below the 4.5:1 contrast gate (ux 8.1).
+        rowClassName={(r) => (!r.enabled ? "bg-surface" : undefined)}
         emptyState={{ title: "No rules match", description: "Adjust the level, severity or visibility filter.", illustration: "search" }}
       />
       <RuleChangeDialog change={change} onClose={() => setChange(null)} />

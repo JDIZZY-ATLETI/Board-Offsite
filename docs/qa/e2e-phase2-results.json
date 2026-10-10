@@ -1,12 +1,17 @@
 {
   "base": "http://localhost:3000",
-  "at": "2026-10-10T02:13:41.446Z",
-  "failed": 5,
+  "at": "2026-10-10T03:54:40.968Z",
+  "failed": 0,
   "results": [
     {
-      "name": "mixed-100-rows VALIDATED with the golden HELD count",
-      "pass": false,
+      "name": "mixed-100-rows VALIDATED: rows = golden + salt, HELD = golden, outcomes sum to rows",
+      "pass": true,
       "detail": "{\"rows\":101,\"accepted\":20,\"rejected\":73,\"warnings\":16,\"infos\":4,\"held\":8}"
+    },
+    {
+      "name": "the salt row is rejected by B2 only (unknown SIN)",
+      "pass": true,
+      "detail": "B2"
     },
     {
       "name": "Submitter next-step copy: N warnings need a HOOPP reviewer's override (7.6)",
@@ -120,8 +125,8 @@
     },
     {
       "name": "amber strip: Overridden · reason · by actor · time · ledger #",
-      "pass": false,
-      "detail": "Overridden·The member received a promotion·by rpatel·2026-10-10 02:12·ledger #699"
+      "pass": true,
+      "detail": "Overridden·The member received a promotion·by rpatel·2026-10-10 03:48·ledger #1519"
     },
     {
       "name": "Records tab HELD filter lists the remaining held rows with the HELD badge",
@@ -175,18 +180,133 @@
     },
     {
       "name": "Reports tab: public Summary card enabled with a View link",
-      "pass": false,
+      "pass": true,
       "detail": ""
     },
     {
       "name": "Reports tab: private Summary card for Reviewer",
-      "pass": false,
+      "pass": true,
       "detail": ""
     },
     {
-      "name": "unexpected error",
-      "pass": false,
-      "detail": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('summary-report-table') to be visible\u001b[22m\n\n    at C:\\Users\\dizju\\Board-Offsite\\tests\\e2e\\phase2-qa.mjs:210:50"
+      "name": "public Summary view: Rule · Message ID · Severity · Count · Overridden · Portal message, no PRIVATE rows",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "public Summary view counts the overrides recorded above",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "private Summary view adds a Visibility column with Lock tags and the PRIVATE rows",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Submitter deep-link to the private report -> forbidden",
+      "pass": true,
+      "detail": "http://localhost:3000/forbidden"
+    },
+    {
+      "name": "Reviewer nav shows Mock Ariel and Rules & config",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "/ariel lists the seeded members (masked SIN, no full SIN)",
+      "pass": true,
+      "detail": "50 rows"
+    },
+    {
+      "name": "/ariel rates panel flags placeholder rows",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "/ariel: no Reseed for Reviewer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "member page shows employments / service / contributions / salary / PA sections and the mock banner",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "/ariel: Admin sees Reseed (dev only)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Submitter /ariel -> /forbidden",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "/admin/rules lists the registry",
+      "pass": true,
+      "detail": "59 rows"
+    },
+    {
+      "name": "config hash shown in the header",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B40 disabled via the UI; hash changed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Change history lists the B40 change with the reason",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a new batch validated while B40 is off has no B40 finding and carries the new hash",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B40 re-enabled; hash back to the original",
+      "pass": true,
+      "detail": "ac068140 vs ac068140"
+    },
+    {
+      "name": "tolerance dialog surfaces 422 INVALID_TOLERANCE inline",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Reviewer sees /admin/rules read-only (toggles disabled)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "dashboard 'Findings by rule' panel lists rules with counts",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "panel: window label, top-N table rows (<= 8) with severity badges and a rule link into the registry",
+      "pass": true,
+      "detail": "8 rows"
+    },
+    {
+      "name": "Submitter dashboard has no 'Findings by rule' panel",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no uncaught page errors",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "axe: zero serious/critical violations across all Phase 2 page states (ux 8.1)",
+      "pass": true,
+      "detail": ""
     }
   ]
 }
