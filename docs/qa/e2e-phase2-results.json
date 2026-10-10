@@ -1,6 +1,6 @@
 {
   "base": "http://localhost:3000",
-  "at": "2026-10-10T03:54:40.968Z",
+  "at": "2026-10-10T04:16:14.126Z",
   "failed": 0,
   "results": [
     {
@@ -126,7 +126,7 @@
     {
       "name": "amber strip: Overridden · reason · by actor · time · ledger #",
       "pass": true,
-      "detail": "Overridden·The member received a promotion·by rpatel·2026-10-10 03:48·ledger #1519"
+      "detail": "Overridden·The member received a promotion·by rpatel·2026-10-10 04:10·ledger #407"
     },
     {
       "name": "Records tab HELD filter lists the remaining held rows with the HELD badge",

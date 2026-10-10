@@ -25,3 +25,6 @@ Running log for the Phase 2B pass (QA fixes + Phase 2 UI). Base `cec41e7`.
 ## Next
 
 - Browser E2E + screenshots, gates + report fix pass.
+## Complete (2026-10-10)
+
+All parts done; see docs/qa/phase2-report.md section 13 for the fix-pass table and final gates.

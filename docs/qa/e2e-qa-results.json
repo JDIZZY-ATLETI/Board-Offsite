@@ -1,6 +1,6 @@
 {
   "base": "http://localhost:3000",
-  "at": "2026-10-10T03:36:21.259Z",
+  "at": "2026-10-10T04:09:42.391Z",
   "failed": 0,
   "results": [
     {
@@ -36,7 +36,7 @@
     {
       "name": "mixed-100-rows reaches VALIDATED",
       "pass": true,
-      "detail": "01a123dd-c04c-7abb-bad1-6303abe7a20f"
+      "detail": "01a123fe-2d72-7665-aead-c382237e7c2d"
     },
     {
       "name": "GAP-E2E-2: API counts - rows = golden + 1 salt row, held = golden, outcomes sum to rows",
@@ -54,9 +54,9 @@
       "detail": ""
     },
     {
-      "name": "aria-live region announces the status change",
-      "pass": true,
-      "detail": "initial=status-badge-PARSED live=\"Batch is now Validated\""
+      "name": "aria-live announcement",
+      "pass": null,
+      "detail": "batch was already VALIDATED on first paint; announcement not observable in this run"
     },
     {
       "name": "live region is aria-live=polite + aria-atomic",
@@ -66,7 +66,7 @@
     {
       "name": "polling stops on terminal status (no GET /api/batches/{id} for 7.5 s after VALIDATED)",
       "pass": true,
-      "detail": "polls before=1 after=1"
+      "detail": "polls before=0 after=0"
     },
     {
       "name": "auto-refresh indicator gone after VALIDATED",
@@ -96,12 +96,12 @@
     {
       "name": "DataTable keyboard: ArrowDown moves focus to the next row",
       "pass": true,
-      "detail": "01a123dd-c3d6-7c84-bb92-c3fef5c0495a -> 01a123dd-c3d7-7324-a12e-c37337d42d4e"
+      "detail": "01a123fe-2f61-705d-b7fc-cda208571ea7 -> 01a123fe-2f61-705d-b7fc-cda34957750b"
     },
     {
       "name": "DataTable keyboard: End/Home jump to last/first row",
       "pass": true,
-      "detail": "end=01a123dd-c434-7466-a686-df12d6e35267 home=01a123dd-c3d6-7c84-bb92-c3fef5c0495a"
+      "detail": "end=01a123fe-2faa-7904-88bf-fa649e610187 home=01a123fe-2f61-705d-b7fc-cda208571ea7"
     },
     {
       "name": "DataTable uses a roving tabindex (exactly one row tabbable)",
@@ -216,7 +216,7 @@
     {
       "name": "ledger page exposes a live region / status role for verify progress (8.1)",
       "pass": true,
-      "detail": "2 live/status/alert nodes"
+      "detail": "3 live/status/alert nodes"
     },
     {
       "name": "DataTable keyboard: Enter on a ledger row opens the entry drawer",

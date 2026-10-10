@@ -265,7 +265,23 @@ Branch `main`, not pushed. Base: `3ebad53` (Phase 2 backend).
 
 | Hash | Commit |
 |---|---|
-| (see below) | test(qa): L2 boundary probes, rate-table gap and Q27 pins, carve-out overlap cases |
-| (see below) | test(qa): Phase 2 pipeline probes - PII posture, offline isolation (BUG-REVAL-1), override/HELD edges, rules-config boundaries; Phase 2 perf smoke |
-| (see below) | fix(ui): batch overview counts HELD rows for the next-step copy (BUG-UI-P2-1); test(e2e): scope verify-button locators, add HELD copy checks |
-| (see below) | docs(qa): Phase 2 QA report |
+| `cec41e7` | test(qa): L2 boundary probes, pipeline/override/rules-config probes, perf smoke; fix(ui): overview counts HELD rows (BUG-UI-P2-1); test(e2e): scope verify-button locators; docs(qa): Phase 2 report |
+
+## 13. Fix pass (Phase 2B) — status
+
+| # | Fix | Proving test | Status |
+|---|---|---|---|
+| BUG-L2-RATES-1/2 | Rate lookups return `null`; B37/B38/B40/B41/B43/B44/B47/B53a/B53b skip with `calculated.skipped = RATE_MISSING:<table>:<year>` (execution report `ruleSkips`); B47/B53b back-walk from `MAX(Year(permanency), firstRateYear)`; placeholder rates 2010–2027 | `l2-boundaries` "BUG-L2-RATES-1/2 (fixed)" | Fixed `704fd68` |
+| BUG-REVAL-1 | Rate tables frozen into `silver/ariel-snapshot.ndjson` (`kind:"rates"` line, folded into `arielSnapshotHash`); `revalidateOffline` reads only the frozen rates | `phase2-pipeline` "BUG-REVAL-1 (fixed)"; golden `expected-findings.ndjson` unchanged | Fixed `704fd68` |
+| SEC INFO | `SYS-RULE-ERROR` message generic + reference; full error via `onRuleError` → pino | `l2-boundaries` | Fixed `704fd68` |
+| GAP-RULES-1/2 | `DELETE /api/rules/{unknown}` → 404; `TOLERANCE_KEYS` min/max/sign + `B47.min < B47.max` → 422 `INVALID_TOLERANCE` | `phase2-pipeline` "GAP-RULES-1/2 (fixed)" | Fixed `e1a431e` |
+| GAP-RULES-3 (new) | Patching a value back to its file default drops the override so equal effective configs share one hash | `phase2-pipeline`; e2e "B40 re-enabled; hash back to the original" | Fixed `9455f6b` |
+| GAP-OVR-1 | Override on a REJECTED row → 409 `ROW_REJECTED` (single + bulk per-item); architecture §7.5 note | `phase2-pipeline` "GAP-OVR-1 (fixed)" | Fixed `e1a431e` |
+| GAP-ENV-1 | pino-pretty transport targets the package entry file; `.env.example` `LOG_PRETTY=false` | dev run: no `uncaughtException` | Fixed `e1a431e` |
+| DEV-DOC-1 / COS-P2-1 | Architecture §18 Q25–Q27 (+Q9 range), §11 route table, §4.6 M16–M18 names; `implemented` restored on `GET /api/rules` | — | Fixed `e1a431e` |
+| GAP-E2E-2 / FLAKY-E2E-1 | Salt with an extra row, assert API `counts`; hydration/menu waits | both suites green x2 | Fixed `e1a431e` |
+| GAP-SCOPE-1 | UI items 11–15 delivered: OverrideDrawer + HELD states + bulk override (`76a1419`), Summary of validations views (`af59082`), `/ariel` + member page (`4c8b1ba`), `/admin/rules` + history (`2ece583`), dashboard Findings-by-rule (`ff38839`); RTL tests (`6f7dc5a`) | `tests/ui/*` (83), `tests/e2e/phase2-qa.mjs` (61) | Done |
+
+**Final gates (2026-10-10):** typecheck 0 errors · lint 0 warnings · `lint:pii` ok · vitest **90 files, 663 passed, 1 skipped, 0 expected-fails** · build ok · `db:migrate` + `db:seed` from clean `.data` ok · `e2e:phase1` OK · `e2e:qa` 51 passed / 0 failed (1 informational note) · `e2e:phase2` **61 passed / 0 failed** · axe **0 critical / 0 serious / 0 moderate / 0 minor** across all 15 Phase 2 page states.
+
+**Recommendation: GO** (Phase 2, dev/demo scope). Open HOOPP questions from §11 remain (Q27, B19b, B47 `{1}`, Q25, B186a/B192b).
