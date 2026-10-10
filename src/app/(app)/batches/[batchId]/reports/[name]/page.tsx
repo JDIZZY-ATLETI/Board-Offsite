@@ -1,150 +1,56 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowLeft, Download, ExternalLink } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
 import { getAppContext } from "@/lib/app-context";
+import { canViewPrivateFindings } from "@/lib/auth/roles";
+import { listFindings } from "@/lib/queries/findings";
 import { readReport } from "@/lib/queries/reports";
-import { formatBytes, formatDateTime, formatDuration, formatInt } from "@/lib/ui/format";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { HashChip } from "@/components/app/ledger/hash-chip";
-import { StatusBadge } from "@/components/app/badges/status-badge";
 import { EmptyState } from "@/components/app/empty-state";
-import type { ExecutionReport } from "@/types";
+import type { ValidationFinding } from "@/types";
 import { loadBatchPage } from "../../_lib";
+import { ExecutionReportView } from "../execution-report-view";
+import { SummaryReportView } from "../summary-report-view";
 
-export const metadata: Metadata = { title: "Execution report" };
 export const dynamic = "force-dynamic";
 
-/** In-app Execution report view (docs/ux-design.md section 5.4.5). Only `execution-report` is viewable in Phase 1. */
+const VIEWS = ["execution-report", "summary-of-validations.csv", "summary-of-validations.private.csv"] as const;
+type ViewName = (typeof VIEWS)[number];
+
+export async function generateMetadata({ params }: { params: Promise<{ name: string }> }): Promise<Metadata> {
+  const { name } = await params;
+  return { title: name === "execution-report" ? "Execution report" : name.includes("private") ? "Summary of validations (incl. HOOPP-internal)" : "Summary of validations" };
+}
+
+/** In-app report views (docs/ux-design.md section 5.4.5): Execution report, Summary of validations (public / private). */
 export default async function ReportViewPage({ params }: { params: Promise<{ batchId: string; name: string }> }) {
   const { batchId, name } = await params;
-  if (name !== "execution-report") notFound();
-  const { batch } = await loadBatchPage(batchId);
+  if (!(VIEWS as readonly string[]).includes(name)) notFound();
+  const view = name as ViewName;
+  const { session, batch } = await loadBatchPage(batchId);
   const ctx = await getAppContext();
-  const file = await readReport(ctx, batch, "execution-report.json");
   const base = `/batches/${batch.batchId}`;
-  if (!file) {
-    return <EmptyState illustration="inbox" title="Execution report not generated yet" description="It is written when processing finishes." action={<Button asChild variant="outline"><Link href={`${base}/reports`}>Back to Reports</Link></Button>} />;
+
+  if (view === "execution-report") {
+    const file = await readReport(ctx, batch, "execution-report.json");
+    if (!file) {
+      return <EmptyState illustration="inbox" title="Execution report not generated yet" description="It is written when processing finishes." action={<Button asChild variant="outline"><Link href={`${base}/reports`}>Back to Reports</Link></Button>} />;
+    }
+    return <ExecutionReportView batch={batch} file={file} />;
   }
-  const r = JSON.parse(file.bytes.toString("utf8")) as ExecutionReport;
-  const rules = [...r.rules].sort((a, b) => b.durationMs - a.durationMs);
-  const facts: Array<[string, React.ReactNode]> = [
-    ["Status", <StatusBadge key="s" status={r.status} size="sm" />],
-    ["Started", formatDateTime(r.startedAt, { seconds: true })],
-    ["Ended", formatDateTime(r.endedAt, { seconds: true })],
-    ["Duration", formatDuration(r.durationMs)],
-    ["Employer", r.parameters.employerId],
-    ["Execution date", r.parameters.executionDate],
-    ["Source system", r.parameters.sourceSystem],
-    ["Uploaded by", <span key="u" className="font-mono">{r.parameters.uploadedBy}</span>],
-    ["Rules config hash", <HashChip key="h" hash={r.parameters.rulesConfigHash} truncate={12} />],
-    ["Input file", `${r.input.originalFilename} · ${formatBytes(r.input.sizeBytes)} · ${r.input.encodingDetected} · ${formatInt(r.input.lineCount)} lines`],
-    ["Input sha256", <HashChip key="i" hash={r.input.sha256} truncate={12} />],
-  ];
-  const counts: Array<[string, number]> = [
-    ["Lines read", r.counts.linesRead],
-    ["Rows", r.counts.rows],
-    ["Accepted", r.counts.accepted],
-    ["Rejected", r.counts.rejected],
-    ["File errors", r.counts.fileErrors],
-    ["Member errors", r.counts.memberErrors],
-    ["Warnings", r.counts.warnings],
-    ["Infos", r.counts.infos],
-    ["Findings", r.counts.findings],
-  ];
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button asChild variant="ghost" size="sm">
-          <Link href={`${base}/reports`}>
-            <ArrowLeft aria-hidden="true" /> Reports
-          </Link>
-        </Button>
-        <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm">
-            <a href={`/api/batches/${batch.batchId}/reports/execution-report.html`} target="_blank" rel="noopener">
-              <ExternalLink aria-hidden="true" /> Open HTML
-            </a>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <a href={`/api/batches/${batch.batchId}/reports/execution-report.json`} target="_blank" rel="noopener">
-              <Download aria-hidden="true" /> JSON
-            </a>
-          </Button>
-        </div>
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Execution report <span className="text-caption font-normal text-ink-faint">Legacy: D0000dti.html</span></CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-small">
-              {facts.map(([k, v]) => (
-                <div key={k} className="contents">
-                  <dt className="text-ink-muted">{k}</dt>
-                  <dd className="min-w-0 break-words">{v}</dd>
-                </div>
-              ))}
-            </dl>
-            {r.failureReason ? <p className="mt-3 rounded-sm bg-sev-cme-soft p-2 font-mono text-caption text-sev-cme-text">{r.failureReason}</p> : null}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Counts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-3 gap-3 text-small">
-              {counts.map(([k, v]) => (
-                <div key={k}>
-                  <dt className="text-caption text-ink-muted">{k}</dt>
-                  <dd className="text-h2 tabular-nums">{formatInt(v)}</dd>
-                </div>
-              ))}
-            </dl>
-            <h3 className="mt-4 text-h3">Outputs</h3>
-            <ul className="mt-1 space-y-0.5 font-mono text-caption text-ink-muted">
-              {r.outputs.map((o) => (
-                <li key={o} className="truncate" title={o}>
-                  {o}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Rule timing</CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto px-0">
-          <table className="w-full text-small">
-            <caption className="sr-only">Per-rule evaluations, findings and duration, slowest first</caption>
-            <thead>
-              <tr className="border-b border-border text-left text-caption text-ink-muted">
-                <th scope="col" className="px-5 py-2 font-medium">Rule</th>
-                <th scope="col" className="px-3 py-2 font-medium">Level</th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">Evaluations</th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">Findings</th>
-                <th scope="col" className="px-5 py-2 text-right font-medium">Duration</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rules.map((t) => (
-                <tr key={t.ruleId} className="border-b border-border/60 last:border-0">
-                  <td className="px-5 py-1.5 font-mono">{t.ruleId}</td>
-                  <td className="px-3 py-1.5">{t.level}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{formatInt(t.evaluations)}</td>
-                  <td className={`px-3 py-1.5 text-right tabular-nums ${t.findings ? "font-medium" : "text-ink-faint"}`}>{formatInt(t.findings)}</td>
-                  <td className="px-5 py-1.5 text-right tabular-nums">{formatDuration(t.durationMs)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
-    </div>
-  );
+
+  const includePrivate = view === "summary-of-validations.private.csv";
+  // Hidden cards are also server-enforced: the private variant is Reviewer/Admin only (architecture 10.6).
+  if (includePrivate && !canViewPrivateFindings(session)) redirect("/forbidden");
+  if (batch.status === "RECEIVED" || batch.status === "PARSED") {
+    return <EmptyState illustration="inbox" title="Summary of validations not available yet" description="It is produced when validation finishes." action={<Button asChild variant="outline"><Link href={`${base}/reports`}>Back to Reports</Link></Button>} />;
+  }
+  const findings: ValidationFinding[] = [];
+  let cursor: string | null = null;
+  do {
+    const page: { items: ValidationFinding[]; nextCursor: string | null } = await listFindings(ctx, batchId, { includePrivate, cursor, limit: 200 });
+    findings.push(...page.items);
+    cursor = page.nextCursor;
+  } while (cursor);
+  return <SummaryReportView batch={batch} findings={findings} includePrivate={includePrivate} />;
 }

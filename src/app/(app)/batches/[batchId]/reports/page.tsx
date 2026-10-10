@@ -33,8 +33,8 @@ const REVIEW: Role[] = ["Reviewer", "Admin"];
 /** docs/ux-design.md section 5.4.5: legacy names map to our artifacts so legacy users find what they know. */
 const CARDS: ReportCardDef[] = [
   { key: "execution", title: "Execution report", legacy: "D0000dti.html", description: "Start/end, parameters, input sha256, counts and per-rule timing.", roles: ALL, artifacts: ["execution-report.html", "execution-report.json"], viewHref: (b) => `${b}/reports/execution-report` },
-  { key: "summary", title: "Summary of validations", legacy: "D0000Val.xls", description: "Findings by message id: rule, severity, count, Portal message.", roles: ALL, laterPhase: 2 },
-  { key: "summary-private", title: "Summary of validations (incl. HOOPP-internal)", legacy: "D0000typ.xlsx / D0000ctl", description: "Same, with the Visibility column and HOOPP-internal findings.", roles: REVIEW, laterPhase: 2 },
+  { key: "summary-of-validations.csv", title: "Summary of validations", legacy: "D0000Val.xls", description: "Findings by message id: rule, severity, count, overridden, Portal message.", roles: ALL, artifacts: ["summary-of-validations.csv"], viewHref: (b) => `${b}/reports/summary-of-validations.csv` },
+  { key: "summary-of-validations.private.csv", title: "Summary of validations (incl. HOOPP-internal)", legacy: "D0000typ.xlsx / D0000ctl", description: "Same, with the Visibility column and HOOPP-internal findings.", roles: REVIEW, artifacts: ["summary-of-validations.private.csv"], viewHref: (b) => `${b}/reports/summary-of-validations.private.csv` },
   { key: "rejected", title: "Rejected individuals", legacy: "Rejected_FileName.csv", description: "The rejected rows in the original 15-column layout, ready to fix and re-upload.", roles: ALL, artifacts: ["rejected.csv"], pii: true },
   { key: "modified", title: "Modified fields report", legacy: "D0000upd.xlsx", description: "One row per derived field: file value, previous value, resulting value, derivation rule.", roles: REVIEW, laterPhase: 3 },
   { key: "transactions", title: "Transactions report", legacy: "D0000tra.xlsx", description: "Service, contribution, salary-rate and PA items per member.", roles: REVIEW, laterPhase: 3 },
@@ -42,6 +42,8 @@ const CARDS: ReportCardDef[] = [
   { key: "membership", title: "Membership reconciliation", legacy: "D0000mov.xls", description: "Members whose status changes, with before/after.", roles: REVIEW, laterPhase: 4 },
   { key: "person", title: "Person data change", legacy: "D0000dci.xls", description: "Last values passed per member for portal display.", roles: REVIEW, laterPhase: 4 },
   { key: "interface", title: "Interface file (original)", legacy: "FileName.csv", description: "Manifest of the file as received (sha256, size, encoding).", roles: ["Admin"], artifacts: ["manifest.json"] },
+  { key: "ariel-snapshot", title: "Ariel snapshot (silver)", legacy: "—", description: "Members and rate tables the rules saw, frozen at validation (pseudonymised; drives offline re-validation).", roles: REVIEW, artifacts: ["ariel-snapshot.ndjson"] },
+  { key: "rules-config", title: "Rules configuration (silver)", legacy: "—", description: "Effective rule flags and tolerances stamped on this batch, with their hash.", roles: REVIEW, artifacts: ["rules-config.json"] },
 ];
 
 export default async function ReportsPage({ params }: { params: Promise<{ batchId: string }> }) {
@@ -108,7 +110,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ batchI
                       <Button key={a} asChild size="sm" variant="outline">
                         <a href={`/api/batches/${batch.batchId}/reports/${a}`} target={a.endsWith(".html") || a.endsWith(".json") ? "_blank" : undefined} rel="noopener">
                           {a.endsWith(".html") ? <ExternalLink aria-hidden="true" /> : <Download aria-hidden="true" />}
-                          {a.endsWith(".html") ? "Open HTML" : a.endsWith(".json") ? "JSON" : a}
+                          {a.endsWith(".html") ? "Open HTML" : a.endsWith(".json") ? "JSON" : a.endsWith(".csv") ? "Download CSV" : a}
                         </a>
                       </Button>
                     ))}
