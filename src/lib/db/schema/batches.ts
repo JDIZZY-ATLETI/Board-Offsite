@@ -38,6 +38,16 @@ export const batches = pgTable(
     arielSnapshotHash: char("ariel_snapshot_hash", { length: 64 }),
     arielAdapter: text("ariel_adapter"),
     failureReason: text("failure_reason"),
+    /** Current (latest build) update set; Phase 3. */
+    updateSetId: uuid("update_set_id"),
+    approvedBy: text("approved_by"),
+    approvedAt: timestamp("approved_at", { withTimezone: true, mode: "string" }),
+    rejectedBy: text("rejected_by"),
+    rejectedAt: timestamp("rejected_at", { withTimezone: true, mode: "string" }),
+    rejectedReason: text("rejected_reason"),
+    reopenedBy: text("reopened_by"),
+    reopenedAt: timestamp("reopened_at", { withTimezone: true, mode: "string" }),
+    exportedAt: timestamp("exported_at", { withTimezone: true, mode: "string" }),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }).notNull().defaultNow(),
   },
   (t) => [

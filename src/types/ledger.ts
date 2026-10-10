@@ -15,7 +15,8 @@ export type LedgerEventType =
   | "UpdateSetExported"
   | "CorrectionAppended"
   | "ChainAnchorPublished"
-  | "RulesConfigChanged";
+  | "RulesConfigChanged"
+  | "BatchReopened";
 
 export const LEDGER_EVENT_TYPES: readonly LedgerEventType[] = [
   "BatchReceived",
@@ -32,6 +33,7 @@ export const LEDGER_EVENT_TYPES: readonly LedgerEventType[] = [
   "CorrectionAppended",
   "ChainAnchorPublished",
   "RulesConfigChanged",
+  "BatchReopened",
 ];
 
 export interface LedgerEntry {
@@ -129,6 +131,90 @@ export interface RulesConfigChangedPayload {
   reason: string;
 }
 
+/** Section 9 / Phase 3: one per accepted row. Items themselves live in ariel_update_items + gold; the payload carries their hash. */
+export interface ArielUpdateProposedPayload {
+  recordId: string;
+  lineNumber: number;
+  sinMasked: string | null;
+  eventType: EventType | null;
+  eventDate: IsoDate | null;
+  employerId: string;
+  itemCount: number;
+  /** sha256(JCS(items sorted by sortOrder)) over the pure item cores. */
+  itemsHash: string;
+  byRecordType: Record<string, number>;
+  byOperation: Record<string, number>;
+  derivationRules: string[];
+  /** D-NCT result when emitted (business data, no PII). */
+  membershipStatus: { status: string; subStatus: string | null; effectiveDate: IsoDate } | null;
+  employmentTermination: { terminationDate: IsoDate; terminationCode: string | null } | null;
+  arielSnapshotHash: string;
+}
+
+export interface UpdateSetBuiltPayload {
+  updateSetId: string;
+  buildNo: number;
+  contentHash: string;
+  itemCount: number;
+  memberCount: number;
+  byRecordType: Record<string, number>;
+  byOperation: Record<string, number>;
+  artifacts: Record<string, string>;
+  /** sha256 of each gold artifact so the chain attests the files. */
+  artifactHashes: Record<string, string>;
+  arielSnapshotHash: string;
+  rulesConfigHash: string;
+}
+
+export interface UpdateSetApprovedPayload {
+  updateSetId: string;
+  approvalId: string;
+  contentHash: string;
+  itemCount: number;
+  memberCount: number;
+  note: string;
+  role: string;
+}
+
+export interface UpdateSetRejectedPayload {
+  updateSetId: string;
+  approvalId: string;
+  contentHash: string;
+  reason: string;
+  role: string;
+}
+
+export interface UpdateSetExportedPayload {
+  exportId: string;
+  updateSetId: string;
+  contentHash: string;
+  format: "json" | "csv" | "both";
+  files: Array<{ name: string; sha256: string; bytes: number }>;
+  itemCount: number;
+  memberCount: number;
+}
+
+export interface BatchReopenedPayload {
+  updateSetId: string | null;
+  reason: string;
+  heldRows: number;
+}
+
+/** Section 9.6: a later batch resubmits a member event that an earlier, unexported entry already covered. */
+export interface CorrectionAppendedPayload {
+  recordId: string;
+  lineNumber: number;
+  sinMasked: string | null;
+  eventType: EventType | null;
+  eventDate: IsoDate | null;
+  kind: "RESUBMITTED_PROPOSAL" | "CORRECTED_REJECTION";
+  supersedesEntryId: string;
+  supersedesSeq: number;
+  supersedesBatchId: string | null;
+  supersedesEventType: LedgerEventType;
+  newEntryId: string;
+}
+
 export type LedgerPayload =
   | BatchReceivedPayload
   | BatchParsedPayload
@@ -136,7 +222,14 @@ export type LedgerPayload =
   | MemberRecordRejectedPayload
   | MemberRecordValidatedPayload
   | WarningOverriddenPayload
-  | RulesConfigChangedPayload;
+  | RulesConfigChangedPayload
+  | ArielUpdateProposedPayload
+  | UpdateSetBuiltPayload
+  | UpdateSetApprovedPayload
+  | UpdateSetRejectedPayload
+  | UpdateSetExportedPayload
+  | BatchReopenedPayload
+  | CorrectionAppendedPayload;
 
 export interface LedgerHead {
   seq: number;
