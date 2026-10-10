@@ -22,6 +22,15 @@ release HELD rows (drawer, bulk, amber "Overridden" strip, ledgered as `WarningO
 the `/admin/rules` registry with change history, and the dashboard "Findings by rule" panel. See
 "Using the app - Phase 2" below and [docs/qa/phase2-report.md](docs/qa/phase2-report.md).
 
+Phase 3A (backend: ledger events for updates, projection, Update Set, approval, export) is implemented: the
+final Ariel derivation (architecture section 8 complete, incl. the contribution RPP/RCA split), automatic
+continuation `VALIDATED -> LEDGERED -> PROJECTION_BUILT -> PENDING_APPROVAL` once no row is HELD, the Update
+Set (DB + gold JSON/CSV/diff + Modified Fields / Transactions reports), approve / reject / reopen / export APIs
+with a hash-chained audit trail, raw-SIN export files behind a pluggable `ArielExportFormat`, the
+`member_projections` read model (rebuildable from seq 1) and the member lookup/view APIs. See
+"Approve / export flow via API" below and [docs/qa/phase3-progress.md](docs/qa/phase3-progress.md). The
+Phase 3 UI (Update Set page, member page) is Phase 3B.
+
 ## Tech stack
 
 | Layer | Technology |
@@ -68,6 +77,7 @@ Postgres-only (PGlite runs as a single superuser).
 | `npm run db:migrate` | apply `drizzle/*.sql` through the active driver |
 | `npm run db:seed` | loads the mock Ariel data set (`tests/fixtures/ariel-seed.json`: 68 members, rate tables 2010-2027) into `ariel_mock` |
 | `npm run ledger:verify` | recompute and verify the whole hash chain |
+| `npm run projections:rebuild` | drop `member_projections` + checkpoint and replay the ledger from seq 1 (identical rows, Phase 3 AC4) |
 | `npm run demo:phase1` | Phase 1 acceptance walk-through |
 | `npm run lint:pii` | CI guard: no 9-digit (SIN-shaped) literals under `src/app` / `src/components` |
 | `npm run e2e:phase1` | browser E2E of the Phase 1 UI against `npm run dev` (screenshots to `docs/screenshots/phase1/`) |
@@ -160,6 +170,41 @@ npm run dev
 `npm run e2e:qa` replays all of this (plus the Phase 1 QA suite) against a running dev server with an
 axe-core scan on every page state; screenshots land in `docs/screenshots/phase2/`.
 
+### Approve / export flow via API (Phase 3A)
+
+A batch with no HELD rows continues automatically after validation: one `ArielUpdateProposed` entry per
+accepted row on its member stream (payload = `itemsHash` + counts, never names or SINs), then the Update Set is
+built (`ariel_update_sets` / `ariel_update_items`, `gold/ariel-update-set.json|.csv`, `gold/diff.md`,
+`gold/reports/modified-fields-report.csv`, `transactions-report.csv`, `transactions-summary.csv`) and
+`UpdateSetBuilt` (with the artifact hashes) lands on the batch stream -> `PENDING_APPROVAL`. A batch with HELD
+rows waits in `VALIDATED`; the override that releases the last HELD row triggers the same continuation.
+
+```powershell
+# Reviewer: review, then approve with the current contentHash, a comment (>= 10 chars) and the attestation.
+curl.exe -b .data/cookies.txt http://localhost:3000/api/batches/$id/update-set            # members -> record-type groups, counts, contentHash
+curl.exe -b .data/cookies.txt http://localhost:3000/api/batches/$id/update-set/diff       # gold/diff.md
+curl.exe -b .data/cookies.txt -X POST http://localhost:3000/api/batches/$id/update-set/approve `
+  -H "content-type: application/json" -d "{\"contentHash\":\"<hash>\",\"note\":\"Reviewed the derived changes\",\"attest\":true}"
+# 409 STALE_CONTENT_HASH when the set was rebuilt; 422 HELD_ROWS / BATCH_NOT_PENDING otherwise.
+curl.exe -b .data/cookies.txt -X POST http://localhost:3000/api/batches/$id/update-set/reject `
+  -H "content-type: application/json" -d "{\"contentHash\":\"<hash>\",\"reason\":\"Row 2 was wrongly rejected\"}"
+# Admin: reopen a REJECTED batch (re-validates with the current rules config when it changed, then rebuilds).
+curl.exe -b .data/cookies.txt -X POST http://localhost:3000/api/batches/$id/reopen `
+  -H "content-type: application/json" -d "{\"reason\":\"B112 relaxed after review\"}"
+# Reviewer/Admin: export the APPROVED set (json | csv | both) -> files + sha256 in `exports` and on the chain.
+curl.exe -b .data/cookies.txt -X POST http://localhost:3000/api/batches/$id/update-set/export `
+  -H "content-type: application/json" -d "{\"format\":\"both\"}"
+# Admin only, audit-logged: the export files are the ONLY artifacts that carry raw SINs.
+curl.exe -b .data/cookies.txt "http://localhost:3000/api/exports/$exportId/download?file=ariel-update-set.json"
+# Reviewer/Admin: member lookup (body only, audit-logged, the SIN is never echoed) and member view.
+curl.exe -b .data/cookies.txt -X POST http://localhost:3000/api/members/lookup -H "content-type: application/json" -d "{\"sin\":\"900000019\"}"
+curl.exe -b .data/cookies.txt http://localhost:3000/api/members/$sinPseudo
+```
+
+Export files are written under the batch gold partition (`gold/.../exports/<exportId>/`) unless `EXPORT_DIR`
+points elsewhere. The same batch gains a new `ariel_update_sets` row (`build_no + 1`, new `contentHash`) after
+reopen; the rejected build and both `UpdateSetBuilt` entries stay on the chain.
+
 ## Dev authentication
 
 `AUTH_MODE=header`: route handlers read `x-user-id`, `x-user-role` (`EmployerSubmitter` | `Reviewer` |
@@ -182,6 +227,13 @@ In-process tests call the route handlers directly and keep passing the headers t
 `GET /api/batches/{id}`, `GET /api/batches/{id}/findings`, `GET /api/batches/{id}/records`,
 `GET /api/batches/{id}/reports/{name}`, `GET /api/batches/{id}/rejected.csv`, `GET /api/ledger/head`,
 `GET /api/ledger/entries`, `GET /api/ledger/entries/{seq}`, `POST /api/ledger/verify`, `GET /api/rules`.
+
+Phase 3: `GET /api/batches/{id}/update-set[?recordType=&operation=&eventType=&sinPseudo=&q=&cursor=&limit=]`,
+`GET .../update-set/diff`, `POST .../update-set/approve`, `POST .../update-set/reject`,
+`POST .../update-set/export`, `POST /api/batches/{id}/reopen` (Admin), the same under
+`/api/update-sets/{updateSetId}[/diff|/approve|/reject|/export]`, `GET /api/exports/{exportId}`,
+`GET /api/exports/{exportId}/download?file=` (Admin), `POST /api/members/lookup`, `GET /api/members/{sinPseudo}`,
+`POST /api/projections/rebuild` (Admin).
 Errors use `{ error: { code, message, details?, correlationId } }`; every response carries `x-correlation-id`.
 
 ## Project structure
