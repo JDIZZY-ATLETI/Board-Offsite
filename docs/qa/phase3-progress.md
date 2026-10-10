@@ -10,9 +10,11 @@ Base: `c094f53` (Phase 2 complete). Scope: architecture section 17 Phase 3 (back
 
 - **Step 3 - pipeline continuation.** `src/lib/pipeline/advance.ts`: `advanceBatch` (VALIDATED, HELD = 0 -> `stepLedger` -> LEDGERED -> `stepBuild` -> PROJECTION_BUILT -> PENDING_APPROVAL; HELD > 0 waits). `ArielUpdateProposed` per accepted row (payload = itemsHash + counts + D-NCT/termination summary, no PII beyond sinMasked), `CorrectionAppended` (section 9.6: earlier unexported proposal for same member/employer/eventType, or earlier rejection for same member/eventType/eventDate), `UpdateSetBuilt` on the batch stream with artifact hashes. Gold: `ariel-update-set.json/.csv`, `diff.md`, `reports/modified-fields-report.csv`, `transactions-report.csv`, `transactions-summary.csv` (`src/lib/pipeline/update-set/writers.ts`). `runBatch` now continues automatically (`{ advance: false }` opt-out); the override API continues when the last HELD row is released. INFO-RET-DNCT persisted as an INFORMATION finding. Member projector (`src/lib/projection/member-projection.ts`, step 5 pulled forward) runs after every ledger write. Phase 1/2 suites updated where they asserted the pre-Phase-3 terminal status `VALIDATED` (now `PENDING_APPROVAL` for batches without HELD rows); 700/700 green.
 
+- **Step 4 - approval / export APIs.** `src/lib/pipeline/approval.ts` (approve 409/422 guards, reject -> REJECTED, Admin reopen -> VALIDATED with automatic re-validation when the rules config hash changed + rebuild, export via `ArielExportFormat` json/csv + manifest with sha256 on `exports` + `UpdateSetExported`, Admin download audit-logged). Routes: `GET/POST /api/batches/{id}/update-set[/approve|/reject|/export|/diff]`, `/api/update-sets/{id}[...]` aliases, `POST /api/batches/{id}/reopen`, `GET /api/exports/{id}` + `/download?file=`. `src/lib/queries/update-sets.ts` (member -> record-type grouping, filters, cursor paging, overrides strip). Batch detail gains `updateSet`, `approval`, `rejection`, `reopened`, `exportedAt`; gold reports registered as HOOPP-only. `EXPORT_DIR` config. Golden `ariel-update-set.json` + `expected-update-counts.json` for the 3 happy scenarios (`scripts/golden-dump.ts --write-expected`). `tests/integration/phase3.spec.ts`: AC1, AC2, AC3, AC4, AC6 + API shapes (7 tests).
+
 ## Next
 
-- Step 4 approval/export APIs.
+- Step 5 member APIs (`POST /api/members/lookup`, `GET /api/members/{sinPseudo}`), `projections:rebuild` script.
 
 ## Decisions
 

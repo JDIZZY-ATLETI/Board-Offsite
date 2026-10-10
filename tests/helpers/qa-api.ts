@@ -24,6 +24,16 @@ import { GET as arielMemberRoute } from "@/app/api/ariel/members/[sinPseudo]/rou
 import { GET as arielRatesRoute } from "@/app/api/ariel/rates/route";
 import { POST as arielReseedRoute } from "@/app/api/ariel/reseed/route";
 import { GET as healthRoute } from "@/app/api/health/route";
+import { GET as updateSetRoute } from "@/app/api/batches/[batchId]/update-set/route";
+import { GET as updateSetDiffRoute } from "@/app/api/batches/[batchId]/update-set/diff/route";
+import { POST as approveRoute } from "@/app/api/batches/[batchId]/update-set/approve/route";
+import { POST as rejectRoute } from "@/app/api/batches/[batchId]/update-set/reject/route";
+import { POST as exportRoute } from "@/app/api/batches/[batchId]/update-set/export/route";
+import { POST as reopenRoute } from "@/app/api/batches/[batchId]/reopen/route";
+import { GET as updateSetByIdRoute } from "@/app/api/update-sets/[updateSetId]/route";
+import { POST as approveByIdRoute } from "@/app/api/update-sets/[updateSetId]/approve/route";
+import { GET as exportMetaRoute } from "@/app/api/exports/[exportId]/route";
+import { GET as exportDownloadRoute } from "@/app/api/exports/[exportId]/download/route";
 import { DELETE as devLogoutRoute, POST as devLoginRoute } from "@/app/api/auth/dev-login/route";
 import { batches, batchStatusHistory, eventsRecords } from "@/lib/db/schema";
 import { decodeBytes } from "@/lib/events/decode";
@@ -146,6 +156,17 @@ export const api = {
   arielReseed: (h: Record<string, string>) => toResult(arielReseedRoute(new Request(`${BASE}/ariel/reseed`, { method: "POST", headers: h }), params({})) as unknown as Promise<Response>),
   devLogin: (body: string, h: Record<string, string> = {}) => toResult(devLoginRoute(new Request(`${BASE}/auth/dev-login`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({})) as unknown as Promise<Response>),
   devLogout: () => toResult(devLogoutRoute(new Request(`${BASE}/auth/dev-login`, { method: "DELETE" }), params({})) as unknown as Promise<Response>),
+  // ---- Phase 3 ----
+  updateSet: (h: Record<string, string>, batchId: string, qs = "") => toResult(updateSetRoute(new Request(`${BASE}/batches/${batchId}/update-set${qs}`, { headers: h }), params({ batchId })) as unknown as Promise<Response>),
+  updateSetDiff: (h: Record<string, string>, batchId: string) => toResult(updateSetDiffRoute(new Request(`${BASE}/batches/${batchId}/update-set/diff`, { headers: h }), params({ batchId })) as unknown as Promise<Response>),
+  updateSetById: (h: Record<string, string>, updateSetId: string, qs = "") => toResult(updateSetByIdRoute(new Request(`${BASE}/update-sets/${updateSetId}${qs}`, { headers: h }), params({ updateSetId })) as unknown as Promise<Response>),
+  approve: (h: Record<string, string>, batchId: string, body: string) => toResult(approveRoute(new Request(`${BASE}/batches/${batchId}/update-set/approve`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({ batchId })) as unknown as Promise<Response>),
+  approveById: (h: Record<string, string>, updateSetId: string, body: string) => toResult(approveByIdRoute(new Request(`${BASE}/update-sets/${updateSetId}/approve`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({ updateSetId })) as unknown as Promise<Response>),
+  reject: (h: Record<string, string>, batchId: string, body: string) => toResult(rejectRoute(new Request(`${BASE}/batches/${batchId}/update-set/reject`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({ batchId })) as unknown as Promise<Response>),
+  exportSet: (h: Record<string, string>, batchId: string, body = "{}") => toResult(exportRoute(new Request(`${BASE}/batches/${batchId}/update-set/export`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({ batchId })) as unknown as Promise<Response>),
+  reopen: (h: Record<string, string>, batchId: string, body: string) => toResult(reopenRoute(new Request(`${BASE}/batches/${batchId}/reopen`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({ batchId })) as unknown as Promise<Response>),
+  exportMeta: (h: Record<string, string>, exportId: string) => toResult(exportMetaRoute(new Request(`${BASE}/exports/${exportId}`, { headers: h }), params({ exportId })) as unknown as Promise<Response>),
+  exportDownload: (h: Record<string, string>, exportId: string, file = "ariel-update-set.json") => toResult(exportDownloadRoute(new Request(`${BASE}/exports/${exportId}/download?file=${encodeURIComponent(file)}`, { headers: h }), params({ exportId })) as unknown as Promise<Response>),
 };
 
 /** Error responses must be the architecture section 11 envelope and must never leak stack traces. */

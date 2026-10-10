@@ -46,6 +46,8 @@ export interface Batch {
   rulesConfigHash?: string | null;
   arielSnapshotHash?: string | null;
   arielAdapter?: string | null;
+  /** Current update set (Phase 3); null before the first build. */
+  updateSetId?: string | null;
 }
 
 export type EncodingDetected = "windows-1252" | "utf-8" | "utf-8-bom";

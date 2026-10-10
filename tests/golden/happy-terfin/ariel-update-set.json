@@ -1,0 +1,1748 @@
+{
+  "schemaVersion": 1,
+  "employerId": "0235",
+  "executionDate": "2026-10-08",
+  "contentHash": "55a8c37bc532073ee63b2fa505f5ba3512aaf1c3838dce72c40071d289926c65",
+  "itemCount": 50,
+  "memberCount": 5,
+  "counts": {
+    "byRecordType": {
+      "CalculationsBenefit": 5,
+      "Employment": 20,
+      "MembershipStatus": 5,
+      "PlansTaxInfoPA": 5,
+      "TransactionsContributions": 8,
+      "TransactionsService": 5,
+      "TransactionsServiceBreak": 2
+    },
+    "byOperation": {
+      "CLOSE": 1,
+      "CREATE": 28,
+      "DELETE": 1,
+      "UPDATE": 20
+    },
+    "byEventType": {
+      "TERFIN": 50
+    }
+  },
+  "members": [
+    {
+      "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+      "sinMasked": "***-***-019",
+      "memberDisplay": "***-***-019 CÔTÉ, Renée",
+      "lineNumber": 2,
+      "eventType": "TERFIN",
+      "eventDate": "2026-09-30",
+      "itemCount": 10,
+      "items": [
+        {
+          "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+          "sinMasked": "***-***-019",
+          "memberDisplay": "***-***-019 CÔTÉ, Renée",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "9ed4c839-c73e-7563-85a7-6fae6660a42d"
+          },
+          "fields": {
+            "terminationDate": "2026-09-30"
+          },
+          "before": {
+            "terminationDate": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = EmploymentEndDate (2026-09-30)",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+          "sinMasked": "***-***-019",
+          "memberDisplay": "***-***-019 CÔTÉ, Renée",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "9ed4c839-c73e-7563-85a7-6fae6660a42d"
+          },
+          "fields": {
+            "terminationCode": "TER"
+          },
+          "before": {
+            "terminationCode": null
+          },
+          "sourceFields": [
+            "EventType"
+          ],
+          "derivationRule": "D-EMP-TERMCODE",
+          "explanation": "Employment.terminationCode = \"TER\" because EventType = TERFIN",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+          "sinMasked": "***-***-019",
+          "memberDisplay": "***-***-019 CÔTÉ, Renée",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "9ed4c839-c73e-7563-85a7-6fae6660a42d"
+          },
+          "fields": {
+            "otherInformation": "Events 09302026"
+          },
+          "before": {
+            "otherInformation": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + EmploymentEndDate as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+          "sinMasked": "***-***-019",
+          "memberDisplay": "***-***-019 CÔTÉ, Renée",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "9ed4c839-c73e-7563-85a7-6fae6660a42d"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+          "sinMasked": "***-***-019",
+          "memberDisplay": "***-***-019 CÔTÉ, Renée",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "9ed4c839-c73e-7563-85a7-6fae6660a42d",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "38.00",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 38.00 for 2026-01-01..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+          "sinMasked": "***-***-019",
+          "memberDisplay": "***-***-019 CÔTÉ, Renée",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "9ed4c839-c73e-7563-85a7-6fae6660a42d",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "3761.56",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 3761.56 for 2026-01-01..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+          "sinMasked": "***-***-019",
+          "memberDisplay": "***-***-019 CÔTÉ, Renée",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "9ed4c839-c73e-7563-85a7-6fae6660a42d",
+            "type": "RPPHGH",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "RPPHGH",
+            "amount": "228.58",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "HighContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPHGH-PRV-CY",
+          "explanation": "RPPHGH provided CY: new transaction RPPHGH/PRV 228.58 for 2026-01-01..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 6
+        },
+        {
+          "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+          "sinMasked": "***-***-019",
+          "memberDisplay": "***-***-019 CÔTÉ, Renée",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "7498ccf0-eb83-7bab-8104-d5c83129619a",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 7368,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 7368 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 7
+        },
+        {
+          "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+          "sinMasked": "***-***-019",
+          "memberDisplay": "***-***-019 CÔTÉ, Renée",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "MembershipStatus",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "7498ccf0-eb83-7bab-8104-d5c83129619a",
+            "statusEffectiveDate": "2026-09-30"
+          },
+          "fields": {
+            "statusCode": "D",
+            "statusEffectiveDate": "2026-09-30",
+            "subStatusCode": "NCT",
+            "subStatusEffectiveDate": "2026-09-30"
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MSTAT-DNCT",
+          "explanation": "Last open employment terminated by TERFIN: membership -> D (Deferred Pensioner) / NCT (Not Completed Termination) effective 2026-09-30",
+          "calculated": {
+            "previousStatus": "A",
+            "previousSubStatus": null,
+            "previousStatusEffectiveDate": "2015-03-02",
+            "statusEventDate": "2026-09-30"
+          },
+          "sortOrder": 8
+        },
+        {
+          "sinPseudo": "3597259879e82cd35743b7afe1015331de20025fb4a983c5b9c7de122b3ac7d0",
+          "sinMasked": "***-***-019",
+          "memberDisplay": "***-***-019 CÔTÉ, Renée",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "CalculationsBenefit",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "7498ccf0-eb83-7bab-8104-d5c83129619a",
+            "eventCategory": "Termination",
+            "eventDate": "2026-09-30"
+          },
+          "fields": {
+            "eventCategory": "Termination",
+            "eventDate": "2026-09-30",
+            "finalCalculation": false,
+            "clientRequestDate": "2026-10-08",
+            "estimate": false
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-CALC-REQUEST",
+          "explanation": "Preliminary calculation request \"Termination\" for 2026-09-30, client request date 2026-10-08 (last open employment terminated)",
+          "calculated": null,
+          "sortOrder": 9
+        }
+      ]
+    },
+    {
+      "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+      "sinMasked": "***-***-191",
+      "memberDisplay": "***-***-191 SINGH, Sam",
+      "lineNumber": 5,
+      "eventType": "TERFIN",
+      "eventDate": "2026-09-30",
+      "itemCount": 12,
+      "items": [
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "585c7732-579d-721c-8a8b-2c02d4bc1f16"
+          },
+          "fields": {
+            "terminationDate": "2026-09-30"
+          },
+          "before": {
+            "terminationDate": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = EmploymentEndDate (2026-09-30)",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "585c7732-579d-721c-8a8b-2c02d4bc1f16"
+          },
+          "fields": {
+            "terminationCode": "TER"
+          },
+          "before": {
+            "terminationCode": null
+          },
+          "sourceFields": [
+            "EventType"
+          ],
+          "derivationRule": "D-EMP-TERMCODE",
+          "explanation": "Employment.terminationCode = \"TER\" because EventType = TERFIN",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "585c7732-579d-721c-8a8b-2c02d4bc1f16"
+          },
+          "fields": {
+            "otherInformation": "Events 09302026"
+          },
+          "before": {
+            "otherInformation": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + EmploymentEndDate as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "585c7732-579d-721c-8a8b-2c02d4bc1f16"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsServiceBreak",
+          "operation": "CLOSE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "585c7732-579d-721c-8a8b-2c02d4bc1f16",
+            "breakId": "af9e2e35-3584-7fd1-8b85-6929138f29c7",
+            "type": "NCS",
+            "startDate": "2026-05-01"
+          },
+          "fields": {
+            "endDate": "2026-10-01"
+          },
+          "before": {
+            "endDate": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-BRK-CLOSE",
+          "explanation": "Break NCS (2026-05-01 -> open) closed at event date + 1 = 2026-10-01",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsServiceBreak",
+          "operation": "DELETE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "585c7732-579d-721c-8a8b-2c02d4bc1f16",
+            "breakId": "596432ce-7f32-7edb-831d-1c0b7510116c",
+            "type": "NCM",
+            "startDate": "2026-11-01"
+          },
+          "fields": {},
+          "before": {
+            "type": "NCM",
+            "startDate": "2026-11-01",
+            "endDate": "2026-12-15"
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-BRK-DELETE",
+          "explanation": "Break NCM starts 2026-11-01, after the event date 2026-09-30: deleted",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "585c7732-579d-721c-8a8b-2c02d4bc1f16",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "17.00",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 17.00 for 2026-01-01..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 6
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "585c7732-579d-721c-8a8b-2c02d4bc1f16",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "1682.80",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 1682.80 for 2026-01-01..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 7
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "585c7732-579d-721c-8a8b-2c02d4bc1f16",
+            "type": "RPPHGH",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "RPPHGH",
+            "amount": "42.11",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "HighContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPHGH-PRV-CY",
+          "explanation": "RPPHGH provided CY: new transaction RPPHGH/PRV 42.11 for 2026-01-01..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 8
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "82e2d2ad-0fb6-70fb-8429-be8015e61da1",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 3179,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 3179 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 9
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "MembershipStatus",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "82e2d2ad-0fb6-70fb-8429-be8015e61da1",
+            "statusEffectiveDate": "2026-09-30"
+          },
+          "fields": {
+            "statusCode": "D",
+            "statusEffectiveDate": "2026-09-30",
+            "subStatusCode": "NCT",
+            "subStatusEffectiveDate": "2026-09-30"
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MSTAT-DNCT",
+          "explanation": "Last open employment terminated by TERFIN: membership -> D (Deferred Pensioner) / NCT (Not Completed Termination) effective 2026-09-30",
+          "calculated": {
+            "previousStatus": "A",
+            "previousSubStatus": null,
+            "previousStatusEffectiveDate": "2009-04-06",
+            "statusEventDate": "2026-09-30"
+          },
+          "sortOrder": 10
+        },
+        {
+          "sinPseudo": "48bd92f4317332f0a39f943e50101f27688d15b99388ee17b6b6a6abfee7a114",
+          "sinMasked": "***-***-191",
+          "memberDisplay": "***-***-191 SINGH, Sam",
+          "employerId": "0235",
+          "lineNumber": 5,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "CalculationsBenefit",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "82e2d2ad-0fb6-70fb-8429-be8015e61da1",
+            "eventCategory": "Termination",
+            "eventDate": "2026-09-30"
+          },
+          "fields": {
+            "eventCategory": "Termination",
+            "eventDate": "2026-09-30",
+            "finalCalculation": false,
+            "clientRequestDate": "2026-10-08",
+            "estimate": false
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-CALC-REQUEST",
+          "explanation": "Preliminary calculation request \"Termination\" for 2026-09-30, client request date 2026-10-08 (last open employment terminated)",
+          "calculated": null,
+          "sortOrder": 11
+        }
+      ]
+    },
+    {
+      "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+      "sinMasked": "***-***-017",
+      "memberDisplay": "***-***-017 ABLE, Anna",
+      "lineNumber": 6,
+      "eventType": "TERFIN",
+      "eventDate": "2026-02-11",
+      "itemCount": 10,
+      "items": [
+        {
+          "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+          "sinMasked": "***-***-017",
+          "memberDisplay": "***-***-017 ABLE, Anna",
+          "employerId": "0235",
+          "lineNumber": 6,
+          "eventType": "TERFIN",
+          "eventDate": "2026-02-11",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "fa94b97c-e0c9-78ab-8289-16c4d6dc87b8"
+          },
+          "fields": {
+            "terminationDate": "2026-02-11"
+          },
+          "before": {
+            "terminationDate": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = EmploymentEndDate (2026-02-11)",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+          "sinMasked": "***-***-017",
+          "memberDisplay": "***-***-017 ABLE, Anna",
+          "employerId": "0235",
+          "lineNumber": 6,
+          "eventType": "TERFIN",
+          "eventDate": "2026-02-11",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "fa94b97c-e0c9-78ab-8289-16c4d6dc87b8"
+          },
+          "fields": {
+            "terminationCode": "TER"
+          },
+          "before": {
+            "terminationCode": null
+          },
+          "sourceFields": [
+            "EventType"
+          ],
+          "derivationRule": "D-EMP-TERMCODE",
+          "explanation": "Employment.terminationCode = \"TER\" because EventType = TERFIN",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+          "sinMasked": "***-***-017",
+          "memberDisplay": "***-***-017 ABLE, Anna",
+          "employerId": "0235",
+          "lineNumber": 6,
+          "eventType": "TERFIN",
+          "eventDate": "2026-02-11",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "fa94b97c-e0c9-78ab-8289-16c4d6dc87b8"
+          },
+          "fields": {
+            "otherInformation": "Events 02112026"
+          },
+          "before": {
+            "otherInformation": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + EmploymentEndDate as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+          "sinMasked": "***-***-017",
+          "memberDisplay": "***-***-017 ABLE, Anna",
+          "employerId": "0235",
+          "lineNumber": 6,
+          "eventType": "TERFIN",
+          "eventDate": "2026-02-11",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "fa94b97c-e0c9-78ab-8289-16c4d6dc87b8"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+          "sinMasked": "***-***-017",
+          "memberDisplay": "***-***-017 ABLE, Anna",
+          "employerId": "0235",
+          "lineNumber": 6,
+          "eventType": "TERFIN",
+          "eventDate": "2026-02-11",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "fa94b97c-e0c9-78ab-8289-16c4d6dc87b8",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-11",
+            "paymentDate": "2026-02-11",
+            "targetDate": "2026-02-11"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "5.00",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-11",
+            "paymentDate": "2026-02-11",
+            "targetDate": "2026-02-11",
+            "declarationDate": "2026-02-11",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 5.00 for 2026-01-01..2026-02-11 (payment/target 2026-02-11)",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+          "sinMasked": "***-***-017",
+          "memberDisplay": "***-***-017 ABLE, Anna",
+          "employerId": "0235",
+          "lineNumber": 6,
+          "eventType": "TERFIN",
+          "eventDate": "2026-02-11",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "fa94b97c-e0c9-78ab-8289-16c4d6dc87b8",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-11",
+            "paymentDate": "2026-02-11",
+            "targetDate": "2026-02-11"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "494.94",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-11",
+            "paymentDate": "2026-02-11",
+            "targetDate": "2026-02-11",
+            "declarationDate": "2026-02-11",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 494.94 for 2026-01-01..2026-02-11 (payment/target 2026-02-11)",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+          "sinMasked": "***-***-017",
+          "memberDisplay": "***-***-017 ABLE, Anna",
+          "employerId": "0235",
+          "lineNumber": 6,
+          "eventType": "TERFIN",
+          "eventDate": "2026-02-11",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "fa94b97c-e0c9-78ab-8289-16c4d6dc87b8",
+            "type": "RPPHGH",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-11",
+            "paymentDate": "2026-02-11",
+            "targetDate": "2026-02-11"
+          },
+          "fields": {
+            "type": "RPPHGH",
+            "amount": "12.38",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-11",
+            "paymentDate": "2026-02-11",
+            "targetDate": "2026-02-11",
+            "declarationDate": "2026-02-11",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "HighContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPHGH-PRV-CY",
+          "explanation": "RPPHGH provided CY: new transaction RPPHGH/PRV 12.38 for 2026-01-01..2026-02-11 (payment/target 2026-02-11)",
+          "calculated": null,
+          "sortOrder": 6
+        },
+        {
+          "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+          "sinMasked": "***-***-017",
+          "memberDisplay": "***-***-017 ABLE, Anna",
+          "employerId": "0235",
+          "lineNumber": 6,
+          "eventType": "TERFIN",
+          "eventDate": "2026-02-11",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "ebbd34eb-6cf7-7f95-85c0-de87fab824e2",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 935,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 935 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 7
+        },
+        {
+          "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+          "sinMasked": "***-***-017",
+          "memberDisplay": "***-***-017 ABLE, Anna",
+          "employerId": "0235",
+          "lineNumber": 6,
+          "eventType": "TERFIN",
+          "eventDate": "2026-02-11",
+          "recordType": "MembershipStatus",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "ebbd34eb-6cf7-7f95-85c0-de87fab824e2",
+            "statusEffectiveDate": "2026-02-11"
+          },
+          "fields": {
+            "statusCode": "D",
+            "statusEffectiveDate": "2026-02-11",
+            "subStatusCode": "NCT",
+            "subStatusEffectiveDate": "2026-02-11"
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MSTAT-DNCT",
+          "explanation": "Last open employment terminated by TERFIN: membership -> D (Deferred Pensioner) / NCT (Not Completed Termination) effective 2026-02-11",
+          "calculated": {
+            "previousStatus": "A",
+            "previousSubStatus": null,
+            "previousStatusEffectiveDate": "2015-03-02",
+            "statusEventDate": "2026-02-11"
+          },
+          "sortOrder": 8
+        },
+        {
+          "sinPseudo": "4a311a09bdcb501b83aec19a2dec2035040100e358926c940f675fd8d3d074e9",
+          "sinMasked": "***-***-017",
+          "memberDisplay": "***-***-017 ABLE, Anna",
+          "employerId": "0235",
+          "lineNumber": 6,
+          "eventType": "TERFIN",
+          "eventDate": "2026-02-11",
+          "recordType": "CalculationsBenefit",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "ebbd34eb-6cf7-7f95-85c0-de87fab824e2",
+            "eventCategory": "Termination",
+            "eventDate": "2026-02-11"
+          },
+          "fields": {
+            "eventCategory": "Termination",
+            "eventDate": "2026-02-11",
+            "finalCalculation": false,
+            "clientRequestDate": "2026-10-08",
+            "estimate": false
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-CALC-REQUEST",
+          "explanation": "Preliminary calculation request \"Termination\" for 2026-02-11, client request date 2026-10-08 (last open employment terminated)",
+          "calculated": null,
+          "sortOrder": 9
+        }
+      ]
+    },
+    {
+      "sinPseudo": "af6ac913b9955fc4d807056563063484bb07a222429b3f8086013b00534b1b60",
+      "sinMasked": "***-***-076",
+      "memberDisplay": "***-***-076 GREY, Gina",
+      "lineNumber": 3,
+      "eventType": "TERFIN",
+      "eventDate": "2026-09-30",
+      "itemCount": 9,
+      "items": [
+        {
+          "sinPseudo": "af6ac913b9955fc4d807056563063484bb07a222429b3f8086013b00534b1b60",
+          "sinMasked": "***-***-076",
+          "memberDisplay": "***-***-076 GREY, Gina",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "b3858690-1c59-7661-87c9-2ab6e1ea0747"
+          },
+          "fields": {
+            "terminationDate": "2026-09-30"
+          },
+          "before": {
+            "terminationDate": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = EmploymentEndDate (2026-09-30)",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "af6ac913b9955fc4d807056563063484bb07a222429b3f8086013b00534b1b60",
+          "sinMasked": "***-***-076",
+          "memberDisplay": "***-***-076 GREY, Gina",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "b3858690-1c59-7661-87c9-2ab6e1ea0747"
+          },
+          "fields": {
+            "terminationCode": "TER"
+          },
+          "before": {
+            "terminationCode": null
+          },
+          "sourceFields": [
+            "EventType"
+          ],
+          "derivationRule": "D-EMP-TERMCODE",
+          "explanation": "Employment.terminationCode = \"TER\" because EventType = TERFIN",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "af6ac913b9955fc4d807056563063484bb07a222429b3f8086013b00534b1b60",
+          "sinMasked": "***-***-076",
+          "memberDisplay": "***-***-076 GREY, Gina",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "b3858690-1c59-7661-87c9-2ab6e1ea0747"
+          },
+          "fields": {
+            "otherInformation": "Events 09302026"
+          },
+          "before": {
+            "otherInformation": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + EmploymentEndDate as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "af6ac913b9955fc4d807056563063484bb07a222429b3f8086013b00534b1b60",
+          "sinMasked": "***-***-076",
+          "memberDisplay": "***-***-076 GREY, Gina",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "b3858690-1c59-7661-87c9-2ab6e1ea0747"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "af6ac913b9955fc4d807056563063484bb07a222429b3f8086013b00534b1b60",
+          "sinMasked": "***-***-076",
+          "memberDisplay": "***-***-076 GREY, Gina",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "b3858690-1c59-7661-87c9-2ab6e1ea0747",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-03-16",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "27.00",
+            "beginDate": "2026-03-16",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 27.00 for 2026-03-16..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "af6ac913b9955fc4d807056563063484bb07a222429b3f8086013b00534b1b60",
+          "sinMasked": "***-***-076",
+          "memberDisplay": "***-***-076 GREY, Gina",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "b3858690-1c59-7661-87c9-2ab6e1ea0747",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-03-16",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "2364.58",
+            "beginDate": "2026-03-16",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 2364.58 for 2026-03-16..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "af6ac913b9955fc4d807056563063484bb07a222429b3f8086013b00534b1b60",
+          "sinMasked": "***-***-076",
+          "memberDisplay": "***-***-076 GREY, Gina",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "4e814d61-e5f7-7e6b-8f02-2a06cbc64321",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 4315,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 4315 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 6
+        },
+        {
+          "sinPseudo": "af6ac913b9955fc4d807056563063484bb07a222429b3f8086013b00534b1b60",
+          "sinMasked": "***-***-076",
+          "memberDisplay": "***-***-076 GREY, Gina",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "MembershipStatus",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "4e814d61-e5f7-7e6b-8f02-2a06cbc64321",
+            "statusEffectiveDate": "2026-09-30"
+          },
+          "fields": {
+            "statusCode": "D",
+            "statusEffectiveDate": "2026-09-30",
+            "subStatusCode": "NCT",
+            "subStatusEffectiveDate": "2026-09-30"
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MSTAT-DNCT",
+          "explanation": "Last open employment terminated by TERFIN: membership -> D (Deferred Pensioner) / NCT (Not Completed Termination) effective 2026-09-30",
+          "calculated": {
+            "previousStatus": "A",
+            "previousSubStatus": null,
+            "previousStatusEffectiveDate": "2026-03-16",
+            "statusEventDate": "2026-09-30"
+          },
+          "sortOrder": 7
+        },
+        {
+          "sinPseudo": "af6ac913b9955fc4d807056563063484bb07a222429b3f8086013b00534b1b60",
+          "sinMasked": "***-***-076",
+          "memberDisplay": "***-***-076 GREY, Gina",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "TERFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "CalculationsBenefit",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "4e814d61-e5f7-7e6b-8f02-2a06cbc64321",
+            "eventCategory": "Termination",
+            "eventDate": "2026-09-30"
+          },
+          "fields": {
+            "eventCategory": "Termination",
+            "eventDate": "2026-09-30",
+            "finalCalculation": false,
+            "clientRequestDate": "2026-10-08",
+            "estimate": false
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-CALC-REQUEST",
+          "explanation": "Preliminary calculation request \"Termination\" for 2026-09-30, client request date 2026-10-08 (last open employment terminated)",
+          "calculated": null,
+          "sortOrder": 8
+        }
+      ]
+    },
+    {
+      "sinPseudo": "eb10b3083a14f929cc957b33f785865eb12b1b0decf4a599b07ef1f40f61eaad",
+      "sinMasked": "***-***-084",
+      "memberDisplay": "***-***-084 HALL, Hugo",
+      "lineNumber": 4,
+      "eventType": "TERFIN",
+      "eventDate": "2026-08-14",
+      "itemCount": 9,
+      "items": [
+        {
+          "sinPseudo": "eb10b3083a14f929cc957b33f785865eb12b1b0decf4a599b07ef1f40f61eaad",
+          "sinMasked": "***-***-084",
+          "memberDisplay": "***-***-084 HALL, Hugo",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "TERFIN",
+          "eventDate": "2026-08-14",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "8a86d3d2-53ac-7f44-8fb4-d42829b8572c"
+          },
+          "fields": {
+            "terminationDate": "2026-08-14"
+          },
+          "before": {
+            "terminationDate": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = EmploymentEndDate (2026-08-14)",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "eb10b3083a14f929cc957b33f785865eb12b1b0decf4a599b07ef1f40f61eaad",
+          "sinMasked": "***-***-084",
+          "memberDisplay": "***-***-084 HALL, Hugo",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "TERFIN",
+          "eventDate": "2026-08-14",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "8a86d3d2-53ac-7f44-8fb4-d42829b8572c"
+          },
+          "fields": {
+            "terminationCode": "TER"
+          },
+          "before": {
+            "terminationCode": null
+          },
+          "sourceFields": [
+            "EventType"
+          ],
+          "derivationRule": "D-EMP-TERMCODE",
+          "explanation": "Employment.terminationCode = \"TER\" because EventType = TERFIN",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "eb10b3083a14f929cc957b33f785865eb12b1b0decf4a599b07ef1f40f61eaad",
+          "sinMasked": "***-***-084",
+          "memberDisplay": "***-***-084 HALL, Hugo",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "TERFIN",
+          "eventDate": "2026-08-14",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "8a86d3d2-53ac-7f44-8fb4-d42829b8572c"
+          },
+          "fields": {
+            "otherInformation": "Events 08142026"
+          },
+          "before": {
+            "otherInformation": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + EmploymentEndDate as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "eb10b3083a14f929cc957b33f785865eb12b1b0decf4a599b07ef1f40f61eaad",
+          "sinMasked": "***-***-084",
+          "memberDisplay": "***-***-084 HALL, Hugo",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "TERFIN",
+          "eventDate": "2026-08-14",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "8a86d3d2-53ac-7f44-8fb4-d42829b8572c"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "eb10b3083a14f929cc957b33f785865eb12b1b0decf4a599b07ef1f40f61eaad",
+          "sinMasked": "***-***-084",
+          "memberDisplay": "***-***-084 HALL, Hugo",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "TERFIN",
+          "eventDate": "2026-08-14",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "8a86d3d2-53ac-7f44-8fb4-d42829b8572c",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-08-14",
+            "paymentDate": "2026-08-14",
+            "targetDate": "2026-08-14"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "30.00",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-08-14",
+            "paymentDate": "2026-08-14",
+            "targetDate": "2026-08-14",
+            "declarationDate": "2026-08-14",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 30.00 for 2026-01-01..2026-08-14 (payment/target 2026-08-14)",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "eb10b3083a14f929cc957b33f785865eb12b1b0decf4a599b07ef1f40f61eaad",
+          "sinMasked": "***-***-084",
+          "memberDisplay": "***-***-084 HALL, Hugo",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "TERFIN",
+          "eventDate": "2026-08-14",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "8a86d3d2-53ac-7f44-8fb4-d42829b8572c",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-08-14",
+            "paymentDate": "2026-08-14",
+            "targetDate": "2026-08-14"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "1353.46",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-08-14",
+            "paymentDate": "2026-08-14",
+            "targetDate": "2026-08-14",
+            "declarationDate": "2026-08-14",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 1353.46 for 2026-01-01..2026-08-14 (payment/target 2026-08-14)",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "eb10b3083a14f929cc957b33f785865eb12b1b0decf4a599b07ef1f40f61eaad",
+          "sinMasked": "***-***-084",
+          "memberDisplay": "***-***-084 HALL, Hugo",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "TERFIN",
+          "eventDate": "2026-08-14",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "4cbd2e78-98ce-7301-85f6-d4ac3db58fa9",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 2302,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 2302 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 6
+        },
+        {
+          "sinPseudo": "eb10b3083a14f929cc957b33f785865eb12b1b0decf4a599b07ef1f40f61eaad",
+          "sinMasked": "***-***-084",
+          "memberDisplay": "***-***-084 HALL, Hugo",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "TERFIN",
+          "eventDate": "2026-08-14",
+          "recordType": "MembershipStatus",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "4cbd2e78-98ce-7301-85f6-d4ac3db58fa9",
+            "statusEffectiveDate": "2026-08-14"
+          },
+          "fields": {
+            "statusCode": "D",
+            "statusEffectiveDate": "2026-08-14",
+            "subStatusCode": "NCT",
+            "subStatusEffectiveDate": "2026-08-14"
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MSTAT-DNCT",
+          "explanation": "Last open employment terminated by TERFIN: membership -> D (Deferred Pensioner) / NCT (Not Completed Termination) effective 2026-08-14",
+          "calculated": {
+            "previousStatus": "A",
+            "previousSubStatus": null,
+            "previousStatusEffectiveDate": "2025-06-02",
+            "statusEventDate": "2026-08-14"
+          },
+          "sortOrder": 7
+        },
+        {
+          "sinPseudo": "eb10b3083a14f929cc957b33f785865eb12b1b0decf4a599b07ef1f40f61eaad",
+          "sinMasked": "***-***-084",
+          "memberDisplay": "***-***-084 HALL, Hugo",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "TERFIN",
+          "eventDate": "2026-08-14",
+          "recordType": "CalculationsBenefit",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "4cbd2e78-98ce-7301-85f6-d4ac3db58fa9",
+            "eventCategory": "Termination",
+            "eventDate": "2026-08-14"
+          },
+          "fields": {
+            "eventCategory": "Termination",
+            "eventDate": "2026-08-14",
+            "finalCalculation": false,
+            "clientRequestDate": "2026-10-08",
+            "estimate": false
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-CALC-REQUEST",
+          "explanation": "Preliminary calculation request \"Termination\" for 2026-08-14, client request date 2026-10-08 (last open employment terminated)",
+          "calculated": null,
+          "sortOrder": 8
+        }
+      ]
+    }
+  ]
+}

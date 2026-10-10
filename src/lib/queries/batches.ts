@@ -4,6 +4,7 @@ import { batches, batchStatusHistory, rawFiles } from "@/lib/db/schema";
 import { ingestDateOf, lakePaths } from "@/lib/lake/paths";
 import type { Batch, BatchStatus, BatchStatusHistoryEntry, IsoDate, RawFile, SourceSystem } from "@/types";
 import { REPORT_NAMES, type ReportName } from "./reports";
+import { updateSetSummaryForBatch } from "./update-sets";
 
 type BatchRow = typeof batches.$inferSelect;
 
@@ -25,6 +26,7 @@ export function toBatch(r: BatchRow): Batch {
     rulesConfigHash: r.rulesConfigHash,
     arielSnapshotHash: r.arielSnapshotHash,
     arielAdapter: r.arielAdapter,
+    updateSetId: r.updateSetId ?? null,
   };
 }
 
@@ -76,6 +78,12 @@ export interface BatchDetail extends BatchSummary {
   rawFile: RawFile;
   statusHistory: BatchStatusHistoryEntry[];
   reports: Array<{ name: ReportName; path: string }>;
+  /** Phase 3: current update set summary (status, hash, counts, approval/rejection/exports) - null before the first build. */
+  updateSet: Awaited<ReturnType<typeof updateSetSummaryForBatch>>;
+  approval: { actor: string; at: string } | null;
+  rejection: { actor: string; at: string; reason: string } | null;
+  reopened: { actor: string; at: string } | null;
+  exportedAt: string | null;
 }
 
 export async function getBatchDetail(ctx: AppContext, batchId: string): Promise<BatchDetail | null> {
@@ -91,10 +99,16 @@ export async function getBatchDetail(ctx: AppContext, batchId: string): Promise<
   const candidates: Array<{ name: ReportName; path: string }> = REPORT_NAMES.map((name) => ({ name, path: reportPath(paths, name) }));
   const reports: Array<{ name: ReportName; path: string }> = [];
   for (const c of candidates) if (await ctx.lake.exists(c.path)) reports.push(c);
+  const b = row.b;
   return {
     ...batch,
     originalFilename: row.f.originalFilename,
     rawFile: toRawFile(row.f),
+    updateSet: await updateSetSummaryForBatch(ctx, batchId),
+    approval: b.approvedBy && b.approvedAt ? { actor: b.approvedBy, at: new Date(b.approvedAt).toISOString() } : null,
+    rejection: b.rejectedBy && b.rejectedAt && b.rejectedReason ? { actor: b.rejectedBy, at: new Date(b.rejectedAt).toISOString(), reason: b.rejectedReason } : null,
+    reopened: b.reopenedBy && b.reopenedAt ? { actor: b.reopenedBy, at: new Date(b.reopenedAt).toISOString() } : null,
+    exportedAt: b.exportedAt ? new Date(b.exportedAt).toISOString() : null,
     statusHistory: history.map((h) => ({
       id: h.id,
       batchId: h.batchId,
@@ -134,5 +148,17 @@ export function reportPath(paths: ReturnType<typeof lakePaths>, name: ReportName
       return paths.silver.arielSnapshot;
     case "rules-config.json":
       return paths.silver.rulesConfig;
+    case "ariel-update-set.json":
+      return paths.gold.updateSetJson;
+    case "ariel-update-set.csv":
+      return paths.gold.updateSetCsv;
+    case "diff.md":
+      return paths.gold.diffMd;
+    case "modified-fields-report.csv":
+      return paths.gold.modifiedFieldsReport;
+    case "transactions-report.csv":
+      return paths.gold.transactionsReport;
+    case "transactions-summary.csv":
+      return paths.gold.transactionsSummary;
   }
 }

@@ -37,11 +37,12 @@ async function main() {
     const status = await runBatch(ctx, r.batchId);
     const findings = await ctx.db.select().from(validationFindings).where(eq(validationFindings.batchId, r.batchId));
     const records = await ctx.db.select().from(eventsRecords).where(eq(eventsRecords.batchId, r.batchId));
-    console.log(`\n== ${scenario}: ${status} rows=${records.length} accepted=${records.filter((x) => x.outcome === "ACCEPTED").length} held=${records.filter((x) => x.outcome === "HELD").length} rejected=${records.filter((x) => x.outcome === "REJECTED").length}`);
+    const [b0] = await ctx.db.select().from(batches).where(eq(batches.batchId, r.batchId));
+    console.log(`\n== ${scenario}: ${status}${b0.failureReason ? " " + b0.failureReason : ""} rows=${records.length} accepted=${records.filter((x) => x.outcome === "ACCEPTED").length} held=${records.filter((x) => x.outcome === "HELD").length} rejected=${records.filter((x) => x.outcome === "REJECTED").length}`);
     const byLine = new Map<number, string[]>();
     for (const f of findings) byLine.set(f.lineNumber ?? 0, [...(byLine.get(f.lineNumber ?? 0) ?? []), `${f.ruleId}/${f.messageId}${f.yearScope ? ":" + f.yearScope[0] : ""}`]);
     for (const [line, ids] of [...byLine.entries()].sort((a, b) => a[0] - b[0])) console.log(`  ${String(line).padStart(3)}  ${records.find((x) => x.lineNumber === line)?.outcome ?? "-"}  ${ids.join("  ")}`);
-    if (process.argv.includes("--write-expected") && status === "VALIDATED") {
+    if (process.argv.includes("--write-expected") && (status === "PENDING_APPROVAL" || status === "VALIDATED")) {
       const [b] = await ctx.db.select().from(batches).where(eq(batches.batchId, r.batchId));
       const paths = lakePaths({ employerId: "0235", batchId: r.batchId, ingestDate: ingestDateOf(b.receivedAt) });
       const out = path.join(root, scenario, "expected-findings.ndjson");
@@ -49,6 +50,14 @@ async function main() {
       const counts = { rows: records.length, accepted: records.filter((x) => x.outcome === "ACCEPTED").length, held: records.filter((x) => x.outcome === "HELD").length, rejected: records.filter((x) => x.outcome === "REJECTED").length, findings: findings.length, executionDate: exec };
       writeFileSync(path.join(root, scenario, "expected-counts.json"), JSON.stringify(counts, null, 2) + "\n");
       console.log(`  wrote ${path.relative(process.cwd(), out)} + expected-counts.json ${JSON.stringify(counts)}`);
+      // Phase 3 (AC1): the deterministic gold Update Set document + its counts.
+      if (status === "PENDING_APPROVAL" && (await ctx.lake.exists(paths.gold.updateSetJson))) {
+        const gold = (await ctx.lake.get(paths.gold.updateSetJson)).toString("utf8");
+        writeFileSync(path.join(root, scenario, "ariel-update-set.json"), gold);
+        const doc = JSON.parse(gold) as { contentHash: string; itemCount: number; memberCount: number; counts: unknown };
+        writeFileSync(path.join(root, scenario, "expected-update-counts.json"), JSON.stringify({ contentHash: doc.contentHash, itemCount: doc.itemCount, memberCount: doc.memberCount, counts: doc.counts }, null, 2) + "\n");
+        console.log(`  wrote ariel-update-set.json (items=${doc.itemCount} members=${doc.memberCount} hash=${doc.contentHash.slice(0, 12)}) + expected-update-counts.json`);
+      }
     }
   }
   await handle.close();

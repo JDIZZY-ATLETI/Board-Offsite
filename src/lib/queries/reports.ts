@@ -17,6 +17,12 @@ export const REPORT_NAMES = [
   "summary-of-validations.private.csv",
   "ariel-snapshot.ndjson",
   "rules-config.json",
+  "ariel-update-set.json",
+  "ariel-update-set.csv",
+  "diff.md",
+  "modified-fields-report.csv",
+  "transactions-report.csv",
+  "transactions-summary.csv",
 ] as const;
 export type ReportName = (typeof REPORT_NAMES)[number];
 
@@ -33,10 +39,27 @@ export const REPORT_CONTENT_TYPES: Record<ReportName, string> = {
   "summary-of-validations.private.csv": "text/csv; charset=utf-8",
   "ariel-snapshot.ndjson": "application/x-ndjson; charset=utf-8",
   "rules-config.json": "application/json; charset=utf-8",
+  "ariel-update-set.json": "application/json; charset=utf-8",
+  "ariel-update-set.csv": "text/csv; charset=utf-8",
+  "diff.md": "text/markdown; charset=utf-8",
+  "modified-fields-report.csv": "text/csv; charset=utf-8",
+  "transactions-report.csv": "text/csv; charset=utf-8",
+  "transactions-summary.csv": "text/csv; charset=utf-8",
 };
 
 /** Reviewer/Admin only (architecture section 10.6: Control Report content). */
-export const PRIVATE_REPORTS: ReadonlySet<ReportName> = new Set<ReportName>(["summary-of-validations.private.csv", "ariel-snapshot.ndjson", "rules-config.json"]);
+export const PRIVATE_REPORTS: ReadonlySet<ReportName> = new Set<ReportName>([
+  "summary-of-validations.private.csv",
+  "ariel-snapshot.ndjson",
+  "rules-config.json",
+  // Phase 3: derived Ariel changes are HOOPP-internal (section 13.1; UX section 5.4.5 roles column).
+  "ariel-update-set.json",
+  "ariel-update-set.csv",
+  "diff.md",
+  "modified-fields-report.csv",
+  "transactions-report.csv",
+  "transactions-summary.csv",
+]);
 
 /** Artifacts whose download must be audit-logged because they contain raw SIN. */
 export const PII_REPORTS: ReadonlySet<ReportName> = new Set<ReportName>(["rejected.csv"]);

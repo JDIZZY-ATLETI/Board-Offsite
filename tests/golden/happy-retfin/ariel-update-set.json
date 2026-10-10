@@ -1,0 +1,807 @@
+{
+  "schemaVersion": 1,
+  "employerId": "0235",
+  "executionDate": "2026-10-08",
+  "contentHash": "0fd2771c415ddaf7528cbefcd2be7435fe853e0f2cdbb930affa1f2f105e7331",
+  "itemCount": 22,
+  "memberCount": 3,
+  "counts": {
+    "byRecordType": {
+      "BenefitReevaluationFlag": 1,
+      "Employment": 9,
+      "PlansTaxInfoPA": 3,
+      "TransactionsContributions": 6,
+      "TransactionsService": 3
+    },
+    "byOperation": {
+      "CREATE": 12,
+      "SET_FLAG": 1,
+      "UPDATE": 9
+    },
+    "byEventType": {
+      "RETFIN": 22
+    }
+  },
+  "members": [
+    {
+      "sinPseudo": "20c97d59990461204d212cb6fb22ad0eb8930c9030c7dc3cbb58e2fab316b3cc",
+      "sinMasked": "***-***-035",
+      "memberDisplay": "***-***-035 CHEN, Carol",
+      "lineNumber": 2,
+      "eventType": "RETFIN",
+      "eventDate": "2026-06-30",
+      "itemCount": 7,
+      "items": [
+        {
+          "sinPseudo": "20c97d59990461204d212cb6fb22ad0eb8930c9030c7dc3cbb58e2fab316b3cc",
+          "sinMasked": "***-***-035",
+          "memberDisplay": "***-***-035 CHEN, Carol",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "RETFIN",
+          "eventDate": "2026-06-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "ff85db97-9b41-7ba7-846c-7a15929ab0ee"
+          },
+          "fields": {
+            "terminationDate": "2026-06-30"
+          },
+          "before": {
+            "terminationDate": "2026-06-30"
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = EmploymentEndDate (2026-06-30); Ariel had 2026-06-30",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "20c97d59990461204d212cb6fb22ad0eb8930c9030c7dc3cbb58e2fab316b3cc",
+          "sinMasked": "***-***-035",
+          "memberDisplay": "***-***-035 CHEN, Carol",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "RETFIN",
+          "eventDate": "2026-06-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "ff85db97-9b41-7ba7-846c-7a15929ab0ee"
+          },
+          "fields": {
+            "otherInformation": "Events 06302026"
+          },
+          "before": {
+            "otherInformation": "RetNotice 2026-06-30"
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + EmploymentEndDate as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "20c97d59990461204d212cb6fb22ad0eb8930c9030c7dc3cbb58e2fab316b3cc",
+          "sinMasked": "***-***-035",
+          "memberDisplay": "***-***-035 CHEN, Carol",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "RETFIN",
+          "eventDate": "2026-06-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "ff85db97-9b41-7ba7-846c-7a15929ab0ee"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "20c97d59990461204d212cb6fb22ad0eb8930c9030c7dc3cbb58e2fab316b3cc",
+          "sinMasked": "***-***-035",
+          "memberDisplay": "***-***-035 CHEN, Carol",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "RETFIN",
+          "eventDate": "2026-06-30",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "ff85db97-9b41-7ba7-846c-7a15929ab0ee",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-06-30",
+            "paymentDate": "2026-06-30",
+            "targetDate": "2026-06-30"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "26.00",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-06-30",
+            "paymentDate": "2026-06-30",
+            "targetDate": "2026-06-30",
+            "declarationDate": "2026-06-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 26.00 for 2026-01-01..2026-06-30 (payment/target 2026-06-30)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "20c97d59990461204d212cb6fb22ad0eb8930c9030c7dc3cbb58e2fab316b3cc",
+          "sinMasked": "***-***-035",
+          "memberDisplay": "***-***-035 CHEN, Carol",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "RETFIN",
+          "eventDate": "2026-06-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "ff85db97-9b41-7ba7-846c-7a15929ab0ee",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-06-30",
+            "paymentDate": "2026-06-30",
+            "targetDate": "2026-06-30"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "2573.70",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-06-30",
+            "paymentDate": "2026-06-30",
+            "targetDate": "2026-06-30",
+            "declarationDate": "2026-06-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 2573.70 for 2026-01-01..2026-06-30 (payment/target 2026-06-30)",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "20c97d59990461204d212cb6fb22ad0eb8930c9030c7dc3cbb58e2fab316b3cc",
+          "sinMasked": "***-***-035",
+          "memberDisplay": "***-***-035 CHEN, Carol",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "RETFIN",
+          "eventDate": "2026-06-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "ff85db97-9b41-7ba7-846c-7a15929ab0ee",
+            "type": "RPPHGH",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-06-30",
+            "paymentDate": "2026-06-30",
+            "targetDate": "2026-06-30"
+          },
+          "fields": {
+            "type": "RPPHGH",
+            "amount": "156.40",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-06-30",
+            "paymentDate": "2026-06-30",
+            "targetDate": "2026-06-30",
+            "declarationDate": "2026-06-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "HighContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPHGH-PRV-CY",
+          "explanation": "RPPHGH provided CY: new transaction RPPHGH/PRV 156.40 for 2026-01-01..2026-06-30 (payment/target 2026-06-30)",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "20c97d59990461204d212cb6fb22ad0eb8930c9030c7dc3cbb58e2fab316b3cc",
+          "sinMasked": "***-***-035",
+          "memberDisplay": "***-***-035 CHEN, Carol",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "RETFIN",
+          "eventDate": "2026-06-30",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "a50110d2-aa53-70d0-86da-2ce5d9f96839",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 5042,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 5042 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 6
+        }
+      ]
+    },
+    {
+      "sinPseudo": "bdb2d38778abe52ec8d6a8f1046129bd489d85fea708340f6f68f61fe5c1e16b",
+      "sinMasked": "***-***-167",
+      "memberDisplay": "***-***-167 FOX, Fiona",
+      "lineNumber": 4,
+      "eventType": "RETFIN",
+      "eventDate": "2026-02-28",
+      "itemCount": 8,
+      "items": [
+        {
+          "sinPseudo": "bdb2d38778abe52ec8d6a8f1046129bd489d85fea708340f6f68f61fe5c1e16b",
+          "sinMasked": "***-***-167",
+          "memberDisplay": "***-***-167 FOX, Fiona",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "RETFIN",
+          "eventDate": "2026-02-28",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "020ddcae-a8eb-7d37-80b6-e56b750d9afe"
+          },
+          "fields": {
+            "terminationDate": "2026-02-28"
+          },
+          "before": {
+            "terminationDate": "2026-02-28"
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = EmploymentEndDate (2026-02-28); Ariel had 2026-02-28",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "bdb2d38778abe52ec8d6a8f1046129bd489d85fea708340f6f68f61fe5c1e16b",
+          "sinMasked": "***-***-167",
+          "memberDisplay": "***-***-167 FOX, Fiona",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "RETFIN",
+          "eventDate": "2026-02-28",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "020ddcae-a8eb-7d37-80b6-e56b750d9afe"
+          },
+          "fields": {
+            "otherInformation": "Events 02282026"
+          },
+          "before": {
+            "otherInformation": "RetNotice 2026-02-28"
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + EmploymentEndDate as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "bdb2d38778abe52ec8d6a8f1046129bd489d85fea708340f6f68f61fe5c1e16b",
+          "sinMasked": "***-***-167",
+          "memberDisplay": "***-***-167 FOX, Fiona",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "RETFIN",
+          "eventDate": "2026-02-28",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "020ddcae-a8eb-7d37-80b6-e56b750d9afe"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "bdb2d38778abe52ec8d6a8f1046129bd489d85fea708340f6f68f61fe5c1e16b",
+          "sinMasked": "***-***-167",
+          "memberDisplay": "***-***-167 FOX, Fiona",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "RETFIN",
+          "eventDate": "2026-02-28",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "020ddcae-a8eb-7d37-80b6-e56b750d9afe",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-28",
+            "paymentDate": "2026-02-28",
+            "targetDate": "2026-02-28"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "8.00",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-28",
+            "paymentDate": "2026-02-28",
+            "targetDate": "2026-02-28",
+            "declarationDate": "2026-02-28",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 8.00 for 2026-01-01..2026-02-28 (payment/target 2026-02-28)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "bdb2d38778abe52ec8d6a8f1046129bd489d85fea708340f6f68f61fe5c1e16b",
+          "sinMasked": "***-***-167",
+          "memberDisplay": "***-***-167 FOX, Fiona",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "RETFIN",
+          "eventDate": "2026-02-28",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "020ddcae-a8eb-7d37-80b6-e56b750d9afe",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-28",
+            "paymentDate": "2026-02-28",
+            "targetDate": "2026-02-28"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "791.91",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-28",
+            "paymentDate": "2026-02-28",
+            "targetDate": "2026-02-28",
+            "declarationDate": "2026-02-28",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 791.91 for 2026-01-01..2026-02-28 (payment/target 2026-02-28)",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "bdb2d38778abe52ec8d6a8f1046129bd489d85fea708340f6f68f61fe5c1e16b",
+          "sinMasked": "***-***-167",
+          "memberDisplay": "***-***-167 FOX, Fiona",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "RETFIN",
+          "eventDate": "2026-02-28",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "020ddcae-a8eb-7d37-80b6-e56b750d9afe",
+            "type": "RPPHGH",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-28",
+            "paymentDate": "2026-02-28",
+            "targetDate": "2026-02-28"
+          },
+          "fields": {
+            "type": "RPPHGH",
+            "amount": "19.82",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-02-28",
+            "paymentDate": "2026-02-28",
+            "targetDate": "2026-02-28",
+            "declarationDate": "2026-02-28",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "HighContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPHGH-PRV-CY",
+          "explanation": "RPPHGH provided CY: new transaction RPPHGH/PRV 19.82 for 2026-01-01..2026-02-28 (payment/target 2026-02-28)",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "bdb2d38778abe52ec8d6a8f1046129bd489d85fea708340f6f68f61fe5c1e16b",
+          "sinMasked": "***-***-167",
+          "memberDisplay": "***-***-167 FOX, Fiona",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "RETFIN",
+          "eventDate": "2026-02-28",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "81612d26-be49-74ca-813d-a354618001b5",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 1496,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 1496 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 6
+        },
+        {
+          "sinPseudo": "bdb2d38778abe52ec8d6a8f1046129bd489d85fea708340f6f68f61fe5c1e16b",
+          "sinMasked": "***-***-167",
+          "memberDisplay": "***-***-167 FOX, Fiona",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "RETFIN",
+          "eventDate": "2026-02-28",
+          "recordType": "BenefitReevaluationFlag",
+          "operation": "SET_FLAG",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "81612d26-be49-74ca-813d-a354618001b5"
+          },
+          "fields": {
+            "active": true,
+            "reason": "RETFIN financial data loaded"
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType"
+          ],
+          "derivationRule": "D-RET-REEVAL-ON",
+          "explanation": "Member is already a Pensioner (status P): benefit re-evaluation flag activated",
+          "calculated": null,
+          "sortOrder": 7
+        }
+      ]
+    },
+    {
+      "sinPseudo": "ed316fc8b9b8eec3669ee1946041a765241b8b92775e21b4cb03dfe7987d2457",
+      "sinMasked": "***-***-092",
+      "memberDisplay": "***-***-092 IRWIN, Ida",
+      "lineNumber": 3,
+      "eventType": "RETFIN",
+      "eventDate": "2026-04-30",
+      "itemCount": 7,
+      "items": [
+        {
+          "sinPseudo": "ed316fc8b9b8eec3669ee1946041a765241b8b92775e21b4cb03dfe7987d2457",
+          "sinMasked": "***-***-092",
+          "memberDisplay": "***-***-092 IRWIN, Ida",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "RETFIN",
+          "eventDate": "2026-04-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "b9b0b854-4d5a-7f2f-8583-bab65c6821a8"
+          },
+          "fields": {
+            "terminationDate": "2026-04-30"
+          },
+          "before": {
+            "terminationDate": "2026-04-30"
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = EmploymentEndDate (2026-04-30); Ariel had 2026-04-30",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "ed316fc8b9b8eec3669ee1946041a765241b8b92775e21b4cb03dfe7987d2457",
+          "sinMasked": "***-***-092",
+          "memberDisplay": "***-***-092 IRWIN, Ida",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "RETFIN",
+          "eventDate": "2026-04-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "b9b0b854-4d5a-7f2f-8583-bab65c6821a8"
+          },
+          "fields": {
+            "otherInformation": "Events 04302026"
+          },
+          "before": {
+            "otherInformation": "RetNotice 2026-04-30"
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + EmploymentEndDate as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "ed316fc8b9b8eec3669ee1946041a765241b8b92775e21b4cb03dfe7987d2457",
+          "sinMasked": "***-***-092",
+          "memberDisplay": "***-***-092 IRWIN, Ida",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "RETFIN",
+          "eventDate": "2026-04-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "b9b0b854-4d5a-7f2f-8583-bab65c6821a8"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "ed316fc8b9b8eec3669ee1946041a765241b8b92775e21b4cb03dfe7987d2457",
+          "sinMasked": "***-***-092",
+          "memberDisplay": "***-***-092 IRWIN, Ida",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "RETFIN",
+          "eventDate": "2026-04-30",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "b9b0b854-4d5a-7f2f-8583-bab65c6821a8",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-04-30",
+            "paymentDate": "2026-04-30",
+            "targetDate": "2026-04-30"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "17.00",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-04-30",
+            "paymentDate": "2026-04-30",
+            "targetDate": "2026-04-30",
+            "declarationDate": "2026-04-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 17.00 for 2026-01-01..2026-04-30 (payment/target 2026-04-30)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "ed316fc8b9b8eec3669ee1946041a765241b8b92775e21b4cb03dfe7987d2457",
+          "sinMasked": "***-***-092",
+          "memberDisplay": "***-***-092 IRWIN, Ida",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "RETFIN",
+          "eventDate": "2026-04-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "b9b0b854-4d5a-7f2f-8583-bab65c6821a8",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-04-30",
+            "paymentDate": "2026-04-30",
+            "targetDate": "2026-04-30"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "1682.80",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-04-30",
+            "paymentDate": "2026-04-30",
+            "targetDate": "2026-04-30",
+            "declarationDate": "2026-04-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 1682.80 for 2026-01-01..2026-04-30 (payment/target 2026-04-30)",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "ed316fc8b9b8eec3669ee1946041a765241b8b92775e21b4cb03dfe7987d2457",
+          "sinMasked": "***-***-092",
+          "memberDisplay": "***-***-092 IRWIN, Ida",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "RETFIN",
+          "eventDate": "2026-04-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "b9b0b854-4d5a-7f2f-8583-bab65c6821a8",
+            "type": "RPPHGH",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-04-30",
+            "paymentDate": "2026-04-30",
+            "targetDate": "2026-04-30"
+          },
+          "fields": {
+            "type": "RPPHGH",
+            "amount": "72.18",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-04-30",
+            "paymentDate": "2026-04-30",
+            "targetDate": "2026-04-30",
+            "declarationDate": "2026-04-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "HighContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPHGH-PRV-CY",
+          "explanation": "RPPHGH provided CY: new transaction RPPHGH/PRV 72.18 for 2026-01-01..2026-04-30 (payment/target 2026-04-30)",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "ed316fc8b9b8eec3669ee1946041a765241b8b92775e21b4cb03dfe7987d2457",
+          "sinMasked": "***-***-092",
+          "memberDisplay": "***-***-092 IRWIN, Ida",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "RETFIN",
+          "eventDate": "2026-04-30",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "287a2497-c739-7751-8c89-90a8daa09c16",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 3238,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 3238 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 6
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "contentHash": "55a8c37bc532073ee63b2fa505f5ba3512aaf1c3838dce72c40071d289926c65",
+  "itemCount": 50,
+  "memberCount": 5,
+  "counts": {
+    "byRecordType": {
+      "CalculationsBenefit": 5,
+      "Employment": 20,
+      "MembershipStatus": 5,
+      "PlansTaxInfoPA": 5,
+      "TransactionsContributions": 8,
+      "TransactionsService": 5,
+      "TransactionsServiceBreak": 2
+    },
+    "byOperation": {
+      "CLOSE": 1,
+      "CREATE": 28,
+      "DELETE": 1,
+      "UPDATE": 20
+    },
+    "byEventType": {
+      "TERFIN": 50
+    }
+  }
+}

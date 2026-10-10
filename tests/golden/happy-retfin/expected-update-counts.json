@@ -1,0 +1,22 @@
+{
+  "contentHash": "0fd2771c415ddaf7528cbefcd2be7435fe853e0f2cdbb930affa1f2f105e7331",
+  "itemCount": 22,
+  "memberCount": 3,
+  "counts": {
+    "byRecordType": {
+      "BenefitReevaluationFlag": 1,
+      "Employment": 9,
+      "PlansTaxInfoPA": 3,
+      "TransactionsContributions": 6,
+      "TransactionsService": 3
+    },
+    "byOperation": {
+      "CREATE": 12,
+      "SET_FLAG": 1,
+      "UPDATE": 9
+    },
+    "byEventType": {
+      "RETFIN": 22
+    }
+  }
+}

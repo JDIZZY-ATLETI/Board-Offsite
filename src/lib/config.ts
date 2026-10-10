@@ -35,6 +35,11 @@ export const envSchema = z.object({
   /** Comma-separated rule ids to disable (e.g. "I9"). Architecture section 18 Q4. */
   RULES_DISABLED: z.string().default(""),
   APP_VERSION: z.string().default("0.1.0"),
+  /**
+   * Phase 3: where Ariel export files (the only artifacts carrying raw SINs) are written, as a lake path prefix.
+   * Empty = inside the batch gold partition (`gold/.../exports/<exportId>/`).
+   */
+  EXPORT_DIR: z.string().default(""),
 });
 
 export interface AppConfig {
@@ -55,6 +60,8 @@ export interface AppConfig {
   i42ApplyToRetfin: boolean;
   rulesDisabled: Set<string>;
   appVersion: string;
+  /** Lake path prefix for export files; null = batch gold partition. */
+  exportDir: string | null;
   /** True when a dev fallback key was used; logged loudly at startup. */
   usingDevKeys: boolean;
 }
@@ -110,6 +117,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         .filter(Boolean),
     ),
     appVersion: e.APP_VERSION,
+    exportDir: e.EXPORT_DIR.trim().replace(/^\/+|\/+$/g, "") || null,
     usingDevKeys,
   };
 }

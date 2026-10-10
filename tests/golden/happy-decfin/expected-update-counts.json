@@ -1,0 +1,23 @@
+{
+  "contentHash": "627649525f7874756c23cc7841ed5f48f23add8e02b4d4990f24e79d0529caee",
+  "itemCount": 32,
+  "memberCount": 3,
+  "counts": {
+    "byRecordType": {
+      "CalculationsBenefit": 3,
+      "Employment": 12,
+      "Member": 3,
+      "MembershipStatus": 3,
+      "PlansTaxInfoPA": 3,
+      "TransactionsContributions": 5,
+      "TransactionsService": 3
+    },
+    "byOperation": {
+      "CREATE": 17,
+      "UPDATE": 15
+    },
+    "byEventType": {
+      "DECFIN": 32
+    }
+  }
+}

@@ -1,0 +1,1114 @@
+{
+  "schemaVersion": 1,
+  "employerId": "0235",
+  "executionDate": "2026-10-08",
+  "contentHash": "627649525f7874756c23cc7841ed5f48f23add8e02b4d4990f24e79d0529caee",
+  "itemCount": 32,
+  "memberCount": 3,
+  "counts": {
+    "byRecordType": {
+      "CalculationsBenefit": 3,
+      "Employment": 12,
+      "Member": 3,
+      "MembershipStatus": 3,
+      "PlansTaxInfoPA": 3,
+      "TransactionsContributions": 5,
+      "TransactionsService": 3
+    },
+    "byOperation": {
+      "CREATE": 17,
+      "UPDATE": 15
+    },
+    "byEventType": {
+      "DECFIN": 32
+    }
+  },
+  "members": [
+    {
+      "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+      "sinMasked": "***-***-027",
+      "memberDisplay": "***-***-027 BAKER, Ben",
+      "lineNumber": 2,
+      "eventType": "DECFIN",
+      "eventDate": "2026-07-01",
+      "itemCount": 11,
+      "items": [
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "7ca89976-9332-7ae2-8c74-53da46f7ecfc"
+          },
+          "fields": {
+            "terminationDate": "2026-07-01"
+          },
+          "before": {
+            "terminationDate": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = DateOfDeath (2026-07-01)",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "7ca89976-9332-7ae2-8c74-53da46f7ecfc"
+          },
+          "fields": {
+            "terminationCode": "DEC"
+          },
+          "before": {
+            "terminationCode": null
+          },
+          "sourceFields": [
+            "EventType"
+          ],
+          "derivationRule": "D-EMP-TERMCODE",
+          "explanation": "Employment.terminationCode = \"DEC\" because EventType = DECFIN",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "7ca89976-9332-7ae2-8c74-53da46f7ecfc"
+          },
+          "fields": {
+            "otherInformation": "Events 07012026"
+          },
+          "before": {
+            "otherInformation": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + DateOfDeath as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "7ca89976-9332-7ae2-8c74-53da46f7ecfc"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "Member",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "79e5bcaa-8df9-74a6-8a9c-2af40298dba7"
+          },
+          "fields": {
+            "dateOfDeath": "2026-07-01"
+          },
+          "before": {
+            "dateOfDeath": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MBR-DOD",
+          "explanation": "Member.dateOfDeath = 2026-07-01 (CSV has no DateOfDeath column: EmploymentEndDate used, section 18 Q1)",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "7ca89976-9332-7ae2-8c74-53da46f7ecfc",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-07-01",
+            "paymentDate": "2026-07-01",
+            "targetDate": "2026-07-01"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "26.00",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-07-01",
+            "paymentDate": "2026-07-01",
+            "targetDate": "2026-07-01",
+            "declarationDate": "2026-07-01",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 26.00 for 2026-01-01..2026-07-01 (payment/target 2026-07-01)",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "7ca89976-9332-7ae2-8c74-53da46f7ecfc",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-07-01",
+            "paymentDate": "2026-07-01",
+            "targetDate": "2026-07-01"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "2573.70",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-07-01",
+            "paymentDate": "2026-07-01",
+            "targetDate": "2026-07-01",
+            "declarationDate": "2026-07-01",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 2573.70 for 2026-01-01..2026-07-01 (payment/target 2026-07-01)",
+          "calculated": null,
+          "sortOrder": 6
+        },
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "7ca89976-9332-7ae2-8c74-53da46f7ecfc",
+            "type": "RPPHGH",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-07-01",
+            "paymentDate": "2026-07-01",
+            "targetDate": "2026-07-01"
+          },
+          "fields": {
+            "type": "RPPHGH",
+            "amount": "110.40",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-07-01",
+            "paymentDate": "2026-07-01",
+            "targetDate": "2026-07-01",
+            "declarationDate": "2026-07-01",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "HighContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPHGH-PRV-CY",
+          "explanation": "RPPHGH provided CY: new transaction RPPHGH/PRV 110.40 for 2026-01-01..2026-07-01 (payment/target 2026-07-01)",
+          "calculated": null,
+          "sortOrder": 7
+        },
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "79e5bcaa-8df9-74a6-8a9c-2af40298dba7",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 4952,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 4952 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 8
+        },
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "MembershipStatus",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "79e5bcaa-8df9-74a6-8a9c-2af40298dba7",
+            "statusEffectiveDate": "2026-07-01"
+          },
+          "fields": {
+            "statusCode": "D",
+            "statusEffectiveDate": "2026-07-01",
+            "subStatusCode": "NCT",
+            "subStatusEffectiveDate": "2026-07-01"
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MSTAT-DNCT",
+          "explanation": "Last open employment terminated by DECFIN: membership -> D (Deferred Pensioner) / NCT (Not Completed Termination) effective 2026-07-01",
+          "calculated": {
+            "previousStatus": "A",
+            "previousSubStatus": null,
+            "previousStatusEffectiveDate": "2010-01-04",
+            "statusEventDate": "2026-07-01"
+          },
+          "sortOrder": 9
+        },
+        {
+          "sinPseudo": "2dceb55893d41c9a357116270353faf7603fa491ad6a385cbe2af3e1607e63f9",
+          "sinMasked": "***-***-027",
+          "memberDisplay": "***-***-027 BAKER, Ben",
+          "employerId": "0235",
+          "lineNumber": 2,
+          "eventType": "DECFIN",
+          "eventDate": "2026-07-01",
+          "recordType": "CalculationsBenefit",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "79e5bcaa-8df9-74a6-8a9c-2af40298dba7",
+            "eventCategory": "Death Before Retirement",
+            "eventDate": "2026-07-01"
+          },
+          "fields": {
+            "eventCategory": "Death Before Retirement",
+            "eventDate": "2026-07-01",
+            "finalCalculation": false,
+            "clientRequestDate": "2026-10-08",
+            "estimate": false
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-CALC-REQUEST",
+          "explanation": "Preliminary calculation request \"Death Before Retirement\" for 2026-07-01, client request date 2026-10-08 (last open employment terminated)",
+          "calculated": null,
+          "sortOrder": 10
+        }
+      ]
+    },
+    {
+      "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+      "sinMasked": "***-***-124",
+      "memberDisplay": "***-***-124 LEE, Liam",
+      "lineNumber": 4,
+      "eventType": "DECFIN",
+      "eventDate": "2026-09-30",
+      "itemCount": 11,
+      "items": [
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "4fbacad2-fccc-7091-8755-3c9eb755cef5"
+          },
+          "fields": {
+            "terminationDate": "2026-09-30"
+          },
+          "before": {
+            "terminationDate": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = DateOfDeath (2026-09-30)",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "4fbacad2-fccc-7091-8755-3c9eb755cef5"
+          },
+          "fields": {
+            "terminationCode": "DEC"
+          },
+          "before": {
+            "terminationCode": null
+          },
+          "sourceFields": [
+            "EventType"
+          ],
+          "derivationRule": "D-EMP-TERMCODE",
+          "explanation": "Employment.terminationCode = \"DEC\" because EventType = DECFIN",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "4fbacad2-fccc-7091-8755-3c9eb755cef5"
+          },
+          "fields": {
+            "otherInformation": "Events 09302026"
+          },
+          "before": {
+            "otherInformation": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + DateOfDeath as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "4fbacad2-fccc-7091-8755-3c9eb755cef5"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "Member",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "9e657761-a622-7aab-866f-edf2aa9496e4"
+          },
+          "fields": {
+            "dateOfDeath": "2026-09-30"
+          },
+          "before": {
+            "dateOfDeath": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MBR-DOD",
+          "explanation": "Member.dateOfDeath = 2026-09-30 (CSV has no DateOfDeath column: EmploymentEndDate used, section 18 Q1)",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "4fbacad2-fccc-7091-8755-3c9eb755cef5",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "38.00",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 38.00 for 2026-01-01..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "4fbacad2-fccc-7091-8755-3c9eb755cef5",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "3761.56",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 3761.56 for 2026-01-01..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 6
+        },
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "4fbacad2-fccc-7091-8755-3c9eb755cef5",
+            "type": "RPPHGH",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30"
+          },
+          "fields": {
+            "type": "RPPHGH",
+            "amount": "60.51",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-09-30",
+            "paymentDate": "2026-09-30",
+            "targetDate": "2026-09-30",
+            "declarationDate": "2026-09-30",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "HighContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPHGH-PRV-CY",
+          "explanation": "RPPHGH provided CY: new transaction RPPHGH/PRV 60.51 for 2026-01-01..2026-09-30 (payment/target 2026-09-30)",
+          "calculated": null,
+          "sortOrder": 7
+        },
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "9e657761-a622-7aab-866f-edf2aa9496e4",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 7040,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 7040 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 8
+        },
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "MembershipStatus",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "9e657761-a622-7aab-866f-edf2aa9496e4",
+            "statusEffectiveDate": "2026-09-30"
+          },
+          "fields": {
+            "statusCode": "D",
+            "statusEffectiveDate": "2026-09-30",
+            "subStatusCode": "NCT",
+            "subStatusEffectiveDate": "2026-09-30"
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MSTAT-DNCT",
+          "explanation": "Last open employment terminated by DECFIN: membership -> D (Deferred Pensioner) / NCT (Not Completed Termination) effective 2026-09-30",
+          "calculated": {
+            "previousStatus": "A",
+            "previousSubStatus": null,
+            "previousStatusEffectiveDate": "2015-03-02",
+            "statusEventDate": "2026-09-30"
+          },
+          "sortOrder": 9
+        },
+        {
+          "sinPseudo": "92566246338c56a9095b5dc88d5d560021f0c25acb63710e71a91ae1ba44d962",
+          "sinMasked": "***-***-124",
+          "memberDisplay": "***-***-124 LEE, Liam",
+          "employerId": "0235",
+          "lineNumber": 4,
+          "eventType": "DECFIN",
+          "eventDate": "2026-09-30",
+          "recordType": "CalculationsBenefit",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "9e657761-a622-7aab-866f-edf2aa9496e4",
+            "eventCategory": "Death Before Retirement",
+            "eventDate": "2026-09-30"
+          },
+          "fields": {
+            "eventCategory": "Death Before Retirement",
+            "eventDate": "2026-09-30",
+            "finalCalculation": false,
+            "clientRequestDate": "2026-10-08",
+            "estimate": false
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-CALC-REQUEST",
+          "explanation": "Preliminary calculation request \"Death Before Retirement\" for 2026-09-30, client request date 2026-10-08 (last open employment terminated)",
+          "calculated": null,
+          "sortOrder": 10
+        }
+      ]
+    },
+    {
+      "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+      "sinMasked": "***-***-116",
+      "memberDisplay": "***-***-116 KING, Kim",
+      "lineNumber": 3,
+      "eventType": "DECFIN",
+      "eventDate": "2026-03-15",
+      "itemCount": 10,
+      "items": [
+        {
+          "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+          "sinMasked": "***-***-116",
+          "memberDisplay": "***-***-116 KING, Kim",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "DECFIN",
+          "eventDate": "2026-03-15",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "502f855b-d4af-7939-8f47-0acdf38f57ba"
+          },
+          "fields": {
+            "terminationDate": "2026-03-15"
+          },
+          "before": {
+            "terminationDate": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-TERMDATE",
+          "explanation": "Employment.terminationDate = DateOfDeath (2026-03-15)",
+          "calculated": null,
+          "sortOrder": 0
+        },
+        {
+          "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+          "sinMasked": "***-***-116",
+          "memberDisplay": "***-***-116 KING, Kim",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "DECFIN",
+          "eventDate": "2026-03-15",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "502f855b-d4af-7939-8f47-0acdf38f57ba"
+          },
+          "fields": {
+            "terminationCode": "DEC"
+          },
+          "before": {
+            "terminationCode": null
+          },
+          "sourceFields": [
+            "EventType"
+          ],
+          "derivationRule": "D-EMP-TERMCODE",
+          "explanation": "Employment.terminationCode = \"DEC\" because EventType = DECFIN",
+          "calculated": null,
+          "sortOrder": 1
+        },
+        {
+          "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+          "sinMasked": "***-***-116",
+          "memberDisplay": "***-***-116 KING, Kim",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "DECFIN",
+          "eventDate": "2026-03-15",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "502f855b-d4af-7939-8f47-0acdf38f57ba"
+          },
+          "fields": {
+            "otherInformation": "Events 03152026"
+          },
+          "before": {
+            "otherInformation": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-EMP-OTHERINFO",
+          "explanation": "Employment.otherInformation = \"Events \" + DateOfDeath as MMDDYYYY (section 18 Q12)",
+          "calculated": null,
+          "sortOrder": 2
+        },
+        {
+          "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+          "sinMasked": "***-***-116",
+          "memberDisplay": "***-***-116 KING, Kim",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "DECFIN",
+          "eventDate": "2026-03-15",
+          "recordType": "Employment",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "employmentId": "502f855b-d4af-7939-8f47-0acdf38f57ba"
+          },
+          "fields": {
+            "terminationDataUpdate": "2026-10-08"
+          },
+          "before": {
+            "terminationDataUpdate": null
+          },
+          "sourceFields": [],
+          "derivationRule": "D-EMP-TERMDATAUPDATE",
+          "explanation": "Employment.terminationDataUpdate = execution date 2026-10-08 (set with every Events load)",
+          "calculated": null,
+          "sortOrder": 3
+        },
+        {
+          "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+          "sinMasked": "***-***-116",
+          "memberDisplay": "***-***-116 KING, Kim",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "DECFIN",
+          "eventDate": "2026-03-15",
+          "recordType": "Member",
+          "operation": "UPDATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "30398a16-0d4e-7357-86cd-15b17f58584b"
+          },
+          "fields": {
+            "dateOfDeath": "2026-03-15"
+          },
+          "before": {
+            "dateOfDeath": null
+          },
+          "sourceFields": [
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MBR-DOD",
+          "explanation": "Member.dateOfDeath = 2026-03-15 (CSV has no DateOfDeath column: EmploymentEndDate used, section 18 Q1)",
+          "calculated": null,
+          "sortOrder": 4
+        },
+        {
+          "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+          "sinMasked": "***-***-116",
+          "memberDisplay": "***-***-116 KING, Kim",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "DECFIN",
+          "eventDate": "2026-03-15",
+          "recordType": "TransactionsService",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "502f855b-d4af-7939-8f47-0acdf38f57ba",
+            "type": "CTSRV",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-03-15",
+            "paymentDate": "2026-03-15",
+            "targetDate": "2026-03-15"
+          },
+          "fields": {
+            "type": "CTSRV",
+            "amount": "10.00",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-03-15",
+            "paymentDate": "2026-03-15",
+            "targetDate": "2026-03-15",
+            "declarationDate": "2026-03-15",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "Weeks_CurrentYear"
+          ],
+          "derivationRule": "D-SRV-CTSRV-CY",
+          "explanation": "CTSRV weeks CY: new transaction CTSRV/PRV 10.00 for 2026-01-01..2026-03-15 (payment/target 2026-03-15)",
+          "calculated": null,
+          "sortOrder": 5
+        },
+        {
+          "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+          "sinMasked": "***-***-116",
+          "memberDisplay": "***-***-116 KING, Kim",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "DECFIN",
+          "eventDate": "2026-03-15",
+          "recordType": "TransactionsContributions",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "employmentId": "502f855b-d4af-7939-8f47-0acdf38f57ba",
+            "type": "RPPLOW",
+            "indicator": "PRV",
+            "summaryAttributes": "Final Data - Events",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-03-15",
+            "paymentDate": "2026-03-15",
+            "targetDate": "2026-03-15"
+          },
+          "fields": {
+            "type": "RPPLOW",
+            "amount": "981.92",
+            "beginDate": "2026-01-01",
+            "endDate": "2026-03-15",
+            "paymentDate": "2026-03-15",
+            "targetDate": "2026-03-15",
+            "declarationDate": "2026-03-15",
+            "transactionIndicator": "PRV",
+            "numberOfPays": 2026,
+            "summaryAttributes": "Final Data - Events"
+          },
+          "before": null,
+          "sourceFields": [
+            "LowContributions_CurrentYear"
+          ],
+          "derivationRule": "D-CONTRIB-RPPLOW-PRV-CY",
+          "explanation": "RPPLOW provided CY: new transaction RPPLOW/PRV 981.92 for 2026-01-01..2026-03-15 (payment/target 2026-03-15)",
+          "calculated": null,
+          "sortOrder": 6
+        },
+        {
+          "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+          "sinMasked": "***-***-116",
+          "memberDisplay": "***-***-116 KING, Kim",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "DECFIN",
+          "eventDate": "2026-03-15",
+          "recordType": "PlansTaxInfoPA",
+          "operation": "CREATE",
+          "yearScope": "CURRENT",
+          "targetKey": {
+            "memberId": "30398a16-0d4e-7357-86cd-15b17f58584b",
+            "employerId": "0235",
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08"
+          },
+          "fields": {
+            "pensionAdjustment": 1806,
+            "calculationYear": 2026,
+            "inputDate": "2026-10-08",
+            "employerId": "0235"
+          },
+          "before": null,
+          "sourceFields": [
+            "PA_CurrentYear"
+          ],
+          "derivationRule": "D-PA-CY",
+          "explanation": "PA 1806 for calculation year 2026 at employer 0235, input 2026-10-08",
+          "calculated": null,
+          "sortOrder": 7
+        },
+        {
+          "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+          "sinMasked": "***-***-116",
+          "memberDisplay": "***-***-116 KING, Kim",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "DECFIN",
+          "eventDate": "2026-03-15",
+          "recordType": "MembershipStatus",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "30398a16-0d4e-7357-86cd-15b17f58584b",
+            "statusEffectiveDate": "2026-03-15"
+          },
+          "fields": {
+            "statusCode": "D",
+            "statusEffectiveDate": "2026-03-15",
+            "subStatusCode": "NCT",
+            "subStatusEffectiveDate": "2026-03-15"
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-MSTAT-DNCT",
+          "explanation": "Last open employment terminated by DECFIN: membership -> D (Deferred Pensioner) / NCT (Not Completed Termination) effective 2026-03-15",
+          "calculated": {
+            "previousStatus": "A",
+            "previousSubStatus": null,
+            "previousStatusEffectiveDate": "2015-03-02",
+            "statusEventDate": "2026-03-15"
+          },
+          "sortOrder": 8
+        },
+        {
+          "sinPseudo": "955cb2d5e27803a266521074410de2f5c29ce9c000fe5b99d09a2990f9d8a704",
+          "sinMasked": "***-***-116",
+          "memberDisplay": "***-***-116 KING, Kim",
+          "employerId": "0235",
+          "lineNumber": 3,
+          "eventType": "DECFIN",
+          "eventDate": "2026-03-15",
+          "recordType": "CalculationsBenefit",
+          "operation": "CREATE",
+          "yearScope": null,
+          "targetKey": {
+            "memberId": "30398a16-0d4e-7357-86cd-15b17f58584b",
+            "eventCategory": "Death Before Retirement",
+            "eventDate": "2026-03-15"
+          },
+          "fields": {
+            "eventCategory": "Death Before Retirement",
+            "eventDate": "2026-03-15",
+            "finalCalculation": false,
+            "clientRequestDate": "2026-10-08",
+            "estimate": false
+          },
+          "before": null,
+          "sourceFields": [
+            "EventType",
+            "EmploymentEndDate"
+          ],
+          "derivationRule": "D-CALC-REQUEST",
+          "explanation": "Preliminary calculation request \"Death Before Retirement\" for 2026-03-15, client request date 2026-10-08 (last open employment terminated)",
+          "calculated": null,
+          "sortOrder": 9
+        }
+      ]
+    }
+  ]
+}
