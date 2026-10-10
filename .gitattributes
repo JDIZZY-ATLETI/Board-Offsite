@@ -1,0 +1,4 @@
+# Golden artifacts are compared byte-for-byte (architecture section 15): never convert their line endings.
+tests/golden/**/*.json -text
+tests/golden/**/*.ndjson -text
+tests/golden/**/*.md -text
