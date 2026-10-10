@@ -5,12 +5,13 @@ import { getAppContext } from "@/lib/app-context";
 import { requirePageSession } from "@/lib/auth/page-session";
 import { employerScope } from "@/lib/auth/roles";
 import { EMPLOYER_NAMES } from "@/lib/auth/dev-session";
-import { getDashboardData } from "@/lib/queries/dashboard";
+import { findingsByRule, getDashboardData } from "@/lib/queries/dashboard";
 import { getLastVerification, getLedgerHead } from "@/lib/queries/ledger";
 import { formatDateTime, formatEmployer, formatInt, formatRelative } from "@/lib/ui/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BatchMiniTable } from "@/components/app/batch-mini-table";
+import { FindingsByRulePanel } from "@/components/app/findings-by-rule-panel";
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { integrityState } from "@/lib/ui/integrity";
@@ -23,9 +24,10 @@ export default async function DashboardPage() {
   const session = await requirePageSession();
   const ctx = await getAppContext();
   const scope = employerScope(session);
-  const [data, head, last] = await Promise.all([getDashboardData(ctx, scope), getLedgerHead(ctx), getLastVerification(ctx)]);
-  const k = data.kpis;
   const isSubmitter = session.role === "EmployerSubmitter";
+  // Section 5.1: the rule panel is Reviewer/Admin only; both see PRIVATE findings.
+  const [data, head, last, byRule] = await Promise.all([getDashboardData(ctx, scope), getLedgerHead(ctx), getLastVerification(ctx), isSubmitter ? null : findingsByRule(ctx, { includePrivate: true })]);
+  const k = data.kpis;
   const canUpload = session.role !== "Reviewer";
   const canLedger = session.role !== "EmployerSubmitter";
   const integrity = integrityState(last);
@@ -130,6 +132,27 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {byRule ? (
+        <Card data-testid="findings-by-rule">
+          <CardHeader className="flex-row items-start justify-between gap-4">
+            <div>
+              <CardTitle>Findings by rule</CardTitle>
+              <p className="text-caption text-ink-muted">
+                Last 30 days · {formatInt(byRule.totalFindings)} findings across {formatInt(byRule.batches)} batches · top {byRule.items.length}
+              </p>
+            </div>
+            <Button asChild variant="link" size="sm" className="px-0">
+              <Link href="/admin/rules">
+                Rule registry <ArrowRight aria-hidden="true" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="px-0 pb-2">
+            <FindingsByRulePanel items={byRule.items} totalFindings={byRule.totalFindings} batches={byRule.batches} />
+          </CardContent>
+        </Card>
+      ) : null}
 
       <p className="text-caption text-ink-faint">
         Refreshed {formatDateTime(data.generatedAt, { seconds: true })} ·{" "}

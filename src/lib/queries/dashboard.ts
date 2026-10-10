@@ -1,7 +1,7 @@
-import { and, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from "drizzle-orm";
 import type { AppContext } from "@/lib/app-context";
-import { batches, rawFiles } from "@/lib/db/schema";
-import type { BatchStatus } from "@/types";
+import { batches, rawFiles, validationFindings } from "@/lib/db/schema";
+import type { BatchStatus, FindingSeverity } from "@/types";
 import { toBatch, type BatchSummary } from "./batches";
 
 export interface DashboardKpis {
@@ -27,6 +27,54 @@ export interface DashboardData {
 
 const IN_PROGRESS: BatchStatus[] = ["RECEIVED", "PARSED", "LEDGERED", "PROJECTION_BUILT"];
 const ATTENTION: BatchStatus[] = ["PENDING_APPROVAL", "FAILED", "FILE_REJECTED"];
+
+export interface FindingsByRuleRow {
+  ruleId: string;
+  severity: FindingSeverity;
+  findings: number;
+  rows: number;
+  batches: number;
+  overridden: number;
+}
+
+/**
+ * docs/ux-design.md section 5.1 "Findings by rule - last 30 days": top N rules by finding count across batches received
+ * in the window (Reviewer/Admin; PRIVATE findings included only when `includePrivate`).
+ */
+export async function findingsByRule(ctx: AppContext, opts: { days?: number; limit?: number; includePrivate: boolean; scopeEmployerId?: string | null } = { includePrivate: false }): Promise<{ items: FindingsByRuleRow[]; totalFindings: number; since: string; batches: number }> {
+  const days = opts.days ?? 30;
+  const limit = opts.limit ?? 8;
+  const since = new Date(ctx.clock().getTime() - days * 86_400_000).toISOString();
+  const conds = [gte(batches.receivedAt, since), isNotNull(validationFindings.recordId)];
+  if (!opts.includePrivate) conds.push(eq(validationFindings.visibility, "PUBLIC"));
+  if (opts.scopeEmployerId) conds.push(eq(batches.employerId, opts.scopeEmployerId));
+  const rows = await ctx.db
+    .select({
+      ruleId: validationFindings.ruleId,
+      severity: validationFindings.severity,
+      findings: sql<number>`count(*)::int`,
+      rows: sql<number>`count(distinct ${validationFindings.recordId})::int`,
+      batches: sql<number>`count(distinct ${validationFindings.batchId})::int`,
+      overridden: sql<number>`count(${validationFindings.overrideReason})::int`,
+    })
+    .from(validationFindings)
+    .innerJoin(batches, eq(batches.batchId, validationFindings.batchId))
+    .where(and(...conds))
+    .groupBy(validationFindings.ruleId, validationFindings.severity)
+    .orderBy(desc(sql`count(*)`), validationFindings.ruleId);
+  const totalFindings = rows.reduce((a, r) => a + Number(r.findings), 0);
+  const [{ n } = { n: 0 }] = await ctx.db
+    .select({ n: sql<number>`count(distinct ${validationFindings.batchId})::int` })
+    .from(validationFindings)
+    .innerJoin(batches, eq(batches.batchId, validationFindings.batchId))
+    .where(and(...conds));
+  return {
+    items: rows.slice(0, limit).map((r) => ({ ruleId: r.ruleId, severity: r.severity as FindingSeverity, findings: Number(r.findings), rows: Number(r.rows), batches: Number(r.batches), overridden: Number(r.overridden) })),
+    totalFindings,
+    since,
+    batches: Number(n),
+  };
+}
 
 function startOfDayIso(d: Date): string {
   const x = new Date(d);

@@ -17,6 +17,9 @@ Running log for the Phase 2B pass (QA fixes + Phase 2 UI). Base `cec41e7`.
 
 - Part 2.11 OverrideDrawer (`src/components/app/findings/override-drawer.tsx`: reasons from `GET /api/rules/{id}`, Other->note, single + bulk POST, error copy map `OVERRIDE_ERROR_COPY`), FindingsView Override column/button, bulk selection + `bulk-override-button`, `?override=` facet, `visibility-toggle`, amber `OverrideStrip`, HELD tint/badges in row groups and Records, held counts in Batches list / dashboard mini table, Submitter D6 copy. Browser-verified via `tests/e2e/phase2-qa.mjs` (new, wired to `e2e:qa` + `e2e:phase2`): single override -> ACCEPTED, held 8->7, WarningOverridden ledgered; bulk 2 B43 -> held 5.
 
+- Part 2.12-2.14 committed (`af59082`, `4c8b1ba`, `2ece583`): Summary of validations views, /ariel browser + member page, /admin/rules registry + history.
+- Part 2.15 Dashboard "Findings by rule" (`findingsByRule()` in `src/lib/queries/dashboard.ts`: top 8 rules by finding count over batches received in the last 30 days, record-level findings only, PRIVATE via `includePrivate`, `scopeEmployerId`; `FindingsByRulePanel` table with caption, rule link -> `/admin/rules?q=<id>`, severity badge, findings/rows/batches/overridden, decorative bar, EmptyState). Rendered for Reviewer/Admin only (`data-testid="findings-by-rule"`); Submitter dashboard unchanged. Test: `ui-queries` "findingsByRule (ux 5.1 item 15)".
+
 ## Next
 
-- Part 2 items 12 (reports views) .. 15. Part 3 unit tests + gates + report.
+- Part 3 unit/RTL tests (OverrideDrawer, FindingsTable strip, rules toggle, status-map), browser E2E + screenshots, gates + report fix pass.

@@ -1,7 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ingest } from "@/lib/pipeline/ingest";
 import { runBatch } from "@/lib/pipeline/run";
-import { getDashboardData } from "@/lib/queries/dashboard";
+import { findingsByRule, getDashboardData } from "@/lib/queries/dashboard";
+import { overrideFinding } from "@/lib/pipeline/override";
+import { validationFindings } from "@/lib/db/schema";
+import { and, eq } from "drizzle-orm";
 import { findingFacets, listFindings } from "@/lib/queries/findings";
 import { getLastVerification, listLedgerEntries, verifyLedger } from "@/lib/queries/ledger";
 import { listRecords, recordOutcomeCounts, recordsByLineNumbers } from "@/lib/queries/records";
@@ -107,5 +110,56 @@ describe("UI query helpers (Phase 1B backend touch-ups)", () => {
     expect(memberOnly.items.every((e) => e.streamId.startsWith("member:"))).toBe(true);
     expect(system.items.length).toBe(1);
     expect(system.items[0].eventType).toBe("ChainAnchorPublished");
+  });
+
+  it("findingsByRule (ux 5.1 item 15): PRIVATE only when included, employer scope, limit, 30-day window, overridden count", async () => {
+    const pub = await findingsByRule(t.ctx, { includePrivate: false });
+    const all = await findingsByRule(t.ctx, { includePrivate: true });
+    expect(pub.items.length).toBeGreaterThan(0);
+    expect(pub.items.length).toBeLessThanOrEqual(8);
+    expect(pub.items.every((r) => r.severity !== "INFORMATION")).toBe(true);
+    expect(all.totalFindings).toBeGreaterThan(pub.totalFindings);
+    expect(all.items.length).toBe(8);
+    // Ordered by finding count, then rule id; counts are consistent.
+    for (let i = 1; i < all.items.length; i += 1) expect(all.items[i - 1].findings).toBeGreaterThanOrEqual(all.items[i].findings);
+    for (const r of all.items) {
+      expect(r.rows).toBeLessThanOrEqual(r.findings);
+      expect(r.batches).toBe(1);
+      expect(r.overridden).toBe(0);
+    }
+    // File-level findings (FILE_ERROR on the rejected-header batch) have no record and are excluded; only the mixed batch counts.
+    expect(all.batches).toBe(1);
+    expect(all.items.some((r) => r.severity === "FILE_ERROR")).toBe(false);
+    // Submitter scope: another employer sees nothing; the owning employer sees PUBLIC only.
+    const other = await findingsByRule(t.ctx, { includePrivate: false, scopeEmployerId: "0359" });
+    expect(other.items).toEqual([]);
+    expect(other.totalFindings).toBe(0);
+    const own = await findingsByRule(t.ctx, { includePrivate: false, scopeEmployerId: "0235" });
+    expect(own.totalFindings).toBe(pub.totalFindings);
+    // Limit.
+    const top3 = await findingsByRule(t.ctx, { includePrivate: true, limit: 3 });
+    expect(top3.items.map((r) => r.ruleId)).toEqual(all.items.slice(0, 3).map((r) => r.ruleId));
+    expect(top3.totalFindings).toBe(all.totalFindings);
+    // Window: a clock 31 days ahead sees nothing; 60 days with a wide window sees everything again.
+    const later = { ...t.ctx, clock: () => new Date(t.ctx.clock().getTime() + 31 * 86_400_000) };
+    const stale = await findingsByRule(later, { includePrivate: true });
+    expect(stale.items).toEqual([]);
+    expect(stale.batches).toBe(0);
+    const wide = await findingsByRule(later, { includePrivate: true, days: 60 });
+    expect(wide.totalFindings).toBe(all.totalFindings);
+    // Overridden column follows a recorded override on a HELD-row B40 warning.
+    const held = await listRecords(t.ctx, mixedId, { accepted: "held", limit: 50 });
+    const heldLines = new Set(held.items.map((r) => r.lineNumber));
+    const b40s = await t.ctx.db
+      .select()
+      .from(validationFindings)
+      .where(and(eq(validationFindings.batchId, mixedId), eq(validationFindings.ruleId, "B40")));
+    const w = b40s.find((f) => heldLines.has(f.lineNumber ?? -1));
+    expect(w).toBeDefined();
+    await overrideFinding(t.ctx, { userId: "qa-rev", role: "Reviewer", employerId: null, actor: "user:qa-rev" }, w!.findingId, { reason: w!.overrideReasons[0] });
+    const after = await findingsByRule(t.ctx, { includePrivate: true, limit: 100 });
+    expect(after.items.find((r) => r.ruleId === "B40")?.overridden).toBe(1);
+    expect(after.items.filter((r) => r.ruleId !== "B40").every((r) => r.overridden === 0)).toBe(true);
+    expect(after.totalFindings).toBe(all.totalFindings);
   });
 });
