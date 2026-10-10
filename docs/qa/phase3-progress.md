@@ -6,9 +6,11 @@ Base: `c094f53` (Phase 2 complete). Scope: architecture section 17 Phase 3 (back
 
 - **Step 1 - schema + types.** `drizzle/0003_phase3.sql`: `ariel_update_sets` loses the `batch_id` UNIQUE (one row per build; `build_no`, `counts`, `ledger_entry_id/seq`), `ariel_update_items` gains `record_id`, `line_number`, `event_type/date`, `year_scope`, `calculated`, `sin_masked`; `exports` paths/sha nullable + `format`, `files`, `manifest_*`, `batch_id`, `content_hash`; `batches` gains `update_set_id`, `approved_by/at`, `rejected_by/at/reason`, `reopened_by/at`, `exported_at`; `member_projections` gains `corrections`, `last_update_set`, `last_event_type`, `counts`. Types: `src/types/ariel-update.ts` (item core vs persisted item, set, approval, export, gold document), `src/types/projection.ts`, ledger payloads for `ArielUpdateProposed`, `UpdateSetBuilt/Approved/Rejected/Exported`, `CorrectionAppended`, new `BatchReopened` event type.
 
+- **Step 2 - final derivation.** `src/lib/derivation/final/contributionSplit.ts` (pure; 1000 + 0.7 x PA limit, Q14 PA fallback, Q15 literal signs) and `src/lib/derivation/final/items.ts` (`deriveFinal`: sections 8.2-8.11 and 8.13 order; `itemsHash`, `contentHashOf`, `sortItems`). Tests: `tests/derivation/contribution-split.spec.ts` (5 worked examples + edges), `tests/derivation/final.spec.ts` (26 cases across every record type).
+
 ## Next
 
-- Step 2 final derivation (`src/lib/derivation/final/*`, `contributionSplit.ts`).
+- Step 3 pipeline steps `ledger` + `build-projection`, gold writers, reports.
 
 ## Decisions
 
