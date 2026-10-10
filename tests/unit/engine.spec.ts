@@ -62,8 +62,10 @@ describe("rules engine", () => {
       const a = rec({}, 2);
       const out = runRecordRules(a, ctxOf({ records: [a] }), deps);
       expect(out.map((f) => f.ruleId)).toEqual(["SYS-RULE-ERROR"]);
-      expect(out[0]).toMatchObject({ visibility: "PRIVATE", severity: "COMPLETE_MEMBER_ERROR", params: { rule: "BOOM", error: "kaboom" } });
-      expect(out[0].dataImportMessage).toBe("Rule BOOM failed: kaboom");
+      // Phase 2 SEC-INFO: the exception text stays in the log; the finding carries a reference only.
+      expect(out[0]).toMatchObject({ visibility: "PRIVATE", severity: "COMPLETE_MEMBER_ERROR", params: { rule: "BOOM" }, calculated: { errorType: "Error" } });
+      expect(out[0].dataImportMessage).toMatch(/^Rule BOOM failed: Rule evaluation failed\. Reference \S+-BOOM-L2 - details are in the server log\.$/);
+      expect(JSON.stringify(out[0])).not.toContain("kaboom");
     } finally {
       L1_RULES.splice(0, L1_RULES.length, ...original);
     }

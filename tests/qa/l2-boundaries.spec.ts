@@ -21,7 +21,8 @@ import { B186a } from "@/lib/rules/events/l2/B186a";
 import { B186c } from "@/lib/rules/events/l2/B186c";
 import { B192b } from "@/lib/rules/events/l2/B192b";
 import { B214 } from "@/lib/rules/events/l2/B214";
-import { lakeFinding, runRecordRules, type EngineDeps } from "@/lib/rules/engine";
+import { evaluateRecords, lakeFinding, runRecordRules, type EngineDeps } from "@/lib/rules/engine";
+import { placeholderRateRows, StaticRateTables } from "@/lib/ariel/rates";
 import { calculatedPA } from "@/lib/rules/lib/ae";
 import { carveOut, EXCESS_CARVE_TYPES } from "@/lib/rules/lib/carve-out";
 import type { ArielMemberSnapshot, IsoDate, RawValues } from "@/types";
@@ -56,26 +57,75 @@ describe("QA/L2: catalogue invariants (architecture 7.9.3-7.9.5)", () => {
   });
 });
 
-describe("QA/L2: rate-table years missing from the placeholder tables (architecture 18 Q9)", () => {
-  it("BUG-L2-RATES-1 (current behaviour): a 2027 event makes B37/B38/B53a throw -> SYS-RULE-ERROR (CME, PRIVATE) rejects the row with no PUBLIC reason", () => {
-    const row: Partial<RawValues> = { EmploymentEndDate: "03312027", Weeks_CurrentYear: "12.00", LowContributions_CurrentYear: "1200.00", HighContributions_CurrentYear: "50.00", AnnualizedEarnings_CurrentYear: "", PA_CurrentYear: "2000" };
-    const fs = engine(row, [stdMember({}, [{ year: 2025, ae: 75000 }, { year: 2026, ae: 78000 }])], { executionDate: "2027-10-08" });
-    const sys = fs.filter((f) => f.ruleId === "SYS-RULE-ERROR");
-    expect(sys.map((f) => f.params.rule)).toEqual(expect.arrayContaining(["B37", "B38", "B53a", "B40", "B43"]));
-    expect(sys.every((f) => f.severity === "COMPLETE_MEMBER_ERROR" && f.visibility === "PRIVATE")).toBe(true);
-    expect(sys[0].dataImportMessage).toContain("rate table MGA has no value for year 2027");
-    expect(fs.filter((f) => f.visibility === "PUBLIC" && f.severity === "COMPLETE_MEMBER_ERROR").map((f) => f.ruleId + ":" + JSON.stringify(f.calculated))).toEqual([]);
+describe("QA/L2: rate-table years missing from the tables (architecture 18 Q9; BUG-L2-RATES-1/2 fixed)", () => {
+  /** Tables trimmed to 2015-2026 (the Phase 2 placeholder range) so the probes still hit uncovered years. */
+  const narrowRates = new StaticRateTables(placeholderRateRows().filter((r) => r.year >= 2015 && r.year <= 2026));
+  function evaluateWith(over: Partial<RawValues>, members: ArielMemberSnapshot[], opts: Partial<Parameters<typeof ctxOf>[0]> = {}) {
+    const r = rec({ ...CLEAN_CY, ...over });
+    const res = evaluateRecords(ctxOf({ records: [r], ariel: members, rates: narrowRates, ...opts }), deps);
+    return { findings: res.recordFindings.get(r.recordId) ?? [], skips: res.skips, outcome: res.outcomes.get(r.recordId), timings: res.timings };
+  }
+  it("placeholder tables now cover 2010-2027 and every row stays flagged placeholder (Q9)", () => {
+    const rows = placeholderRateRows();
+    expect([...new Set(rows.map((r) => r.year))].sort()).toEqual(Array.from({ length: 18 }, (_, i) => 2010 + i));
+    expect(rows.every((r) => r.placeholder)).toBe(true);
+    expect(RATES.firstYear()).toBe(2010);
+    expect(RATES.ympe(2009)).toBeNull();
+    expect(narrowRates.firstYear()).toBe(2015);
   });
-  it("BUG-L2-RATES-2 (current behaviour): B47 walks back to the permanency year; 2010 service hits the missing 2010 rate row -> SYS-RULE-ERROR", () => {
+  it("BUG-L2-RATES-1 (fixed): a 2027 event with no 2027 rates emits no SYS-RULE-ERROR; B37/B38/B40/B41/B43/B44/B53a skip with RATE_MISSING and the row is not rejected", () => {
+    const row: Partial<RawValues> = { EmploymentEndDate: "03312027", Weeks_CurrentYear: "12.00", LowContributions_CurrentYear: "1200.00", HighContributions_CurrentYear: "50.00", AnnualizedEarnings_CurrentYear: "", PA_CurrentYear: "2000" };
+    const { findings, skips, outcome } = evaluateWith(row, [stdMember({}, [{ year: 2025, ae: 75000 }, { year: 2026, ae: 78000 }])], { executionDate: "2027-10-08" });
+    expect(findings.filter((f) => f.ruleId === "SYS-RULE-ERROR")).toEqual([]);
+    expect(findings.filter((f) => ["B37", "B38", "B40", "B41", "B43", "B44", "B53a"].includes(f.ruleId))).toEqual([]);
+    const byRule = Object.fromEntries(skips.map((s) => [s.ruleId, s.reason]));
+    expect(byRule).toMatchObject({ B37: "RATE_MISSING:MGA:2027", B38: "RATE_MISSING:MGA:2027", B53a: "RATE_MISSING:MGA:2027", B40: "RATE_MISSING:MGA:2027", B43: "RATE_MISSING:MGA:2027" });
+    expect(skips.every((s) => s.lineNumber === 2)).toBe(true);
+    expect(outcome).not.toBe("REJECTED");
+  });
+  it("BUG-L2-RATES-2 (fixed): B47 starts its back-walk at MAX(Year(permanency), firstRateYear); 2010 service with no 2010 rates neither throws nor fires", () => {
     const base = stdMember().employments[0];
     const m = member({ emp: { permanencyDate: "2010-01-04", service: [...base.service, ctsrv(2010, 52)], contributions: [...base.contributions, contrib(2010, "RPPLOW", 3000)] } });
-    const fs = engine({ ...ZERO_PY }, [m]);
-    expect(fs.filter((f) => f.ruleId === "SYS-RULE-ERROR").map((f) => f.params.rule)).toEqual(["B47"]);
-    expect(fs.find((f) => f.ruleId === "SYS-RULE-ERROR")?.dataImportMessage).toContain("LOWRATE has no value for year 2010");
+    const { findings, skips } = evaluateWith({ ...ZERO_PY }, [m]);
+    expect(findings.filter((f) => f.ruleId === "SYS-RULE-ERROR")).toEqual([]);
+    expect(findings.filter((f) => f.level === "L2").map((f) => f.ruleId)).toEqual([]);
+    expect(skips.filter((s) => s.ruleId === "B47")).toEqual([]);
+  });
+  it("with the shipped 2010-2027 tables the same 2010 history is evaluated (the 2010 AE suppresses B47) and a 2027 event is fully evaluated", () => {
+    const base = stdMember().employments[0];
+    const m = member({ emp: { permanencyDate: "2010-01-04", service: [...base.service, ctsrv(2010, 52)], contributions: [...base.contributions, contrib(2010, "RPPLOW", 3000)] } });
+    expect(l2(engine({ ...ZERO_PY }, [m]))).toEqual([]);
+    const row: Partial<RawValues> = { EmploymentEndDate: "03312027", Weeks_CurrentYear: "12.00", LowContributions_CurrentYear: "1200.00", HighContributions_CurrentYear: "50.00", AnnualizedEarnings_CurrentYear: "", PA_CurrentYear: "2000" };
+    const r = rec({ ...CLEAN_CY, ...row });
+    const res = evaluateRecords(ctxOf({ records: [r], ariel: [stdMember({}, [{ year: 2025, ae: 75000 }, { year: 2026, ae: 78000 }])], executionDate: "2027-10-08" }), deps);
+    expect(res.skips).toEqual([]);
+    expect((res.recordFindings.get(r.recordId) ?? []).some((f) => f.ruleId === "SYS-RULE-ERROR")).toBe(false);
+  });
+  it("skips are counted per rule in the timings (execution report) and never produce a finding", () => {
+    const row: Partial<RawValues> = { EmploymentEndDate: "03312027", Weeks_CurrentYear: "12.00", LowContributions_CurrentYear: "1200.00", HighContributions_CurrentYear: "50.00", AnnualizedEarnings_CurrentYear: "", PA_CurrentYear: "2000" };
+    const { timings } = evaluateWith(row, [stdMember({}, [{ year: 2025, ae: 75000 }, { year: 2026, ae: 78000 }])], { executionDate: "2027-10-08" });
+    const b37 = timings.find((t) => t.ruleId === "B37")!;
+    expect(b37.skipped).toBe(1);
+    expect(b37.findings).toBe(0);
   });
   it("the same member with service only in covered years is clean", () => {
     const fs = engine({ ...ZERO_PY }, [stdMember({ emp: { permanencyDate: "2010-01-04" } })]);
     expect(l2(fs)).toEqual([]);
+  });
+  it("SEC-INFO (Phase 2): a rule that throws yields a SYS-RULE-ERROR whose message carries only a reference, while the full error reaches deps.onRuleError", () => {
+    const r = rec({ ...CLEAN_CY });
+    const errors: Array<{ ruleId: string; ref: string; error: unknown }> = [];
+    const throwing = () => {
+      throw new Error("secret cell value 123456789");
+    };
+    const boom = ctxOf({ records: [r], ariel: [stdMember()], rates: { ympe: throwing, paMaxDb: throwing, paOffset: throwing, lowContributionRate: throwing, highContributionRate: throwing, firstYear: () => 2015, rows: () => [] } });
+    const fs = runRecordRules(r, boom, { ...deps, onRuleError: (i) => errors.push(i) });
+    const sys = fs.filter((f) => f.ruleId === "SYS-RULE-ERROR");
+    expect(sys.length).toBeGreaterThan(0);
+    expect(JSON.stringify(sys)).not.toContain("secret cell value");
+    expect(sys[0].dataImportMessage).toMatch(/Reference [-0-9a-zA-Z]+ - details are in the server log/);
+    expect(errors[0].ref).toBe(sys[0].calculated?.errorRef);
+    expect((errors[0].error as Error).message).toContain("secret cell value");
   });
 });
 
@@ -102,7 +152,7 @@ describe("QA/L2: B53a tolerance edge (|CalcPA - PA| = 250 fires, 249 does not)",
   // AE 78,000 (file REPORT), 52 weeks -> CalcPA = MIN(34,416, ((3,400 x 0.02 + 74,600 x 0.015) x 9) - 600) = 10,083.00 exactly
   const over: Partial<RawValues> = { ...cyBlock("2026-12-31", 52, 78000), AnnualizedEarnings_CurrentYear: "78000" };
   it("spec: reject when CalcPA - PA <= -250 OR >= +250", () => {
-    expect(calculatedPA(new Decimal(78000), new Decimal(1), 2026, RATES).toFixed(2)).toBe("10083.00");
+    expect(calculatedPA(new Decimal(78000), new Decimal(1), 2026, RATES)!.toFixed(2)).toBe("10083.00");
     h.given({ ...over, PA_CurrentYear: "10333" }).expectFinding({ messageId: "2160", yearScope: "CURRENT", params: { 2: "PA", 3: 2026, 4: 10083 }, calculated: { calculatedPA: "10083.00", reportedPA: 10333 }, dataImportMessage: "The PA for 2026 is incorrect based on the data provided. The HOOPP calculated value is 10083." });
     h.given({ ...over, PA_CurrentYear: "10332" }).expectNoFinding();
     h.given({ ...over, PA_CurrentYear: "9833" }).expectFinding({ field: "PA_CurrentYear" });

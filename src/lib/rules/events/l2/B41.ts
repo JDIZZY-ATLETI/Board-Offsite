@@ -12,9 +12,9 @@ export const B41 = l2Rule({
   tool: "CustomDLL",
   dataImportMessage: "Verify Earnings increase greater than 50%.",
   portalMessage: "Verify Earnings increase greater than 50%.",
-  evaluate(_record, d, ctx) {
+  evaluate(record, d, ctx) {
     const pct = toleranceNumber(ctx.config, "B41.pct", 0.5);
-    const hit = aeYearOverYear(d, ctx, (cur, prev) => cur.gt(prev.times(1 + pct)));
+    const hit = aeYearOverYear("B41", record, d, ctx, (cur, prev) => cur.gt(prev.times(1 + pct)));
     return hit ? [aeDraft(d, hit, {})] : [];
   },
 });

@@ -1,5 +1,6 @@
 import { sha256Hex } from "@/lib/crypto/hash";
-import type { ArielMemberSnapshot, ArielSnapshotMeta } from "@/types";
+import type { ArielMemberSnapshot, ArielRateTables, ArielSnapshotMeta, RateTableRow } from "@/types";
+import { StaticRateTables } from "./rates";
 
 /**
  * Read model the rules engine sees (architecture section 7.1 `ArielBatchSnapshot`). Taken once per batch,
@@ -15,6 +16,11 @@ export interface ArielBatchSnapshot {
   memberBySin(sinPseudo: string): ArielMemberSnapshot | null;
   members(): ArielMemberSnapshot[];
   meta: Omit<ArielSnapshotMeta, "kind" | "schemaVersion">;
+  /**
+   * Rate tables frozen with the snapshot (`{"kind":"rates"}` line, folded into `hash`) so offline re-validation
+   * never consults the live adapter (AC5 / Phase 2 QA BUG-REVAL-1). Null for snapshots taken without rates (L0).
+   */
+  rates: ArielRateTables | null;
   /** Persisted form (silver/ariel-snapshot.ndjson). */
   toNdjson(): string;
 }
@@ -41,13 +47,16 @@ export class InMemoryArielSnapshot implements ArielBatchSnapshot {
   readonly adapter: string;
   readonly hash: string;
   readonly meta: ArielBatchSnapshot["meta"];
+  readonly rates: ArielRateTables | null;
   private readonly bySin = new Map<string, ArielMemberSnapshot[]>();
   private readonly all: ArielMemberSnapshot[];
   private readonly ndjson: string;
 
-  constructor(members: ArielMemberSnapshot[], meta: ArielBatchSnapshot["meta"]) {
+  constructor(members: ArielMemberSnapshot[], meta: ArielBatchSnapshot["meta"], rateRows: RateTableRow[] | null = null) {
     this.adapter = meta.adapter;
     this.meta = meta;
+    const rates = rateRows ? new StaticRateTables(rateRows) : null;
+    this.rates = rates;
     this.all = members.map(sortMember).sort((a, b) => a.sinPseudo.localeCompare(b.sinPseudo) || a.memberId.localeCompare(b.memberId));
     for (const m of this.all) {
       const list = this.bySin.get(m.sinPseudo) ?? [];
@@ -59,7 +68,8 @@ export class InMemoryArielSnapshot implements ArielBatchSnapshot {
     const { batchId: _batchId, ...persisted } = meta;
     void _batchId;
     const metaLine: ArielSnapshotMeta = { kind: "meta", schemaVersion: 1, ...persisted, found: this.all.length };
-    this.ndjson = [JSON.stringify(metaLine), ...this.all.map((m) => JSON.stringify({ kind: "member", ...m }))].join("\n") + "\n";
+    const ratesLine = rates ? [JSON.stringify({ kind: "rates", rows: rates.rows() })] : [];
+    this.ndjson = [JSON.stringify(metaLine), ...ratesLine, ...this.all.map((m) => JSON.stringify({ kind: "member", ...m }))].join("\n") + "\n";
     this.hash = sha256Hex(this.ndjson);
   }
 
@@ -79,10 +89,13 @@ export class InMemoryArielSnapshot implements ArielBatchSnapshot {
   static fromNdjson(text: string, batchId = ""): InMemoryArielSnapshot {
     const lines = text.split("\n").filter((l) => l.trim() !== "");
     let meta: ArielBatchSnapshot["meta"] | null = null;
+    let rateRows: RateTableRow[] | null = null;
     const members: ArielMemberSnapshot[] = [];
     for (const line of lines) {
       const obj = JSON.parse(line) as { kind: string } & Record<string, unknown>;
-      if (obj.kind === "meta") {
+      if (obj.kind === "rates") {
+        rateRows = (obj as unknown as { rows: RateTableRow[] }).rows;
+      } else if (obj.kind === "meta") {
         const { kind: _k, schemaVersion: _v, ...rest } = obj as unknown as ArielSnapshotMeta;
         void _k;
         void _v;
@@ -94,7 +107,7 @@ export class InMemoryArielSnapshot implements ArielBatchSnapshot {
       }
     }
     if (!meta) throw new Error("ariel snapshot has no meta line");
-    return new InMemoryArielSnapshot(members, meta);
+    return new InMemoryArielSnapshot(members, meta, rateRows);
   }
 
   static empty(batchId = "", employerId = "", adapter = "none"): InMemoryArielSnapshot {

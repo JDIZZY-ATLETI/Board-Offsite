@@ -23,6 +23,15 @@ export interface RuleContext {
   rates: ArielRateTables;
   /** Provisional derivation (architecture section 8.1) for L2 rules; null when no employment matches. */
   derived: (record: EventsRecord) => FileDerived | null;
+  /** Diagnostics sink: a rule that cannot evaluate (e.g. "RATE_MISSING:MGA:2027") records why instead of throwing. */
+  skip?: (ruleId: string, record: EventsRecord, reason: string) => void;
+}
+
+export interface RuleSkip {
+  ruleId: string;
+  recordId: string;
+  lineNumber: number;
+  reason: string;
 }
 
 export interface FindingDraft {

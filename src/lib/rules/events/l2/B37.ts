@@ -4,7 +4,7 @@ import { lowContributionCalc } from "../../lib/ae";
 import { dec, SCOPES } from "../../lib/context";
 import { money } from "../../lib/format";
 import type { FindingDraft } from "../../types";
-import { l2Rule } from "./_shared";
+import { l2Rule, rateGap, skipRule } from "./_shared";
 
 /** B37_Message / 3029: low contributions above the maximum for the weeks reported (Final Data variant: file values only). */
 export const B37 = l2Rule({
@@ -25,11 +25,16 @@ export const B37 = l2Rule({
       const low = dec(b.lowContributions);
       if (!weeks || !low) continue;
       const year = scope === "CURRENT" ? d.eventYear : d.eventYear - 1;
-      const { calc, maxWeekly } = lowContributionCalc(weeks, year, ctx.rates);
+      const pieces = lowContributionCalc(weeks, year, ctx.rates);
+      if (!pieces) {
+        skipRule(ctx, "B37", record, rateGap(ctx, year) ?? `RATE_MISSING:MGA:${year}`);
+        continue;
+      }
+      const { calc, maxWeekly } = pieces;
       const tolerance = maxWeekly.times(tol1);
       const ceiling = calc.plus(tolerance).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
       if (low.minus(calc).gt(tolerance)) {
-        out.push({ field: scope === "CURRENT" ? "LowContributions_CurrentYear" : "LowContributions_PreviousYear", yearScope: scope, params: { 1: year, 2: money(ceiling) }, calculated: { calculatedLow: calc.toFixed(2), tolerance: tolerance.toFixed(2), reportedLow: low.toFixed(2), ympe: ctx.rates.ympe(year) } });
+        out.push({ field: scope === "CURRENT" ? "LowContributions_CurrentYear" : "LowContributions_PreviousYear", yearScope: scope, params: { 1: year, 2: money(ceiling) }, calculated: { calculatedLow: calc.toFixed(2), tolerance: tolerance.toFixed(2), reportedLow: low.toFixed(2), ympe: ctx.rates.ympe(year) ?? "" } });
       }
     }
     return out;

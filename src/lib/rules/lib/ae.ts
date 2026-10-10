@@ -40,29 +40,40 @@ export interface AeResult {
  * Spec "Function CalculateAE / CalculateAEwithRetroPaid / CalculateAEwithRetro" (B40-B47, B53). A REPORT salary
  * rate for the year wins; otherwise contributions grossed up by rate and annualised over service/52.
  */
-export function calculateAE(view: TxView, year: number, rates: ArielRateTables, variant: AeVariant = "standard"): AeResult {
+export function calculateAE(view: TxView, year: number, rates: ArielRateTables, variant: AeVariant = "standard"): AeResult | null {
   const report = view.salaryRates.filter((s) => s.type === "REPORT" && yearOf(s.effectiveDate) === year).sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate))[0];
   if (report) return { ae: new Decimal(report.rate), source: "REPORT", service: ZERO, low: ZERO, high: ZERO };
   const service = sum(view.service.filter((t) => t.type === "CTSRV" && t.indicator !== "REGUL" && yearOf(t.beginDate) === year).map((t) => t.amount));
   if (service.isZero()) return { ae: ZERO, source: "NONE", service, low: ZERO, high: ZERO };
+  const lowRate = rates.lowContributionRate(year);
+  const highRate = rates.highContributionRate(year);
+  // Rate year not covered: the caller skips the rule (BUG-L2-RATES-1); never throw inside a rule.
+  if (lowRate === null || highRate === null) return null;
   const low = pool(view, year, variant, lowFilter);
   const high = pool(view, year, variant, highFilter);
-  const ae = low.div(rates.lowContributionRate(year)).plus(high.div(rates.highContributionRate(year))).div(service.div(52));
+  const ae = low.div(lowRate).plus(high.div(highRate)).div(service.div(52));
   return { ae: ae.toDecimalPlaces(2, Decimal.ROUND_HALF_UP), source: "CALCULATED", service, low, high };
 }
 
-/** Low-contribution ceiling pieces shared by B37/B38. */
-export function lowContributionCalc(weeks: Decimal, year: number, rates: ArielRateTables): { calc: Decimal; maxWeekly: Decimal } {
-  const annual = new Decimal(rates.ympe(year)).times(rates.lowContributionRate(year));
+/** Low-contribution ceiling pieces shared by B37/B38; null when the year has no rates. */
+export function lowContributionCalc(weeks: Decimal, year: number, rates: ArielRateTables): { calc: Decimal; maxWeekly: Decimal } | null {
+  const ympe = rates.ympe(year);
+  const lowRate = rates.lowContributionRate(year);
+  if (ympe === null || lowRate === null) return null;
+  const annual = new Decimal(ympe).times(lowRate);
   return { calc: annual.times(weeks).div(52), maxWeekly: annual.div(52) };
 }
 
-/** B53a/B53b Calculated PA (architecture section 7.9.3 #33). */
-export function calculatedPA(ae: Decimal, svc: Decimal, year: number, rates: ArielRateTables): Decimal {
-  const ympe = new Decimal(rates.ympe(year));
-  const cap = new Decimal(rates.paMaxDb(year)).times(svc);
+/** B53a/B53b Calculated PA (architecture section 7.9.3 #33); null when the year has no rates. */
+export function calculatedPA(ae: Decimal, svc: Decimal, year: number, rates: ArielRateTables): Decimal | null {
+  const ympeRaw = rates.ympe(year);
+  const paMax = rates.paMaxDb(year);
+  const offset = rates.paOffset(year);
+  if (ympeRaw === null || paMax === null || offset === null) return null;
+  const ympe = new Decimal(ympeRaw);
+  const cap = new Decimal(paMax).times(svc);
   const over = Decimal.max(0, ae.minus(ympe)).times(0.02).times(svc);
   const under = Decimal.min(ae, ympe).times(0.015).times(svc);
-  const formula = over.plus(under).times(9).minus(new Decimal(rates.paOffset(year)).times(svc));
+  const formula = over.plus(under).times(9).minus(new Decimal(offset).times(svc));
   return Decimal.min(cap, formula).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 }

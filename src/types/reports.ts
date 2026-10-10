@@ -6,6 +6,8 @@ export interface RuleTiming {
   evaluations: number;
   findings: number;
   durationMs: number;
+  /** Evaluations that produced no finding because an input was unavailable (e.g. a rate-table year). */
+  skipped?: number;
 }
 
 export interface ExecutionReport {
@@ -45,5 +47,7 @@ export interface ExecutionReport {
     findings: number;
   };
   rules: RuleTiming[];
+  /** Per-record rule skips (BUG-L2-RATES-1): the row was evaluated without the rule; reason is machine-readable. */
+  ruleSkips?: Array<{ ruleId: string; lineNumber: number; reason: string }>;
   failureReason?: string;
 }

@@ -103,7 +103,7 @@ export function contribsFor(year: number, ae: number, weeks: number): { low: str
 
 /** HOOPP-calculated PA (whole dollars) for the block - what B53a expects within +/-250. */
 export function paFor(year: number, ae: number, weeks: number): string {
-  return String(calculatedPA(new Decimal(ae), new Decimal(weeks).div(52), year, RATES).toDecimalPlaces(0).toNumber());
+  return String(calculatedPA(new Decimal(ae), new Decimal(weeks).div(52), year, RATES)!.toDecimalPlaces(0).toNumber());
 }
 
 /** A clean current-year block with a blank previous year; passes every L2 rule for `stdMember()`. */

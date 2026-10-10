@@ -65,7 +65,8 @@ export class MockArielAdapter implements ArielAdapter {
       const rows = await this.db.select().from(mockMembers).where(inArray(mockMembers.sinPseudo, unique.slice(i, i + 500)));
       members.push(...(await this.assemble(rows)));
     }
-    return new InMemoryArielSnapshot(members, { adapter: this.name, batchId, employerId, requested: unique.length, found: members.length });
+    const rates = await this.rates();
+    return new InMemoryArielSnapshot(members, { adapter: this.name, batchId, employerId, requested: unique.length, found: members.length }, rates.rows());
   }
 
   async listMembers(filter: { employerId?: string; q?: string } = {}): Promise<ArielMemberSnapshot[]> {

@@ -116,12 +116,18 @@ export interface RateTableRow {
   placeholder: boolean;
 }
 
+/**
+ * Rate lookups return `null` for a year the tables do not cover (architecture section 18 Q9 / Phase 2 QA
+ * BUG-L2-RATES-1): rules must skip, never throw.
+ */
 export interface ArielRateTables {
-  ympe(year: number): DecimalString;
-  paMaxDb(year: number): DecimalString;
-  paOffset(year: number): DecimalString;
-  lowContributionRate(year: number): DecimalString;
-  highContributionRate(year: number): DecimalString;
+  ympe(year: number): DecimalString | null;
+  paMaxDb(year: number): DecimalString | null;
+  paOffset(year: number): DecimalString | null;
+  lowContributionRate(year: number): DecimalString | null;
+  highContributionRate(year: number): DecimalString | null;
+  /** Earliest year for which every table has a value; null when the tables are empty. */
+  firstYear(): number | null;
   rows(): RateTableRow[];
 }
 

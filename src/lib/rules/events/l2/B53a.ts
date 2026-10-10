@@ -6,7 +6,7 @@ import { whole } from "../../lib/format";
 import { arielService, txView } from "../../lib/service";
 import { ltdBreakIn } from "../../lib/breaks";
 import type { FindingDraft } from "../../types";
-import { l2Rule } from "./_shared";
+import { l2Rule, rateGap, skipRule } from "./_shared";
 
 /** B53a / 2160 (Events): non-LTD member's PA must be within +/-250 of the HOOPP-calculated PA. */
 export const B53a = l2Rule({
@@ -30,8 +30,13 @@ export const B53a = l2Rule({
       const weeksFile = dec(b.weeks) ?? new Decimal(0);
       if (b.pa === 0 && weeksFile.isZero() && zeroOrBlank(b.lowContributions) && zeroOrBlank(b.highContributions)) continue;
       const svc = weeksFile.plus(arielService(view, year)).div(52);
-      const ae = calculateAE(view, year, ctx.rates, "retroPaid").ae;
-      const calc = calculatedPA(ae, svc, year, ctx.rates);
+      const aeResult = calculateAE(view, year, ctx.rates, "retroPaid");
+      const calc = aeResult && calculatedPA(aeResult.ae, svc, year, ctx.rates);
+      if (!aeResult || !calc) {
+        skipRule(ctx, "B53a", record, rateGap(ctx, year) ?? `RATE_MISSING:MGA:${year}`);
+        continue;
+      }
+      const ae = aeResult.ae;
       const diff = calc.minus(b.pa);
       if (diff.lte(-tol) || diff.gte(tol)) {
         out.push({

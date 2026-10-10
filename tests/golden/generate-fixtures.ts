@@ -78,7 +78,7 @@ function mdcYear(year: number, ae: number, weeks = 52, opts: { employerId?: stri
   const contributions: Tx[] = [{ type: "RPPLOW", amount: c.low, ...dates }];
   if (c.highN > 0) contributions.push({ type: "RPPHGH", amount: c.high, ...dates });
   const svc = new Decimal(weeks).div(52);
-  const pa = opts.pa === false ? null : { employerId: opts.employerId ?? "0235", calculationYear: year, amount: calculatedPA(new Decimal(ae), svc, year, RATES).toDecimalPlaces(0).toNumber(), calculationDate: `${year}-12-31`, entryDate: `${year + 1}-01-15` };
+  const pa = opts.pa === false ? null : { employerId: opts.employerId ?? "0235", calculationYear: year, amount: calculatedPA(new Decimal(ae), svc, year, RATES)!.toDecimalPlaces(0).toNumber(), calculationDate: `${year}-12-31`, entryDate: `${year + 1}-01-15` };
   return { service: [{ type: "CTSRV", amount: new Decimal(weeks).toFixed(4), ...dates }], contributions, pa };
 }
 
@@ -149,12 +149,12 @@ for (let i = 1; i <= 19; i++) {
 function cyBlock(eventDate: string, weeks: number, ae: number, over: Row = {}): Row {
   const year = Number(eventDate.slice(0, 4));
   const c = contribs(year, ae, weeks);
-  const pa = calculatedPA(new Decimal(ae), new Decimal(weeks).div(52), year, RATES).toDecimalPlaces(0).toNumber();
+  const pa = calculatedPA(new Decimal(ae), new Decimal(weeks).div(52), year, RATES)!.toDecimalPlaces(0).toNumber();
   return { EmploymentEndDate: mmdd(eventDate), Weeks_CurrentYear: weeks.toFixed(2), LowContributions_CurrentYear: c.low, HighContributions_CurrentYear: c.highN > 0 ? c.high : "", AnnualizedEarnings_CurrentYear: "", PA_CurrentYear: String(pa), Weeks_PreviousYear: "", LowContributions_PreviousYear: "", HighContributions_PreviousYear: "", AnnualizedEarnings_PreviousYear: "", PA_PreviousYear: "", ...over };
 }
 function pyBlock(year: number, weeks: number, ae: number): Row {
   const c = contribs(year, ae, weeks);
-  const pa = calculatedPA(new Decimal(ae), new Decimal(weeks).div(52), year, RATES).toDecimalPlaces(0).toNumber();
+  const pa = calculatedPA(new Decimal(ae), new Decimal(weeks).div(52), year, RATES)!.toDecimalPlaces(0).toNumber();
   return { Weeks_PreviousYear: weeks.toFixed(2), LowContributions_PreviousYear: c.low, HighContributions_PreviousYear: c.highN > 0 ? c.high : "", AnnualizedEarnings_PreviousYear: "", PA_PreviousYear: String(pa) };
 }
 const ZERO_CY: Row = { Weeks_CurrentYear: "0.00", LowContributions_CurrentYear: "0.00", HighContributions_CurrentYear: "", AnnualizedEarnings_CurrentYear: "", PA_CurrentYear: "0" };

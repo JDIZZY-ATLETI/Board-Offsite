@@ -4,7 +4,7 @@ import { lowContributionCalc } from "../../lib/ae";
 import { dec, gt0, SCOPES } from "../../lib/context";
 import { money } from "../../lib/format";
 import type { FindingDraft } from "../../types";
-import { l2Rule } from "./_shared";
+import { l2Rule, rateGap, skipRule } from "./_shared";
 
 /** B38_Message / 480 (WARNING): high contributions present but low below the calculated low less one week. */
 export const B38 = l2Rule({
@@ -26,7 +26,12 @@ export const B38 = l2Rule({
       const low = dec(b.lowContributions);
       if (!weeks || !low || !gt0(b.highContributions)) continue;
       const year = scope === "CURRENT" ? d.eventYear : d.eventYear - 1;
-      const { calc, maxWeekly } = lowContributionCalc(weeks, year, ctx.rates);
+      const pieces = lowContributionCalc(weeks, year, ctx.rates);
+      if (!pieces) {
+        skipRule(ctx, "B38", record, rateGap(ctx, year) ?? `RATE_MISSING:MGA:${year}`);
+        continue;
+      }
+      const { calc, maxWeekly } = pieces;
       const floor = calc.plus(maxWeekly.times(tolWeeks)).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
       if (low.lt(floor)) {
         out.push({ field: scope === "CURRENT" ? "LowContributions_CurrentYear" : "LowContributions_PreviousYear", yearScope: scope, params: { 1: year, 2: money(floor) }, calculated: { calculatedLow: calc.toFixed(2), reportedLow: low.toFixed(2), high: String(b.highContributions) } });

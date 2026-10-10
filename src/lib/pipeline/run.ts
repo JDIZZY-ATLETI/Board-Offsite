@@ -52,6 +52,7 @@ interface RunState {
   startedAt: Date;
   outputs: string[];
   timings: RuleTiming[];
+  ruleSkips: NonNullable<ExecutionReport["ruleSkips"]>;
   counts: ExecutionReport["counts"];
   lineCount: number;
   encoding: string;
@@ -151,6 +152,7 @@ export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchS
     startedAt: ctx.clock(),
     outputs: [rawFile.lakePath],
     timings: [],
+    ruleSkips: [],
     counts: { linesRead: 0, rows: 0, accepted: 0, rejected: 0, held: 0, fileErrors: 0, memberErrors: 0, warnings: 0, infos: 0, findings: 0 },
     lineCount: 0,
     encoding: rawFile.encodingDetected,
@@ -158,7 +160,12 @@ export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchS
     arielAdapter: ctx.ariel.name,
     arielSnapshotHash: "",
   };
-  const deps: EngineDeps = { newId: ctx.newId, now: ctx.clock };
+  const deps: EngineDeps = {
+    newId: ctx.newId,
+    now: ctx.clock,
+    // The finding only carries `ref`; the exception text (which may quote cell values) stays in the log (SEC INFO).
+    onRuleError: ({ ruleId, lineNumber, ref, error }) => log.error({ err: error, ruleId, lineNumber, ref }, "rule threw during evaluation"),
+  };
   try {
     const config = await loadEffectiveRulesConfig(ctx);
     state.rulesConfigHash = config.hash;
@@ -194,9 +201,12 @@ export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchS
     state.arielSnapshotHash = snapshot.hash;
     await putOnce(ctx, state.paths.silver.rulesConfig, serializeRulesConfig(config));
     state.outputs.push(state.paths.silver.arielSnapshot, state.paths.silver.rulesConfig);
-    const rates = await ctx.ariel.rates();
+    // Rates frozen in the snapshot are authoritative so the live run and offline re-validation agree (AC5).
+    const rates = snapshot.rates ?? (await ctx.ariel.rates());
     const validation = runValidation({ batch: batchInfo, parsed, records, snapshot, rates, config }, deps);
     state.timings.push(...validation.timings);
+    state.ruleSkips.push(...validation.skips.map((s) => ({ ruleId: s.ruleId, lineNumber: s.lineNumber, reason: s.reason })));
+    if (validation.skips.length) log.warn({ skips: validation.skips.length, rules: [...new Set(validation.skips.map((s) => s.ruleId))] }, "rules skipped for some rows (see execution report ruleSkips)");
     await stepValidate(ctx, state, parsed, records, validation, config);
     await writeExecutionReport(ctx, state, "VALIDATED");
     log.info({ accepted: state.counts.accepted, rejected: state.counts.rejected, held: state.counts.held }, "batch validated");
@@ -447,6 +457,7 @@ async function writeExecutionReport(ctx: AppContext, state: RunState, status: Ba
     outputs: [...state.outputs, paths.gold.executionReportJson, paths.gold.executionReportHtml],
     counts: state.counts,
     rules: state.timings,
+    ...(state.ruleSkips.length ? { ruleSkips: state.ruleSkips } : {}),
     ...(failureReason ? { failureReason } : {}),
   };
   await ctx.lake.put(paths.gold.executionReportJson, JSON.stringify(report, null, 2), { overwrite: true });

@@ -21,9 +21,9 @@ export const B43 = l2Rule({
   ],
   dataImportMessage: "The Annualized Earnings amount of ${0} has decreased by ${1} from the prior year's Annualized Earnings of ${2}. To continue, update the entry or select an override reason.",
   portalMessage: "The Annualized Earnings amount has decreased from the prior year's Annualized Earnings. To continue, update the entry or select an override reason.",
-  evaluate(_record, d, ctx) {
+  evaluate(record, d, ctx) {
     const amount = toleranceNumber(ctx.config, "B43.amount", -2500);
-    const hit = aeYearOverYear(d, ctx, (cur, prev) => cur.lt(prev.plus(amount)));
+    const hit = aeYearOverYear("B43", record, d, ctx, (cur, prev) => cur.lt(prev.plus(amount)));
     if (!hit) return [];
     return [aeDraft(d, hit, { 0: money(hit.current), 1: money(hit.previous.minus(hit.current)), 2: money(hit.previous) })];
   },

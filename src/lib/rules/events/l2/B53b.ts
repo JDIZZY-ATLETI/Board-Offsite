@@ -8,7 +8,7 @@ import { arielService, sum, txView, type TxView } from "../../lib/service";
 import { ltdBreakIn } from "../../lib/breaks";
 import type { ArielEmployment, ArielMemberSnapshot, ArielRateTables } from "@/types";
 import type { FindingDraft } from "../../types";
-import { l2Rule } from "./_shared";
+import { l2Rule, rateGap, skipRule } from "./_shared";
 
 type Situation = 1 | 2 | 3;
 
@@ -42,10 +42,13 @@ function situationOf(ltdStart: string, ltdEnd: string, year: number, hasFaRate: 
   return 1;
 }
 
-function aeContributions(view: TxView, year: number, permYear: number, rates: ArielRateTables): Decimal {
-  for (let y = year; y >= permYear; y--) {
-    const ae = calculateAE(view, y, rates, "retroPaid").ae;
-    if (ae.gt(0)) return ae;
+/** Latest non-zero AE walking back to the permanency year; null when a visited year has no rate rows (BUG-L2-RATES-2). */
+function aeContributions(view: TxView, year: number, permYear: number, rates: ArielRateTables): Decimal | null {
+  const floor = Math.max(permYear, rates.firstYear() ?? Number.NEGATIVE_INFINITY);
+  for (let y = year; y >= floor; y--) {
+    const r = calculateAE(view, y, rates, "retroPaid");
+    if (r === null) return null;
+    if (r.ae.gt(0)) return r.ae;
   }
   return new Decimal(0);
 }
@@ -79,7 +82,7 @@ export const B53b = l2Rule({
       const weeksFile = dec(b.weeks) ?? new Decimal(0);
       let cs = weeksFile.plus(arielService(view, year)).div(52);
       const { fa, source } = situation === 1 ? { fa: new Decimal(0), source: "n/a" } : freeAccrualService(d.member, emp, ltd.startDate, ltdEnd, year, view);
-      let ae: Decimal;
+      let ae: Decimal | null;
       if (situation === 1) {
         ae = aeContributions(view, year, permYear, ctx.rates);
       } else if (situation === 2) {
@@ -88,11 +91,19 @@ export const B53b = l2Rule({
       } else {
         const contrib = aeContributions(view, year, permYear, ctx.rates);
         const total = cs.plus(fa);
-        const blended = total.isZero() ? new Decimal(0) : contrib.times(cs.div(total)).plus((faRate ? new Decimal(faRate.rate) : new Decimal(0)).times(fa.div(total)));
-        ae = Decimal.max(contrib, blended);
+        if (contrib === null) {
+          ae = null;
+        } else {
+          const blended = total.isZero() ? new Decimal(0) : contrib.times(cs.div(total)).plus((faRate ? new Decimal(faRate.rate) : new Decimal(0)).times(fa.div(total)));
+          ae = Decimal.max(contrib, blended);
+        }
       }
       const svc = cs.plus(fa);
-      const calc = calculatedPA(ae, svc, year, ctx.rates);
+      const calc = ae === null ? null : calculatedPA(ae, svc, year, ctx.rates);
+      if (ae === null || calc === null) {
+        skipRule(ctx, "B53b", record, rateGap(ctx, year) ?? `RATE_MISSING:MGA:${year}`);
+        continue;
+      }
       const diff = new Decimal(whole(calc)).minus(b.pa).abs();
       if (diff.gt(tol)) {
         out.push({

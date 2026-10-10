@@ -12,9 +12,9 @@ export const B44 = l2Rule({
   tool: "CustomDLL",
   dataImportMessage: "Verify Earnings decrease greater than $50000",
   portalMessage: "Verify Earnings decrease greater than $50000",
-  evaluate(_record, d, ctx) {
+  evaluate(record, d, ctx) {
     const amount = toleranceNumber(ctx.config, "B44.amount", -50000);
-    const hit = aeYearOverYear(d, ctx, (cur, prev) => cur.lt(prev.plus(amount)));
+    const hit = aeYearOverYear("B44", record, d, ctx, (cur, prev) => cur.lt(prev.plus(amount)));
     return hit ? [aeDraft(d, hit, {})] : [];
   },
 });

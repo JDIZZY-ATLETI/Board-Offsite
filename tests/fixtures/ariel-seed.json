@@ -21,6 +21,156 @@
   "rateTables": [
     {
       "table": "MGA",
+      "year": 2010,
+      "value": "47200",
+      "placeholder": true
+    },
+    {
+      "table": "PAMAXDB",
+      "year": 2010,
+      "value": "22450",
+      "placeholder": true
+    },
+    {
+      "table": "REDFE",
+      "year": 2010,
+      "value": "600",
+      "placeholder": true
+    },
+    {
+      "table": "LOWRATE",
+      "year": 2010,
+      "value": "0.069",
+      "placeholder": true
+    },
+    {
+      "table": "HIGHRATE",
+      "year": 2010,
+      "value": "0.092",
+      "placeholder": true
+    },
+    {
+      "table": "MGA",
+      "year": 2011,
+      "value": "48300",
+      "placeholder": true
+    },
+    {
+      "table": "PAMAXDB",
+      "year": 2011,
+      "value": "22970",
+      "placeholder": true
+    },
+    {
+      "table": "REDFE",
+      "year": 2011,
+      "value": "600",
+      "placeholder": true
+    },
+    {
+      "table": "LOWRATE",
+      "year": 2011,
+      "value": "0.069",
+      "placeholder": true
+    },
+    {
+      "table": "HIGHRATE",
+      "year": 2011,
+      "value": "0.092",
+      "placeholder": true
+    },
+    {
+      "table": "MGA",
+      "year": 2012,
+      "value": "50100",
+      "placeholder": true
+    },
+    {
+      "table": "PAMAXDB",
+      "year": 2012,
+      "value": "23820",
+      "placeholder": true
+    },
+    {
+      "table": "REDFE",
+      "year": 2012,
+      "value": "600",
+      "placeholder": true
+    },
+    {
+      "table": "LOWRATE",
+      "year": 2012,
+      "value": "0.069",
+      "placeholder": true
+    },
+    {
+      "table": "HIGHRATE",
+      "year": 2012,
+      "value": "0.092",
+      "placeholder": true
+    },
+    {
+      "table": "MGA",
+      "year": 2013,
+      "value": "51100",
+      "placeholder": true
+    },
+    {
+      "table": "PAMAXDB",
+      "year": 2013,
+      "value": "24270",
+      "placeholder": true
+    },
+    {
+      "table": "REDFE",
+      "year": 2013,
+      "value": "600",
+      "placeholder": true
+    },
+    {
+      "table": "LOWRATE",
+      "year": 2013,
+      "value": "0.069",
+      "placeholder": true
+    },
+    {
+      "table": "HIGHRATE",
+      "year": 2013,
+      "value": "0.092",
+      "placeholder": true
+    },
+    {
+      "table": "MGA",
+      "year": 2014,
+      "value": "52500",
+      "placeholder": true
+    },
+    {
+      "table": "PAMAXDB",
+      "year": 2014,
+      "value": "24930",
+      "placeholder": true
+    },
+    {
+      "table": "REDFE",
+      "year": 2014,
+      "value": "600",
+      "placeholder": true
+    },
+    {
+      "table": "LOWRATE",
+      "year": 2014,
+      "value": "0.069",
+      "placeholder": true
+    },
+    {
+      "table": "HIGHRATE",
+      "year": 2014,
+      "value": "0.092",
+      "placeholder": true
+    },
+    {
+      "table": "MGA",
       "year": 2015,
       "value": "53600",
       "placeholder": true
@@ -376,6 +526,36 @@
     {
       "table": "HIGHRATE",
       "year": 2026,
+      "value": "0.092",
+      "placeholder": true
+    },
+    {
+      "table": "MGA",
+      "year": 2027,
+      "value": "77000",
+      "placeholder": true
+    },
+    {
+      "table": "PAMAXDB",
+      "year": 2027,
+      "value": "35500",
+      "placeholder": true
+    },
+    {
+      "table": "REDFE",
+      "year": 2027,
+      "value": "600",
+      "placeholder": true
+    },
+    {
+      "table": "LOWRATE",
+      "year": 2027,
+      "value": "0.069",
+      "placeholder": true
+    },
+    {
+      "table": "HIGHRATE",
+      "year": 2027,
       "value": "0.092",
       "placeholder": true
     }

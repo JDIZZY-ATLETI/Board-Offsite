@@ -22,9 +22,9 @@ export const B40 = l2Rule({
   ],
   dataImportMessage: "The Annualized Earnings amount of ${0} is {1}% greater than the prior year's Annualized Earnings of ${2}. To continue, update the entry or select an override reason.",
   portalMessage: "The Annualized Earnings amount for the reporting year is greater than the prior year's Annualized Earnings. To continue, update the entry or select an override reason.",
-  evaluate(_record, d, ctx) {
+  evaluate(record, d, ctx) {
     const pct = toleranceNumber(ctx.config, "B40.pct", 0.15);
-    const hit = aeYearOverYear(d, ctx, (cur, prev) => cur.gt(prev.times(1 + pct)));
+    const hit = aeYearOverYear("B40", record, d, ctx, (cur, prev) => cur.gt(prev.times(1 + pct)));
     if (!hit) return [];
     const increase = hit.current.minus(hit.previous).div(hit.previous).times(100);
     return [aeDraft(d, hit, { 0: money(hit.current), 1: pct2(increase), 2: money(hit.previous) })];

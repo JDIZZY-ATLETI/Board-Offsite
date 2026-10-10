@@ -68,14 +68,14 @@ describe("rules/lib: AE, service and context helpers", () => {
     expect(calculateAE(txView(emp, null), 2025, RATES)).toMatchObject({ source: "REPORT", ae: new Decimal(71000) });
     expect(calculateAE(txView(employment(), null), 2025, RATES)).toMatchObject({ source: "NONE" });
     const retro = employment({ service: [ctsrv(2025, 52)], contributions: [contrib(2025, "RPPLOW", 4919.7), contrib(2024, "RPPLOW", 100, { summaryAttribute: "RRETRO", paymentDate: "2025-03-01", indicator: "RETRO" })] });
-    const std = calculateAE(txView(retro, null), 2025, RATES).ae;
-    const paid = calculateAE(txView(retro, null), 2025, RATES, "retroPaid").ae;
-    const withRetro = calculateAE(txView(retro, null), 2025, RATES, "withRetro").ae;
+    const std = calculateAE(txView(retro, null), 2025, RATES)!.ae;
+    const paid = calculateAE(txView(retro, null), 2025, RATES, "retroPaid")!.ae;
+    const withRetro = calculateAE(txView(retro, null), 2025, RATES, "withRetro")!.ae;
     expect(std.toFixed(2)).toBe("71300.00");
     expect(paid.gt(std)).toBe(true);
     expect(withRetro.toFixed(2)).toBe("71300.00");
     const regul = employment({ service: [ctsrv(2025, 52)], contributions: [contrib(2025, "RPPLOW", 4919.7), contrib(2025, "RPPLOW", 500, { indicator: "REGUL" }), contrib(2025, "RCAHGH", 92)] });
-    expect(calculateAE(txView(regul, null), 2025, RATES).ae.toFixed(2)).toBe("72300.00");
+    expect(calculateAE(txView(regul, null), 2025, RATES)!.ae.toFixed(2)).toBe("72300.00");
   });
   it("reportedService excludes REGUL unless asked; expectedService guards a zero-length year", () => {
     const v = txView(employment({ service: [ctsrv(2025, 50), ctsrv(2025, 2, { indicator: "REGUL" })] }), null);

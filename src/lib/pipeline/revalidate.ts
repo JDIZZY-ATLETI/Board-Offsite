@@ -31,7 +31,9 @@ export async function revalidateOffline(ctx: AppContext, batchId: string, deps: 
   const config = deserializeRulesConfig(configText.toString("utf8"));
   const parsed = parseEventsCsv(bytes);
   const records = parsed.rows.map((row) => buildRecord(row, { batchId, pseudonymKey: ctx.config.sinPseudonymKey, newId: deps.newId }));
-  const rates = await ctx.ariel.rates();
+  // Never the live adapter: the rates frozen with the snapshot are the only input (BUG-REVAL-1).
+  const rates = snapshot.rates;
+  if (!rates) throw new Error(`ariel snapshot for batch ${batchId} carries no rate tables; offline re-validation would not be reproducible`);
   const v = runValidation({ batch: { batchId, employerId: batch.employerId, executionDate: batch.executionDate as IsoDate }, parsed, records, snapshot, rates, config }, deps);
   return {
     batchId,

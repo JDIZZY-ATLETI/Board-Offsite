@@ -45,6 +45,7 @@ describe("QA/Phase2: silver zone and report PII posture (architecture 9.7 / 13.3
     const lines = text.trim().split("\n").map((l) => JSON.parse(l) as Record<string, unknown>);
     expect(lines[0]).toMatchObject({ kind: "meta", schemaVersion: 1, adapter: "MockArielAdapter", employerId: "0235" });
     expect(lines[0].batchId).toBeUndefined();
+    expect(lines[1].kind).toBe("rates");
     const members = lines.filter((l) => l.kind === "member");
     expect(members.length).toBeGreaterThan(10);
     for (const m of members) {
@@ -84,14 +85,22 @@ describe("QA/Phase2: offline re-validation isolation (AC5)", () => {
       await seedArielMock(t.ctx.db, fixtureSeed(), { pseudonymKey: t.ctx.config.sinPseudonymKey, encKey: t.ctx.config.sinEncKey });
     }
   });
-  it.fails("BUG-REVAL-1: rate tables are not part of the persisted snapshot - changing MGA 2026 in the mock changes the offline result", async () => {
-    const { paths } = await located(mixed);
+  it("BUG-REVAL-1 (fixed): rate tables are frozen in the persisted snapshot - changing MGA 2026 in the mock does not change the offline result", async () => {
+    const { b, paths } = await located(mixed);
     const before = lakeFile(paths.silver.findings).toString("utf8");
+    const snapshotLines = lakeFile(paths.silver.arielSnapshot).toString("utf8").trim().split("\n").map((l) => JSON.parse(l) as { kind: string; rows?: Array<{ table: string; year: number; value: string }> });
+    const ratesLine = snapshotLines.find((l) => l.kind === "rates");
+    expect(ratesLine?.rows?.find((r) => r.table === "MGA" && r.year === 2026)?.value).toBe("74600");
+    expect(snapshotLines.indexOf(ratesLine!)).toBe(1);
     const where = and(eq(mockRateTables.tableName, "MGA"), eq(mockRateTables.year, 2026));
     await t.ctx.db.update(mockRateTables).set({ value: "50000" }).where(where);
     try {
       const r = await revalidateOffline(t.ctx, mixed);
       expect(r.findingsNdjson).toBe(before);
+      expect(r.arielSnapshotHash).toBe(b.arielSnapshotHash);
+      // The live adapter now disagrees with the frozen rates: a fresh snapshot would hash differently.
+      const fresh = await t.ctx.ariel.snapshotForBatch("probe", "0235", snapshotLines.filter((l) => l.kind === "member").map((l) => (l as unknown as { sinPseudo: string }).sinPseudo));
+      expect(fresh.hash).not.toBe(b.arielSnapshotHash);
     } finally {
       await t.ctx.db.update(mockRateTables).set({ value: "74600" }).where(where);
     }
