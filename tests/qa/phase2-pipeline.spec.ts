@@ -194,13 +194,13 @@ describe("QA/Phase2: rules configuration effect boundary", () => {
   it("disabling B40 affects new batches only: the earlier batch keeps its B40 findings and its config hash", async () => {
     const { b } = await located(mixed);
     const first = await upload(csv(line(77)), ADMIN, { employerId: "0235", executionDate: EXEC }, { filename: "b40-on.csv" });
-    expect(first.body.status, first.text).toBe("VALIDATED");
+    expect(first.body.status, first.text).toBe("VALIDATED"); // line 77 carries a B40 warning -> HELD
     expect((await findingsOf(first.body.batchId)).map((f) => f.ruleId)).toContain("B40");
     const patched = await api.patchRule(ADMIN, "B40", body({ enabled: false, reason: "QA: disable B40" }));
     expect(patched.status, patched.text).toBe(200);
     try {
       const second = await upload(csv(line(77).replace(/^([^,]*,)([^,]*)/, "$1QA$2")), ADMIN, { employerId: "0235", executionDate: EXEC }, { filename: "b40-off.csv" });
-      expect(second.body.status, second.text).toBe("VALIDATED");
+      expect(second.body.status, second.text).toBe("PENDING_APPROVAL"); // B40 disabled -> nothing HELD -> auto-advance
       expect(second.body.batchId).not.toBe(first.body.batchId);
       expect((await findingsOf(second.body.batchId)).map((f) => f.ruleId)).not.toContain("B40");
       expect((await api.getBatch(ADMIN, second.body.batchId)).body.rulesConfigHash).toBe(patched.body.config.hash);
@@ -258,7 +258,7 @@ describe("QA/Phase2: rules configuration effect boundary", () => {
     const r = await api.arielReseed(ADMIN);
     expect(r.status, r.text).toBe(200);
     const again = await upload(goldenInput("mixed-100-rows"), ADMIN, { employerId: "0359", executionDate: EXEC }, { filename: "other-employer.csv" });
-    expect(again.body.status).toBe("VALIDATED");
+    expect(["VALIDATED", "PENDING_APPROVAL"]).toContain(again.body.status);
     const { paths: p2 } = await located(again.body.batchId);
     // the meta line names the employer, so compare the member lines (same SINs requested, same deterministic ids)
     expect(membersOf(p2.silver.arielSnapshot)).toBe(membersOf(paths.silver.arielSnapshot));

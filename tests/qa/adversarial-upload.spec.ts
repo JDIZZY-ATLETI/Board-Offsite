@@ -55,30 +55,30 @@ describe("QA/upload: degenerate files", () => {
       await expectLegalBatchState(t, r.body.batchId);
     }
   });
-  it("header-only file -> VALIDATED with zero rows and all artifacts", async () => {
+  it("header-only file -> PENDING_APPROVAL (empty update set) with zero rows and all artifacts", async () => {
     const r = await up(Buffer.from(HEADER + "\r\n"), { filename: "header-only.csv" });
-    expect(r.body.status).toBe("VALIDATED");
+    expect(r.body.status).toBe("PENDING_APPROVAL");
     const b = await api.getBatch(ADMIN, r.body.batchId);
     expect(b.body.counts).toMatchObject({ rows: 0, accepted: 0, rejected: 0 });
-    expect(b.body.statusHistory.map((h: { toStatus: string }) => h.toStatus)).toEqual(["RECEIVED", "PARSED", "VALIDATED"]);
+    expect(b.body.statusHistory.map((h: { toStatus: string }) => h.toStatus)).toEqual(["RECEIVED", "PARSED", "VALIDATED", "LEDGERED", "PROJECTION_BUILT", "PENDING_APPROVAL"]);
     expect((await api.report(ADMIN, r.body.batchId, "rejected.csv")).status).toBe(200);
   });
   it("single valid row (seeded member) -> VALIDATED, 1 accepted; an unknown SIN is rejected by B2", async () => {
     const unknown = await up(csvBytes([validRow(1)]), { filename: "one-unknown.csv" });
-    expect(unknown.body.status).toBe("VALIDATED");
+    expect(unknown.body.status).toBe("PENDING_APPROVAL");
     expect((await api.getBatch(ADMIN, unknown.body.batchId)).body.counts).toMatchObject({ rows: 1, accepted: 0, rejected: 1 });
     expect((await api.findings(ADMIN, unknown.body.batchId)).body.items.map((f: { ruleId: string }) => f.ruleId)).toEqual(["B2"]);
     const r = await up(csvBytes([seededRow(0)]), { filename: "one.csv" });
-    expect(r.body.status).toBe("VALIDATED");
+    expect(r.body.status).toBe("PENDING_APPROVAL");
     expect((await api.getBatch(ADMIN, r.body.batchId)).body.counts).toMatchObject({ rows: 1, accepted: 1, rejected: 0 });
   });
   it("1,000 generated rows -> VALIDATED (timing recorded)", async () => {
     const t0 = Date.now();
     const r = await up(csvBytes(manyRows(1000, 10_000)), { filename: "k1.csv" });
     const ms = Date.now() - t0;
-    expect(r.body.status).toBe("VALIDATED");
+    expect(r.body.status).toBe("PENDING_APPROVAL");
     expect((await api.getBatch(ADMIN, r.body.batchId)).body.counts.rows).toBe(1000);
-    console.info(`[perf] 1,000 rows upload->VALIDATED (route, wait=true): ${ms} ms`);
+    console.info(`[perf] 1,000 rows upload->PENDING_APPROVAL (route, wait=true): ${ms} ms`);
     expect(ms).toBeLessThan(60_000);
   });
 });
@@ -183,12 +183,12 @@ describe("QA/upload: not-a-CSV payloads", () => {
     expectErrorEnvelope(await api.retry(ADMIN, "nope"), 400);
     const retried = await api.retry(ADMIN, r.batchId);
     expect(retried.status).toBe(200);
-    expect(retried.body).toEqual({ batchId: r.batchId, status: "VALIDATED" });
+    expect(retried.body).toEqual({ batchId: r.batchId, status: "PENDING_APPROVAL" });
     const b = await api.getBatch(ADMIN, r.batchId);
-    expect(b.body.status).toBe("VALIDATED");
+    expect(b.body.status).toBe("PENDING_APPROVAL");
     expect(b.body.failureReason ?? null).toBeNull();
     expect(b.body.counts).toMatchObject({ rows: 1, accepted: 1, rejected: 0 });
-    expect(b.body.statusHistory.map((h: { toStatus: string }) => h.toStatus)).toEqual(["RECEIVED", "PARSED", "FAILED", "RECEIVED", "PARSED", "VALIDATED"]);
+    expect(b.body.statusHistory.map((h: { toStatus: string }) => h.toStatus)).toEqual(["RECEIVED", "PARSED", "FAILED", "RECEIVED", "PARSED", "VALIDATED", "LEDGERED", "PROJECTION_BUILT", "PENDING_APPROVAL"]);
     expect(await t.ctx.db.select().from(eventsRecords).where(eq(eventsRecords.batchId, r.batchId))).toHaveLength(1);
     expectErrorEnvelope(await api.retry(ADMIN, r.batchId), 409, "INVALID_STATE");
     const { auditLog } = await import("@/lib/db/schema");
@@ -218,7 +218,7 @@ describe("QA/upload: structural variants", () => {
     const cols = HEADER.split(",").slice(0, 14);
     const vals = Object.values(seededRow(2)).slice(0, 14);
     const r14 = await up(Buffer.from(`${cols.join(",")}\r\n${vals.join(",")}\r\n`), { filename: "c14.csv" });
-    expect(r14.body.status).toBe("VALIDATED");
+    expect(r14.body.status).toBe("PENDING_APPROVAL");
     expect((await api.getBatch(ADMIN, r14.body.batchId)).body.counts.accepted).toBe(1);
   });
   it("a data row with 16 fields -> FILE_REJECTED I50 (whole file), firstOffendingLine reported", async () => {
@@ -236,15 +236,15 @@ describe("QA/upload: structural variants", () => {
   });
   it("LF-only and CR-only files parse like CRLF", async () => {
     const lf = await up(csvBytes([seededRow(3), seededRow(4)], HEADER, "\n"), { filename: "lf.csv" });
-    expect(lf.body.status).toBe("VALIDATED");
+    expect(lf.body.status).toBe("PENDING_APPROVAL");
     expect((await api.getBatch(ADMIN, lf.body.batchId)).body.counts.accepted).toBe(2);
     const cr = await up(csvBytes([seededRow(5), seededRow(6)], HEADER, "\r"), { filename: "cr.csv" });
-    expect(cr.body.status).toBe("VALIDATED");
+    expect(cr.body.status).toBe("PENDING_APPROVAL");
     expect((await api.getBatch(ADMIN, cr.body.batchId)).body.counts.accepted).toBe(2);
   });
   it("SIN column with 9 non-numeric characters -> I8 (param SIN), raw value never echoed in the API", async () => {
     const r = await up(csvBytes([validRow(15, { SIN: "ABCDEFGHI" })]), { filename: "sinalpha.csv" });
-    expect(r.body.status).toBe("VALIDATED");
+    expect(r.body.status).toBe("PENDING_APPROVAL");
     const f = await api.findings(ADMIN, r.body.batchId);
     expect(f.body.items.map((x: { messageId: string }) => x.messageId)).toEqual(["5131"]);
     expect(f.text).not.toContain("ABCDEFGHI");
@@ -253,7 +253,7 @@ describe("QA/upload: structural variants", () => {
   });
   it("quoted fields with embedded commas survive to the Rejected Individuals CSV unchanged", async () => {
     const r = await up(Buffer.from(`${HEADER}\r\n${Object.values(validRow(16, { LastName: `"ABLE, JR"`, Weeks_CurrentYear: "-1" })).join(",")}\r\n`), { filename: "quoted.csv" });
-    expect(r.body.status).toBe("VALIDATED");
+    expect(r.body.status).toBe("PENDING_APPROVAL");
     const csv = await api.rejectedCsv(ADMIN, r.body.batchId);
     expect(csv.status).toBe(200);
     expect(csv.text.split("\r\n")[1]).toContain(`"ABLE, JR"`);
@@ -308,7 +308,7 @@ describe("QA/upload: filenames, fields and formula injection", () => {
     ];
     const rows = payloads.map(([p], i) => validRow(200 + i, { LastName: p, FirstName: p, Weeks_CurrentYear: "-1" }));
     const r = await up(csvBytes(rows), { filename: "formula.csv" });
-    expect(r.body.status).toBe("VALIDATED");
+    expect(r.body.status).toBe("PENDING_APPROVAL");
     expect((await api.getBatch(ADMIN, r.body.batchId)).body.counts.rejected).toBe(rows.length);
     const csv = await api.rejectedCsv(ADMIN, r.body.batchId);
     expect(csv.headers.get("content-type")).toContain("text/csv");
@@ -375,15 +375,15 @@ describe("QA/state-machine", () => {
     await expect(t.ctx.db.transaction((tx) => transitionBatch(tx, { batchId: "00000000-0000-7000-8000-00000000dead", from: "RECEIVED", to: "PARSED", actor: "qa", at: new Date().toISOString() }))).rejects.toThrow(/not found/);
     const after = (await t.ctx.db.select().from(batchStatusHistory).where(eq(batchStatusHistory.batchId, id))).length;
     expect(after).toBe(before);
-    expect((await api.getBatch(ADMIN, id)).body.status).toBe("VALIDATED");
+    expect((await api.getBatch(ADMIN, id)).body.status).toBe("PENDING_APPROVAL");
   });
   it("runBatch on a non-RECEIVED batch is a no-op (idempotent; no duplicate history/ledger)", async () => {
     const r = await up(csvBytes([validRow(301)]), { filename: "noop.csv" });
     const id = r.body.batchId as string;
     const head = (await api.ledgerHead()).body.seq;
-    expect(await runBatch(t.ctx, id)).toBe("VALIDATED");
+    expect(await runBatch(t.ctx, id)).toBe("PENDING_APPROVAL");
     expect((await api.ledgerHead()).body.seq).toBe(head);
-    expect((await api.getBatch(ADMIN, id)).body.statusHistory).toHaveLength(3);
+    expect((await api.getBatch(ADMIN, id)).body.statusHistory).toHaveLength(6);
   });
   it("duplicate content: same employer -> same batchId regardless of filename/uploader; other employer -> new batch; FILE_REJECTED never dedups", async () => {
     const bytes = csvBytes([validRow(302)]);
@@ -430,7 +430,7 @@ describe("QA/state-machine", () => {
     expect(created.length).toBeGreaterThan(20);
     const seen = new Set<string>();
     for (const id of [...new Set(created)]) seen.add((await expectLegalBatchState(t, id)).status);
-    expect([...seen].sort()).toEqual(["FAILED", "FILE_REJECTED", "VALIDATED"]);
+    expect([...seen].sort()).toEqual(["FAILED", "FILE_REJECTED", "PENDING_APPROVAL"]);
   });
   it("the whole ledger still verifies after every adversarial upload", async () => {
     const v = await t.ctx.ledger.verify();

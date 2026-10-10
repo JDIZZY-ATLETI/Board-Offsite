@@ -38,10 +38,10 @@ beforeAll(async () => {
 afterAll(() => t.cleanup());
 
 describe("pipeline: happy-terfin", () => {
-  it("goes RECEIVED -> PARSED -> VALIDATED with all rows accepted and every lake artifact present", async () => {
+  it("goes RECEIVED -> PARSED -> VALIDATED -> ... -> PENDING_APPROVAL with all rows accepted and every lake artifact present", async () => {
     const u = await upload("happy-terfin");
-    expect(u.status).toBe("VALIDATED");
-    expect(u.batch.status).toBe("VALIDATED");
+    expect(u.status).toBe("PENDING_APPROVAL");
+    expect(u.batch.status).toBe("PENDING_APPROVAL");
     expect(u.batch.rowsTotal).toBe(5);
     expect(u.batch.rowsAccepted).toBe(5);
     expect(u.batch.rowsRejected).toBe(0);
@@ -79,13 +79,14 @@ describe("pipeline: happy-terfin", () => {
     // status history and ledger
     const history = (await import("@/lib/queries/batches")).getBatchDetail;
     const detail = await history(t.ctx, u.batchId);
-    expect(detail?.statusHistory.map((h) => h.toStatus)).toEqual(["RECEIVED", "PARSED", "VALIDATED"]);
+    // Phase 3: no HELD rows, so the batch continues automatically to PENDING_APPROVAL (architecture section 10.1).
+    expect(detail?.statusHistory.map((h) => h.toStatus)).toEqual(["RECEIVED", "PARSED", "VALIDATED", "LEDGERED", "PROJECTION_BUILT", "PENDING_APPROVAL"]);
     expect(detail?.reports.map((r) => r.name)).toContain("execution-report.json");
     const entries = await t.ctx.ledger.list({ batchId: u.batchId, order: "asc" });
-    expect(entries.items.map((e) => e.eventType)).toEqual(["BatchReceived", "BatchParsed", ...Array<string>(5).fill("MemberRecordValidated")]);
+    expect(entries.items.map((e) => e.eventType)).toEqual(["BatchReceived", "BatchParsed", ...Array<string>(5).fill("MemberRecordValidated"), ...Array<string>(5).fill("ArielUpdateProposed"), "UpdateSetBuilt"]);
     expect(entries.items[0].payload).toMatchObject({ sha256: u.sha256, employerId: "0235", uploadedBy: ACTOR });
     // Phase 2: every accepted row is ledgered on its member stream with the config/snapshot hashes and a findings hash.
-    for (const e of entries.items.slice(2)) {
+    for (const e of entries.items.slice(2, 7)) {
       expect(e.streamId).toMatch(/^member:[0-9a-f]{64}$/);
       expect(e.payload).toMatchObject({ findings: [], overrides: [], rulesConfigHash: u.batch.rulesConfigHash, arielSnapshotHash: u.batch.arielSnapshotHash });
       expect((e.payload as { findingsHash: string }).findingsHash).toMatch(/^[0-9a-f]{64}$/);
@@ -141,14 +142,14 @@ describe("pipeline: happy-terfin", () => {
 describe("pipeline: happy-decfin / happy-retfin", () => {
   it("DECFIN rows are accepted with EmploymentEndDate as the event date (Q1)", async () => {
     const u = await upload("happy-decfin");
-    expect(u.status).toBe("VALIDATED");
+    expect(u.status).toBe("PENDING_APPROVAL");
     expect(u.batch.rowsAccepted).toBe(3);
     const rows = await t.ctx.db.select().from(eventsRecords).where(eq(eventsRecords.batchId, u.batchId));
     expect(rows.every((r) => r.eventType === "DECFIN" && r.dateOfDeath === r.employmentEndDate)).toBe(true);
   });
   it("RETFIN rows are accepted", async () => {
     const u = await upload("happy-retfin");
-    expect(u.status).toBe("VALIDATED");
+    expect(u.status).toBe("PENDING_APPROVAL");
     expect(u.batch.rowsAccepted).toBe(3);
   });
 });

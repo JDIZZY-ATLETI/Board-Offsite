@@ -147,6 +147,7 @@ export interface ArielUpdateProposedPayload {
   derivationRules: string[];
   /** D-NCT result when emitted (business data, no PII). */
   membershipStatus: { status: string; subStatus: string | null; effectiveDate: IsoDate } | null;
+  membershipStatusBefore: { status: string | null; subStatus: string | null } | null;
   employmentTermination: { terminationDate: IsoDate; terminationCode: string | null } | null;
   arielSnapshotHash: string;
 }

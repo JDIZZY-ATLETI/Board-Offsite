@@ -8,9 +8,11 @@ Base: `c094f53` (Phase 2 complete). Scope: architecture section 17 Phase 3 (back
 
 - **Step 2 - final derivation.** `src/lib/derivation/final/contributionSplit.ts` (pure; 1000 + 0.7 x PA limit, Q14 PA fallback, Q15 literal signs) and `src/lib/derivation/final/items.ts` (`deriveFinal`: sections 8.2-8.11 and 8.13 order; `itemsHash`, `contentHashOf`, `sortItems`). Tests: `tests/derivation/contribution-split.spec.ts` (5 worked examples + edges), `tests/derivation/final.spec.ts` (26 cases across every record type).
 
+- **Step 3 - pipeline continuation.** `src/lib/pipeline/advance.ts`: `advanceBatch` (VALIDATED, HELD = 0 -> `stepLedger` -> LEDGERED -> `stepBuild` -> PROJECTION_BUILT -> PENDING_APPROVAL; HELD > 0 waits). `ArielUpdateProposed` per accepted row (payload = itemsHash + counts + D-NCT/termination summary, no PII beyond sinMasked), `CorrectionAppended` (section 9.6: earlier unexported proposal for same member/employer/eventType, or earlier rejection for same member/eventType/eventDate), `UpdateSetBuilt` on the batch stream with artifact hashes. Gold: `ariel-update-set.json/.csv`, `diff.md`, `reports/modified-fields-report.csv`, `transactions-report.csv`, `transactions-summary.csv` (`src/lib/pipeline/update-set/writers.ts`). `runBatch` now continues automatically (`{ advance: false }` opt-out); the override API continues when the last HELD row is released. INFO-RET-DNCT persisted as an INFORMATION finding. Member projector (`src/lib/projection/member-projection.ts`, step 5 pulled forward) runs after every ledger write. Phase 1/2 suites updated where they asserted the pre-Phase-3 terminal status `VALIDATED` (now `PENDING_APPROVAL` for batches without HELD rows); 700/700 green.
+
 ## Next
 
-- Step 3 pipeline steps `ledger` + `build-projection`, gold writers, reports.
+- Step 4 approval/export APIs.
 
 ## Decisions
 

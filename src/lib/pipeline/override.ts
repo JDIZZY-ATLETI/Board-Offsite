@@ -9,6 +9,8 @@ import { memberStream } from "@/lib/ledger/streams";
 import { toFinding } from "@/lib/queries/findings";
 import { outcomeOf } from "@/lib/rules/engine";
 import type { EventsRecord, IsoDate, RecordOutcome, Session, ValidationFinding, WarningOverriddenPayload } from "@/types";
+import { projectLedger } from "@/lib/projection";
+import { advanceBatch } from "./advance";
 import { validatedPayload, writeSummaryReports } from "./run";
 
 export interface OverrideRequest {
@@ -51,7 +53,7 @@ export async function overrideFinding(ctx: AppContext, session: Session, finding
   if (!row.recordId) throw new ApiError(422, "NOT_OVERRIDABLE", "File-level findings cannot be overridden.");
 
   const at = ctx.clock().toISOString();
-  return ctx.db.transaction(async (tx) => {
+  const result = await ctx.db.transaction(async (tx) => {
     const [record] = await tx.select().from(eventsRecords).where(eq(eventsRecords.recordId, row.recordId!));
     if (!record) throw new ApiError(404, "NOT_FOUND", "record not found");
     // GAP-OVR-1: an override on a rejected row could never release it; refuse instead of writing a dead ledger entry.
@@ -130,6 +132,13 @@ export async function overrideFinding(ctx: AppContext, session: Session, finding
     const updated = siblings.find((f) => f.findingId === findingId)!;
     return { finding: { ...updated, override: { ...updated.override!, ledgerSeq: entries[0].seq } }, rowOutcome, heldRemaining, ledgerSeq: entries[0].seq };
   });
+  // The last HELD row was released: continue to LEDGERED -> PENDING_APPROVAL (section 10.1) after the override committed.
+  if (result.heldRemaining === 0 && result.rowOutcome === "ACCEPTED") {
+    await advanceBatch(ctx, batch.batchId);
+  } else {
+    await projectLedger(ctx);
+  }
+  return result;
 }
 
 export interface BulkOverrideResult {

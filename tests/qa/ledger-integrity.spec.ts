@@ -69,12 +69,12 @@ describe("QA/ledger: concurrency", () => {
       return runBatch(t.ctx, r.batchId);
     });
     const statuses = await Promise.all(jobs.map((j) => j()));
-    expect(statuses).toEqual(["VALIDATED", "VALIDATED", "VALIDATED", "VALIDATED", "VALIDATED"]);
+    expect(statuses).toEqual(["PENDING_APPROVAL", "PENDING_APPROVAL", "PENDING_APPROVAL", "PENDING_APPROVAL", "PENDING_APPROVAL"]);
     const entries = await auditChain();
-    // 2 batch entries + one member outcome per row (unknown SINs are rejected by B2) per upload.
-    expect(entries.length).toBe(5 * (2 + 20));
+    // 2 batch entries + one member outcome per row (unknown SINs are rejected by B2) + an (empty) UpdateSetBuilt per upload.
+    expect(entries.length).toBe(5 * (2 + 20 + 1));
     const v = await t.ctx.ledger.verify();
-    expect(v).toMatchObject({ ok: true, checked: 110, headSeq: 110 });
+    expect(v).toMatchObject({ ok: true, checked: 115, headSeq: 115 });
   });
   it("parallel uploads of identical bytes for one employer: exactly one batch, the rest are duplicates (unique index race)", async () => {
     const bytes = csvBytes([validRow(999)]);

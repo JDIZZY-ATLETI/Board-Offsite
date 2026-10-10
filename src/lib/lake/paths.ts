@@ -47,6 +47,14 @@ export function lakePaths(loc: BatchLocator) {
       executionReportHtml: `${gold}/reports/execution-report.html`,
       summaryOfValidations: `${gold}/reports/summary-of-validations.csv`,
       summaryOfValidationsPrivate: `${gold}/reports/summary-of-validations.private.csv`,
+      // Phase 3 (architecture section 5): Update Set artifacts, legacy Modified Fields / Transactions reports, exports.
+      updateSetJson: `${gold}/ariel-update-set.json`,
+      updateSetCsv: `${gold}/ariel-update-set.csv`,
+      diffMd: `${gold}/diff.md`,
+      modifiedFieldsReport: `${gold}/reports/modified-fields-report.csv`,
+      transactionsReport: `${gold}/reports/transactions-report.csv`,
+      transactionsSummary: `${gold}/reports/transactions-summary.csv`,
+      exportsDir: `${gold}/exports`,
     },
   } as const;
 }

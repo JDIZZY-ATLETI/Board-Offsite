@@ -96,7 +96,7 @@ describe("Phase 2 AC3: seed outcomes", () => {
     for (const line of [59, 60, 61]) expect(at(line).rec.outcome, `line ${line}`).toBe("REJECTED");
     for (const [s, id] of Object.entries(happy)) {
       const d = await api.getBatch(REVIEWER, id);
-      expect(d.body.status, s).toBe("VALIDATED");
+      expect(d.body.status, s).toBe("PENDING_APPROVAL");
       expect(d.body.counts, s).toMatchObject({ accepted: d.body.counts.rows, rejected: 0, held: 0, warnings: 0, infos: 0 });
       expect(await findingsOf(id), s).toHaveLength(0);
     }
@@ -259,7 +259,7 @@ describe("Phase 2: rules configuration API", () => {
     expectErrorEnvelope(await api.rulesHistory({}), 401, "UNAUTHENTICATED");
     const current = (await api.rules()).body.config.hash as string;
     const u = await upload(goldenInput("happy-terfin"), ADMIN, { employerId: "0135", executionDate: EXEC }, { filename: "stamped.csv" });
-    expect(u.body.status).toBe("VALIDATED");
+    expect(u.body.status).toBe("PENDING_APPROVAL");
     expect((await api.getBatch(ADMIN, u.body.batchId)).body.rulesConfigHash).toBe(current);
     expect((await api.report(ADMIN, u.body.batchId, "rules-config.json")).body).toMatchObject({ hash: current, enabled: { B181: true }, tolerances: { "B37.tolerance1Weeks": 3 } });
     expectErrorEnvelope(await api.deleteRule(REVIEWER, "B181"), 403, "FORBIDDEN");

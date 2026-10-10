@@ -86,7 +86,7 @@ describe("POST /api/batches", () => {
   it("happy-terfin with ?wait=true -> VALIDATED (Admin sets executionDate)", async () => {
     const r = await post("/batches?wait=true", ADMIN, form(goldenInput("happy-terfin"), { employerId: "0235", executionDate: "2026-10-08" }));
     expect(r.status).toBe(200);
-    expect(r.body).toMatchObject({ status: "VALIDATED", duplicate: false });
+    expect(r.body).toMatchObject({ status: "PENDING_APPROVAL", duplicate: false });
     terfinBatchId = r.body.batchId;
   });
   it("duplicate re-upload returns 200 duplicate:true with the same batchId", async () => {
@@ -151,7 +151,7 @@ describe("POST /api/batches", () => {
     it("GET reports streams artifacts; rejected.csv is audit-logged and rejects unknown names", async () => {
       const rep = await getReport(new Request(`${BASE}/batches/${terfinBatchId}/reports/execution-report.json`, { headers: SUB_0235 }), params({ batchId: terfinBatchId, name: "execution-report.json" }));
       expect(rep.status).toBe(200);
-      expect((await rep.json()).status).toBe("VALIDATED");
+      expect((await rep.json()).status).toBe("VALIDATED"); // execution report is written at the end of validation
       const html = await getReport(new Request(`${BASE}/batches/${terfinBatchId}/reports/execution-report.html`, { headers: SUB_0235 }), params({ batchId: terfinBatchId, name: "execution-report.html" }));
       expect(html.headers.get("content-type")).toContain("text/html");
       const csv = await getRejectedCsv(new Request(`${BASE}/batches/${terfinBatchId}/rejected.csv`, { headers: { ...SUB_0235, "x-forwarded-for": "10.0.0.1" } }), { params: Promise.resolve({ batchId: terfinBatchId }) });

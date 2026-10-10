@@ -135,8 +135,25 @@ export function validatedPayload(r: EventsRecord, findings: ValidationFinding[],
   };
 }
 
-/** Runs parse -> validate (L0/L1/L2 with Ariel snapshot) -> finalize for a RECEIVED batch (architecture section 10.2). */
-export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchStatus> {
+export interface RunBatchOptions {
+  /** Continue VALIDATED -> LEDGERED -> PROJECTION_BUILT -> PENDING_APPROVAL when no row is HELD (section 10.1). Default true. */
+  advance?: boolean;
+}
+
+/**
+ * Runs parse -> validate (L0/L1/L2 with Ariel snapshot) for a RECEIVED batch, then (unless `advance: false`)
+ * the Phase 3 continuation when no row is HELD (architecture section 10.1 / 10.2).
+ */
+export async function runBatch(ctx: AppContext, batchId: string, opts: RunBatchOptions = {}): Promise<BatchStatus> {
+  const status = await runValidationStage(ctx, batchId);
+  const { projectLedger } = await import("@/lib/projection");
+  await projectLedger(ctx).catch((err) => ctx.logger.error({ err, batchId }, "member projection update failed after validation"));
+  if (status !== "VALIDATED" || opts.advance === false) return status;
+  const { advanceBatch } = await import("./advance");
+  return advanceBatch(ctx, batchId);
+}
+
+async function runValidationStage(ctx: AppContext, batchId: string): Promise<BatchStatus> {
   const loaded = await loadBatch(ctx, batchId);
   if (!loaded) throw new Error(`batch ${batchId} not found`);
   const { batch, rawFile } = loaded;
