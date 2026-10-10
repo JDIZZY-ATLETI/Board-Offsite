@@ -20,6 +20,7 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "ledger:verify": "tsx scripts/ledger-verify.ts",
+    "projections:rebuild": "tsx scripts/projections-rebuild.ts",
     "demo:phase1": "tsx scripts/demo-phase1.ts",
     "e2e:phase1": "node scripts/e2e-phase1.mjs"
   },

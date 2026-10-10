@@ -19,6 +19,7 @@ let b0235: string; // mixed-100-rows for employer 0235 (has rejected rows => rej
 let b0359: string;
 let cmeFindingId: string; // a COMPLETE_MEMBER_ERROR finding: role gates are checked before the "not overridable" check
 let m1Pseudo: string;
+let set0359: string; // b0359 reaches PENDING_APPROVAL with an (empty) update set
 const env = process.env as Record<string, string | undefined>;
 const origEnv = env.NODE_ENV;
 
@@ -31,6 +32,7 @@ beforeAll(async () => {
   cmeFindingId = cme.findingId;
   const { pseudonymizeSin } = await import("@/lib/pii/sin");
   m1Pseudo = pseudonymizeSin(t.ctx.config.sinPseudonymKey, "900000019");
+  set0359 = (await api.getBatch(ADMIN, b0359)).body.updateSet.updateSetId;
   // A PRIVATE finding (SYS-RULE-ERROR shape) so visibility filtering can be observed end-to-end.
   await t.ctx.db.insert(validationFindings).values({
     findingId: "00000000-0000-7000-8000-0000000a0001",
@@ -79,6 +81,23 @@ describe("QA/security: role matrix for every Phase-1 route", () => {
     ["GET /api/batches/{id}/reports/summary-of-validations.private.csv", (h) => api.report(h, b0235, "summary-of-validations.private.csv"), [401, 403, 200, 200]],
     ["GET /api/batches/{id}/reports/ariel-snapshot.ndjson", (h) => api.report(h, b0235, "ariel-snapshot.ndjson"), [401, 403, 200, 200]],
     ["GET /api/batches/{id}/reports/rules-config.json", (h) => api.report(h, b0235, "rules-config.json"), [401, 403, 200, 200]],
+    // Phase 3 routes (architecture section 11 / 13.1): approve/reject = Reviewer/Admin; reopen + export download = Admin.
+    ["GET /api/batches/{id}/update-set", (h) => api.updateSet(h, b0359), [401, 403, 200, 200]],
+    ["GET /api/batches/{id}/update-set/diff", (h) => api.updateSetDiff(h, b0359), [401, 403, 200, 200]],
+    ["GET /api/update-sets/{id}", (h) => api.updateSetById(h, set0359), [401, 403, 200, 200]],
+    ["POST /api/batches/{id}/update-set/approve (stale hash)", (h) => api.approve(h, b0359, JSON.stringify({ contentHash: "0".repeat(64), note: "role matrix: stale hash probe", attest: true })), [401, 403, 409, 409]],
+    ["POST /api/update-sets/{id}/approve (stale hash)", (h) => api.approveById(h, set0359, JSON.stringify({ contentHash: "0".repeat(64), note: "role matrix: stale hash probe", attest: true })), [401, 403, 409, 409]],
+    ["POST /api/batches/{id}/update-set/reject (stale hash)", (h) => api.reject(h, b0359, JSON.stringify({ contentHash: "0".repeat(64), reason: "probe" })), [401, 403, 409, 409]],
+    ["POST /api/batches/{id}/update-set/export (not approved)", (h) => api.exportSet(h, b0359), [401, 403, 422, 422]],
+    ["POST /api/batches/{id}/reopen (not rejected)", (h) => api.reopen(h, b0359, JSON.stringify({ reason: "probe" })), [401, 403, 403, 422]],
+    ["GET /api/exports/{id} (unknown)", (h) => api.exportMeta(h, "00000000-0000-7000-8000-00000000beef"), [401, 403, 404, 404]],
+    ["GET /api/exports/{id}/download (unknown)", (h) => api.exportDownload(h, "00000000-0000-7000-8000-00000000beef"), [401, 403, 403, 404]],
+    // b0359 belongs to another employer: Submitter scoping (404) applies before the HOOPP-only check (403, covered in phase3.spec).
+    ["GET /api/batches/{id}/reports/modified-fields-report.csv", (h) => api.report(h, b0359, "modified-fields-report.csv"), [401, 404, 200, 200]],
+    ["GET /api/batches/{id}/reports/ariel-update-set.json", (h) => api.report(h, b0359, "ariel-update-set.json"), [401, 404, 200, 200]],
+    ["POST /api/members/lookup", (h) => api.memberLookup(h, JSON.stringify({ sin: "900000019" })), [401, 403, 200, 200]],
+    ["GET /api/members/{sinPseudo}", (h) => api.member(h, m1Pseudo), [401, 403, 200, 200]],
+    ["POST /api/projections/rebuild", (h) => api.projectionsRebuild(h), [401, 403, 403, 200]],
   ];
   it.each(matrix)("%s", async (_name, call, expected) => {
     for (let i = 0; i < ROLES.length; i++) {

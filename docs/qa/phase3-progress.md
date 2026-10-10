@@ -12,9 +12,11 @@ Base: `c094f53` (Phase 2 complete). Scope: architecture section 17 Phase 3 (back
 
 - **Step 4 - approval / export APIs.** `src/lib/pipeline/approval.ts` (approve 409/422 guards, reject -> REJECTED, Admin reopen -> VALIDATED with automatic re-validation when the rules config hash changed + rebuild, export via `ArielExportFormat` json/csv + manifest with sha256 on `exports` + `UpdateSetExported`, Admin download audit-logged). Routes: `GET/POST /api/batches/{id}/update-set[/approve|/reject|/export|/diff]`, `/api/update-sets/{id}[...]` aliases, `POST /api/batches/{id}/reopen`, `GET /api/exports/{id}` + `/download?file=`. `src/lib/queries/update-sets.ts` (member -> record-type grouping, filters, cursor paging, overrides strip). Batch detail gains `updateSet`, `approval`, `rejection`, `reopened`, `exportedAt`; gold reports registered as HOOPP-only. `EXPORT_DIR` config. Golden `ariel-update-set.json` + `expected-update-counts.json` for the 3 happy scenarios (`scripts/golden-dump.ts --write-expected`). `tests/integration/phase3.spec.ts`: AC1, AC2, AC3, AC4, AC6 + API shapes (7 tests).
 
+- **Step 5 - member APIs + projections.** `POST /api/members/lookup` (Reviewer/Admin, body only, audit `MEMBER_LOOKUP`, returns pseudonym + mask + found/inAriel), `GET /api/members/{sinPseudo}` (projection + member-stream timeline + latest-set items + Ariel summary; 404 when unknown everywhere), `POST /api/projections/rebuild` (Admin) + `npm run projections:rebuild`. Role matrix extended for all Phase 3 routes (`tests/qa/security-roles.spec.ts`, 69 green). `tests/integration/phase3-members.spec.ts`: mixed-100-rows builds after overriding all 8 HELD rows, `CorrectionAppended` RESUBMITTED_PROPOSAL / CORRECTED_REJECTION, member lookup/view, rebuild identity via API. New `INFO-NO-DERIVATION` finding for accepted rows that cannot yield items (mixed line 51: DECFIN without any event date).
+
 ## Next
 
-- Step 5 member APIs (`POST /api/members/lookup`, `GET /api/members/{sinPseudo}`), `projections:rebuild` script.
+- Step 6/7 remaining: writer unit tests; Step 8 gates + docs.
 
 ## Decisions
 

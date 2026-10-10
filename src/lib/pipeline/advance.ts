@@ -33,7 +33,22 @@ export interface DerivedRow {
 }
 
 /** Re-derives every accepted row of the batch from the persisted snapshot (pure, reproducible). */
-export async function deriveBatch(ctx: AppContext, batch: BatchRow): Promise<{ rows: DerivedRow[]; skipped: EventsRecord[]; snapshot: ArielBatchSnapshot }> {
+export const INFO_NO_DERIVATION = "INFO-NO-DERIVATION";
+
+export interface SkippedRow {
+  record: EventsRecord;
+  reason: "EVENT_DATE_MISSING" | "MEMBER_NOT_FOUND" | "EMPLOYMENT_NOT_FOUND";
+}
+
+/** Why an accepted row yields no Ariel items (section 18 Q30): recorded as an INFORMATION finding at build time. */
+function skipReason(record: EventsRecord, snapshot: ArielBatchSnapshot, employerId: string): SkippedRow["reason"] {
+  if (!record.eventDate) return "EVENT_DATE_MISSING";
+  const member = record.sinPseudo ? snapshot.memberBySin(record.sinPseudo) : null;
+  if (!member) return "MEMBER_NOT_FOUND";
+  return member.employments.some((e) => e.employerId === employerId) ? "EVENT_DATE_MISSING" : "EMPLOYMENT_NOT_FOUND";
+}
+
+export async function deriveBatch(ctx: AppContext, batch: BatchRow): Promise<{ rows: DerivedRow[]; skipped: SkippedRow[]; snapshot: ArielBatchSnapshot }> {
   const paths = lakePaths({ employerId: batch.employerId, batchId: batch.batchId, ingestDate: ingestDateOf(batch.receivedAt) });
   if (!(await ctx.lake.exists(paths.silver.arielSnapshot))) throw new PipelineError("Ariel snapshot for this batch is missing from the lake; the Update Set cannot be derived.");
   const snapshot = InMemoryArielSnapshot.fromNdjson((await ctx.lake.get(paths.silver.arielSnapshot)).toString("utf8"), batch.batchId);
@@ -48,12 +63,12 @@ export async function deriveBatch(ctx: AppContext, batch: BatchRow): Promise<{ r
     .where(and(eq(validationFindings.batchId, batch.batchId), eq(validationFindings.ruleId, "B139"), isNotNull(validationFindings.overrideReason)));
   const b139Set = new Set(b139.map((f) => f.recordId));
   const out: DerivedRow[] = [];
-  const skipped: EventsRecord[] = [];
+  const skipped: SkippedRow[] = [];
   for (const row of rows) {
     const record = recordFromRow(row);
     const derivation = deriveFinal({ record, snapshot, employerId: batch.employerId, executionDate: batch.executionDate as IsoDate, b139Overridden: b139Set.has(row.recordId) });
     if (!derivation) {
-      skipped.push(record);
+      skipped.push({ record, reason: skipReason(record, snapshot, batch.employerId) });
       continue;
     }
     out.push({ record, derivation, hash: itemsHash(derivation.items) });
@@ -185,7 +200,7 @@ export interface BuildResult {
  * `build-projection` step: ariel_update_sets + items, gold JSON/CSV/diff + Modified Fields / Transactions
  * reports, UpdateSetBuilt on the batch stream; LEDGERED -> PROJECTION_BUILT -> PENDING_APPROVAL.
  */
-export async function stepBuild(ctx: AppContext, batch: BatchRow, rows: DerivedRow[], proposals?: Map<string, LedgerEntry>): Promise<BuildResult> {
+export async function stepBuild(ctx: AppContext, batch: BatchRow, rows: DerivedRow[], proposals?: Map<string, LedgerEntry>, skipped: SkippedRow[] = []): Promise<BuildResult> {
   const paths = lakePaths({ employerId: batch.employerId, batchId: batch.batchId, ingestDate: ingestDateOf(batch.receivedAt) });
   const entries = proposals ?? (await latestProposals(ctx, batch.batchId));
   const allItems: ArielUpdateItemCore[] = [];
@@ -269,7 +284,7 @@ export async function stepBuild(ctx: AppContext, batch: BatchRow, rows: DerivedR
   await ctx.db.transaction(async (tx) => {
     await tx.insert(arielUpdateSets).values({ updateSetId, batchId: batch.batchId, buildNo, employerId: batch.employerId, status: "BUILDING", itemCount: allItems.length, memberCount: doc.memberCount, contentHash, counts: counts as unknown as Record<string, Record<string, number>>, artifacts, builtAt: at, updatedAt: at });
     for (const part of chunk(itemRows, 200)) await tx.insert(arielUpdateItems).values(part);
-    await persistNotes(ctx, tx, batch, rows);
+    await persistNotes(ctx, tx, batch, rows, skipped);
     await transitionBatch(tx, { batchId: batch.batchId, from: "LEDGERED", to: "PROJECTION_BUILT", actor: ACTOR, at, note: `updateSet=${updateSetId} items=${allItems.length} members=${doc.memberCount}` });
     const [entry] = await ctx.ledger.appendMany([{ streamId: batchStream(batch.batchId), eventType: "UpdateSetBuilt", batchId: batch.batchId, actor: ACTOR, payload: payload as unknown as Record<string, unknown> }], tx);
     ledgerSeq = entry.seq;
@@ -280,43 +295,52 @@ export async function stepBuild(ctx: AppContext, batch: BatchRow, rows: DerivedR
   return { updateSetId, buildNo, contentHash, itemCount: allItems.length, memberCount: doc.memberCount, ledgerSeq };
 }
 
-/** Section 8.5 D-RET-REEVAL-NONE: INFORMATION finding for traceability (once per record). */
-async function persistNotes(ctx: AppContext, tx: DbOrTx, batch: BatchRow, rows: DerivedRow[]): Promise<void> {
-  const withNotes = rows.filter((r) => r.derivation.notes.length);
-  if (withNotes.length === 0) return;
+const SKIP_MESSAGES: Record<SkippedRow["reason"], string> = {
+  EVENT_DATE_MISSING: "No Ariel update derived: the row has no event date (DECFIN without DateOfDeath or EmploymentEndDate).",
+  MEMBER_NOT_FOUND: "No Ariel update derived: the member is not in the Ariel snapshot.",
+  EMPLOYMENT_NOT_FOUND: "No Ariel update derived: the member has no employment at the reporting employer.",
+};
+
+/**
+ * Build-time INFORMATION findings (once per record): section 8.5 D-RET-REEVAL-NONE (`INFO-RET-DNCT`) and accepted
+ * rows that yield no items (`INFO-NO-DERIVATION`, section 18 Q30).
+ */
+async function persistNotes(ctx: AppContext, tx: DbOrTx, batch: BatchRow, rows: DerivedRow[], skipped: SkippedRow[]): Promise<void> {
+  const notes: Array<{ record: EventsRecord; rule: string; message: string; params: Record<string, string | number> }> = [];
+  for (const r of rows) for (const n of r.derivation.notes) notes.push({ record: r.record, rule: n.rule, message: n.message, params: n.params });
+  for (const s of skipped) notes.push({ record: s.record, rule: INFO_NO_DERIVATION, message: SKIP_MESSAGES[s.reason], params: { reason: s.reason } });
+  if (notes.length === 0) return;
   const existing = await tx
     .select({ recordId: validationFindings.recordId, ruleId: validationFindings.ruleId })
     .from(validationFindings)
-    .where(and(eq(validationFindings.batchId, batch.batchId), eq(validationFindings.ruleId, INFO_RET_DNCT)));
+    .where(and(eq(validationFindings.batchId, batch.batchId), inArray(validationFindings.ruleId, [INFO_RET_DNCT, INFO_NO_DERIVATION])));
   const have = new Set(existing.map((e) => `${e.recordId}|${e.ruleId}`));
   const at = ctx.clock().toISOString();
   let added = 0;
-  for (const r of withNotes) {
-    for (const n of r.derivation.notes) {
-      if (have.has(`${r.record.recordId}|${n.rule}`)) continue;
-      added += 1;
-      await tx.insert(validationFindings).values({
-        findingId: ctx.newId(),
-        batchId: batch.batchId,
-        recordId: r.record.recordId,
-        lineNumber: r.record.lineNumber,
-        sinPseudo: r.record.sinPseudo,
-        ruleId: n.rule,
-        messageId: n.rule,
-        level: "L2",
-        severity: "INFORMATION",
-        visibility: "PUBLIC",
-        field: "EventType",
-        yearScope: null,
-        params: n.params,
-        dataImportMessage: n.message,
-        portalMessage: n.message,
-        overrideReasons: [],
-        calculated: null,
-        sortOrder: 1000,
-        createdAt: at,
-      });
-    }
+  for (const n of notes) {
+    if (have.has(`${n.record.recordId}|${n.rule}`)) continue;
+    added += 1;
+    await tx.insert(validationFindings).values({
+      findingId: ctx.newId(),
+      batchId: batch.batchId,
+      recordId: n.record.recordId,
+      lineNumber: n.record.lineNumber,
+      sinPseudo: n.record.sinPseudo,
+      ruleId: n.rule,
+      messageId: n.rule,
+      level: "L2",
+      severity: "INFORMATION",
+      visibility: "PUBLIC",
+      field: "EventType",
+      yearScope: null,
+      params: n.params,
+      dataImportMessage: n.message,
+      portalMessage: n.message,
+      overrideReasons: [],
+      calculated: null,
+      sortOrder: 1000,
+      createdAt: at,
+    });
   }
   if (added) await tx.update(batches).set({ infosTotal: batch.infosTotal + added }).where(eq(batches.batchId, batch.batchId));
 }
@@ -336,10 +360,10 @@ export async function advanceBatch(ctx: AppContext, batchId: string): Promise<Ba
   }
   try {
     const { rows, skipped } = await deriveBatch(ctx, batch);
-    if (skipped.length) log.warn({ lines: skipped.map((s) => s.lineNumber) }, "accepted rows without a derivable Ariel member were skipped");
+    if (skipped.length) log.warn({ lines: skipped.map((s) => `${s.record.lineNumber}:${s.reason}`) }, "accepted rows yield no Ariel items (INFO-NO-DERIVATION)");
     const proposals = batch.status === "VALIDATED" ? await stepLedger(ctx, batch, rows) : undefined;
     const [ledgered] = await ctx.db.select().from(batches).where(eq(batches.batchId, batchId));
-    const built = await stepBuild(ctx, ledgered, rows, proposals);
+    const built = await stepBuild(ctx, ledgered, rows, proposals, skipped);
     log.info({ updateSetId: built.updateSetId, items: built.itemCount, members: built.memberCount, contentHash: built.contentHash }, "update set built");
     await projectLedger(ctx);
     return "PENDING_APPROVAL";

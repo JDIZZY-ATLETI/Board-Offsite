@@ -34,6 +34,9 @@ import { GET as updateSetByIdRoute } from "@/app/api/update-sets/[updateSetId]/r
 import { POST as approveByIdRoute } from "@/app/api/update-sets/[updateSetId]/approve/route";
 import { GET as exportMetaRoute } from "@/app/api/exports/[exportId]/route";
 import { GET as exportDownloadRoute } from "@/app/api/exports/[exportId]/download/route";
+import { POST as memberLookupRoute } from "@/app/api/members/lookup/route";
+import { GET as memberRoute } from "@/app/api/members/[sinPseudo]/route";
+import { POST as projectionsRebuildRoute } from "@/app/api/projections/rebuild/route";
 import { DELETE as devLogoutRoute, POST as devLoginRoute } from "@/app/api/auth/dev-login/route";
 import { batches, batchStatusHistory, eventsRecords } from "@/lib/db/schema";
 import { decodeBytes } from "@/lib/events/decode";
@@ -166,6 +169,9 @@ export const api = {
   exportSet: (h: Record<string, string>, batchId: string, body = "{}") => toResult(exportRoute(new Request(`${BASE}/batches/${batchId}/update-set/export`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({ batchId })) as unknown as Promise<Response>),
   reopen: (h: Record<string, string>, batchId: string, body: string) => toResult(reopenRoute(new Request(`${BASE}/batches/${batchId}/reopen`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({ batchId })) as unknown as Promise<Response>),
   exportMeta: (h: Record<string, string>, exportId: string) => toResult(exportMetaRoute(new Request(`${BASE}/exports/${exportId}`, { headers: h }), params({ exportId })) as unknown as Promise<Response>),
+  memberLookup: (h: Record<string, string>, body: string) => toResult(memberLookupRoute(new Request(`${BASE}/members/lookup`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({})) as unknown as Promise<Response>),
+  member: (h: Record<string, string>, sinPseudo: string) => toResult(memberRoute(new Request(`${BASE}/members/${sinPseudo}`, { headers: h }), params({ sinPseudo })) as unknown as Promise<Response>),
+  projectionsRebuild: (h: Record<string, string>) => toResult(projectionsRebuildRoute(new Request(`${BASE}/projections/rebuild`, { method: "POST", headers: h }), params({})) as unknown as Promise<Response>),
   exportDownload: (h: Record<string, string>, exportId: string, file = "ariel-update-set.json") => toResult(exportDownloadRoute(new Request(`${BASE}/exports/${exportId}/download?file=${encodeURIComponent(file)}`, { headers: h }), params({ exportId })) as unknown as Promise<Response>),
 };
 
