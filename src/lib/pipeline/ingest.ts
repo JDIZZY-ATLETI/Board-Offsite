@@ -3,7 +3,7 @@ import type { AppContext } from "@/lib/app-context";
 import { sha256Hex } from "@/lib/crypto/hash";
 import { batches, batchStatusHistory, rawFiles } from "@/lib/db/schema";
 import { decodeBytes } from "@/lib/events/decode";
-import { lakePaths } from "@/lib/lake/paths";
+import { ingestDateOf, lakePaths } from "@/lib/lake/paths";
 import { batchStream } from "@/lib/ledger/streams";
 import { todayIso } from "@/lib/events/fields";
 import type { BatchReceivedPayload, IsoDate, SourceSystem } from "@/types";
@@ -68,7 +68,7 @@ export async function ingest(ctx: AppContext, input: IngestInput): Promise<Inges
   const rawFileId = ctx.newId();
   const { encoding, text } = decodeBytes(input.bytes);
   const lineCount = text === "" ? 0 : text.split(/\r\n|\n|\r/).filter((l, i, a) => !(i === a.length - 1 && l === "")).length;
-  const paths = lakePaths({ employerId: input.employerId, batchId, ingestDate: receivedAt.slice(0, 10) as IsoDate });
+  const paths = lakePaths({ employerId: input.employerId, batchId, ingestDate: ingestDateOf(receivedAt) });
   const manifest: Manifest = {
     schemaVersion: 1,
     batchId,

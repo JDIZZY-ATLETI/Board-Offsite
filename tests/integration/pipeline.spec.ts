@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { sha256Hex } from "@/lib/crypto/hash";
 import { batches, eventsRecords, validationFindings } from "@/lib/db/schema";
 import { decodeBytes } from "@/lib/events/decode";
-import { lakePaths } from "@/lib/lake/paths";
+import { ingestDateOf, lakePaths } from "@/lib/lake/paths";
 import { decryptSin } from "@/lib/pii/sin";
 import { ingest } from "@/lib/pipeline/ingest";
 import { runBatch } from "@/lib/pipeline/run";
@@ -24,7 +24,7 @@ async function upload(scenario: string, employerId = "0235") {
   if (r.duplicate) throw new Error("unexpected duplicate");
   const status = await runBatch(t.ctx, r.batchId);
   const [batch] = await t.ctx.db.select().from(batches).where(eq(batches.batchId, r.batchId));
-  const paths = lakePaths({ employerId, batchId: r.batchId, ingestDate: batch.receivedAt.slice(0, 10) as IsoDate });
+  const paths = lakePaths({ employerId, batchId: r.batchId, ingestDate: ingestDateOf(batch.receivedAt) });
   return { bytes, batchId: r.batchId, status, batch, paths, sha256: r.sha256 };
 }
 
@@ -82,8 +82,17 @@ describe("pipeline: happy-terfin", () => {
     expect(detail?.statusHistory.map((h) => h.toStatus)).toEqual(["RECEIVED", "PARSED", "VALIDATED"]);
     expect(detail?.reports.map((r) => r.name)).toContain("execution-report.json");
     const entries = await t.ctx.ledger.list({ batchId: u.batchId, order: "asc" });
-    expect(entries.items.map((e) => e.eventType)).toEqual(["BatchReceived", "BatchParsed"]);
+    expect(entries.items.map((e) => e.eventType)).toEqual(["BatchReceived", "BatchParsed", ...Array<string>(5).fill("MemberRecordValidated")]);
     expect(entries.items[0].payload).toMatchObject({ sha256: u.sha256, employerId: "0235", uploadedBy: ACTOR });
+    // Phase 2: every accepted row is ledgered on its member stream with the config/snapshot hashes and a findings hash.
+    for (const e of entries.items.slice(2)) {
+      expect(e.streamId).toMatch(/^member:[0-9a-f]{64}$/);
+      expect(e.payload).toMatchObject({ findings: [], overrides: [], rulesConfigHash: u.batch.rulesConfigHash, arielSnapshotHash: u.batch.arielSnapshotHash });
+      expect((e.payload as { findingsHash: string }).findingsHash).toMatch(/^[0-9a-f]{64}$/);
+    }
+    expect(u.batch.arielAdapter).toBe("MockArielAdapter");
+    expect(await t.ctx.lake.exists(u.paths.silver.arielSnapshot)).toBe(true);
+    expect(await t.ctx.lake.exists(u.paths.silver.rulesConfig)).toBe(true);
   });
 
   it("stores no raw SIN in events_records (only pseudonym, mask and ciphertext)", async () => {
@@ -176,43 +185,62 @@ describe("pipeline: file-rejected-*", () => {
 
 describe("pipeline: mixed-100-rows", () => {
   it("triggers every L1 message id at least once and rejects exactly the expected rows", async () => {
-    const expected = goldenJson<{ messageIds: string[]; rows: number; accepted: number; rejected: number; rejectedLines: number[] }>("mixed-100-rows", "expected-message-ids.json");
+    const expected = goldenJson<{ messageIds: string[]; l1MessageIds: string[]; l2MessageIds: string[]; l2RowsByMessageId: Record<string, string[]>; rows: number; disabledNotExpected: string[] }>("mixed-100-rows", "expected-message-ids.json");
+    const counts = goldenJson<{ rows: number; accepted: number; held: number; rejected: number; findings: number }>("mixed-100-rows", "expected-counts.json");
     const u = await upload("mixed-100-rows");
     expect(u.status).toBe("VALIDATED");
     expect(u.batch.rowsTotal).toBe(expected.rows);
-    expect(u.batch.rowsRejected).toBe(expected.rejected);
-    expect(u.batch.rowsAccepted).toBe(expected.accepted);
+    expect(u.batch.rowsRejected).toBe(counts.rejected);
+    expect(u.batch.rowsAccepted).toBe(counts.accepted);
+    expect(u.batch.heldTotal).toBe(counts.held);
+    expect(counts.held).toBeGreaterThan(0);
 
     const findings = await t.ctx.db.select().from(validationFindings).where(eq(validationFindings.batchId, u.batchId));
     const ids = new Set(findings.map((f) => f.messageId));
     for (const id of expected.messageIds) expect(ids.has(id), `message id ${id} never fired`).toBe(true);
     expect([...ids].sort()).toEqual([...expected.messageIds].sort());
+    for (const id of expected.disabledNotExpected) expect(ids.has(id), `disabled rule message ${id} fired`).toBe(false);
+    for (const [id, lines] of Object.entries(expected.l2RowsByMessageId)) {
+      for (const line of lines) expect(findings.some((f) => f.messageId === id && f.lineNumber === Number(line)), `message ${id} on line ${line}`).toBe(true);
+    }
+    expect(findings).toHaveLength(counts.findings);
 
     const records = await t.ctx.db.select().from(eventsRecords).where(eq(eventsRecords.batchId, u.batchId));
-    const rejectedLines = records.filter((r) => r.accepted === false).map((r) => r.lineNumber).sort((a, b) => a - b);
-    expect(rejectedLines).toEqual(expected.rejectedLines);
+    const rejectedLines = records.filter((r) => r.outcome === "REJECTED").map((r) => r.lineNumber).sort((a, b) => a - b);
+    expect(rejectedLines).toHaveLength(counts.rejected);
+    expect(records.filter((r) => r.outcome === "HELD")).toHaveLength(counts.held);
+    expect(records.filter((r) => r.outcome === "HELD").every((r) => r.accepted === null)).toBe(true);
+    // CME on a row always rejects it; a HELD row carries at least one un-overridden WARNING and no CME.
+    for (const r of records) {
+      const mine = findings.filter((f) => f.recordId === r.recordId);
+      if (mine.some((f) => f.severity === "COMPLETE_MEMBER_ERROR")) expect(r.outcome, `line ${r.lineNumber}`).toBe("REJECTED");
+      else if (mine.some((f) => f.severity === "WARNING")) expect(r.outcome, `line ${r.lineNumber}`).toBe("HELD");
+      else expect(r.outcome, `line ${r.lineNumber}`).toBe("ACCEPTED");
+    }
 
     // spot checks on message rendering and parameters
     const byLine = (l: number) => findings.filter((f) => f.lineNumber === l);
-    expect(byLine(70).map((f) => f.dataImportMessage)).toContain("The field Weeks_CurrentYear exceeds the maximum acceptable length of 5 characters (including decimal point, if applicable).");
-    expect(byLine(80)[0].dataImportMessage).toBe("RETIRE is in an invalid code.");
-    expect(byLine(81).map((f) => f.messageId)).toEqual(["910"]);
-    expect(byLine(82).map((f) => f.messageId)).toEqual(["910"]);
-    expect(byLine(81)[0].params).toEqual({ 1: "***-***-994" });
-    expect(byLine(101).map((f) => f.messageId).sort()).toEqual(["6503", "9099", "9519"]);
-    expect(byLine(69 + 10).find((f) => f.messageId === "5131")?.params).toEqual({ 1: "SIN" });
+    expect(byLine(25).map((f) => f.dataImportMessage)).toContain("The field Weeks_CurrentYear exceeds the maximum acceptable length of 5 characters (including decimal point, if applicable).");
+    expect(byLine(35)[0].dataImportMessage).toBe("RETIRE is in an invalid code.");
+    expect(byLine(36).map((f) => f.messageId)).toEqual(["910"]);
+    expect(byLine(37).map((f) => f.messageId)).toEqual(["910"]);
+    expect(byLine(36)[0].params).toEqual({ 1: "***-***-994" });
+    expect(byLine(55).map((f) => f.messageId).sort()).toEqual(["6503", "9099", "9519"]);
+    expect(byLine(34).find((f) => f.messageId === "5131")?.params).toEqual({ 1: "SIN" });
 
     // Rejected Individuals mirrors the input rows with raw SIN and the original header
     const rejectedCsv = decodeBytes(lakeFile(u.paths.silver.rejected)).text.trim().split("\r\n");
     const inputLines = decodeBytes(u.bytes).text.trim().split("\r\n");
     expect(rejectedCsv[0]).toBe(inputLines[0]);
-    expect(rejectedCsv).toHaveLength(1 + expected.rejected);
-    for (const line of expected.rejectedLines) expect(rejectedCsv).toContain(inputLines[line - 1]);
+    expect(rejectedCsv).toHaveLength(1 + counts.rejected);
+    for (const line of rejectedLines) expect(rejectedCsv).toContain(inputLines[line - 1]);
 
     // one MemberRecordRejected per rejected row, each listing its findings, no raw SIN in payloads
     const entries = await t.ctx.ledger.list({ batchId: u.batchId, eventType: "MemberRecordRejected", limit: 200 });
-    expect(entries.items).toHaveLength(expected.rejected);
-    const noSin = entries.items.find((e) => (e.payload as { lineNumber: number }).lineNumber === 69);
+    expect(entries.items).toHaveLength(counts.rejected);
+    const validated = await t.ctx.ledger.list({ batchId: u.batchId, eventType: "MemberRecordValidated", limit: 200 });
+    expect(validated.items).toHaveLength(counts.accepted);
+    const noSin = entries.items.find((e) => (e.payload as { lineNumber: number }).lineNumber === 24);
     expect(noSin?.streamId).toBe(`batch:${u.batchId}`);
     for (const e of entries.items) {
       const s = JSON.stringify(e.payload);
@@ -220,7 +248,9 @@ describe("pipeline: mixed-100-rows", () => {
       expect(e.streamId.startsWith("member:") || e.streamId.startsWith("batch:")).toBe(true);
     }
     const report: ExecutionReport = JSON.parse(lakeFile(u.paths.gold.executionReportJson).toString());
-    expect(report.counts.rejected).toBe(expected.rejected);
+    expect(report.counts.rejected).toBe(counts.rejected);
+    expect(report.counts.held).toBe(counts.held);
+    expect(report.parameters.arielSnapshotHash).toBe(u.batch.arielSnapshotHash);
     expect(report.rules.map((r) => r.ruleId)).toContain("I42");
   });
 

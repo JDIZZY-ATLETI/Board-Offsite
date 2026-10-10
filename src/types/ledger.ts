@@ -14,7 +14,8 @@ export type LedgerEventType =
   | "UpdateSetRejected"
   | "UpdateSetExported"
   | "CorrectionAppended"
-  | "ChainAnchorPublished";
+  | "ChainAnchorPublished"
+  | "RulesConfigChanged";
 
 export const LEDGER_EVENT_TYPES: readonly LedgerEventType[] = [
   "BatchReceived",
@@ -30,6 +31,7 @@ export const LEDGER_EVENT_TYPES: readonly LedgerEventType[] = [
   "UpdateSetExported",
   "CorrectionAppended",
   "ChainAnchorPublished",
+  "RulesConfigChanged",
 ];
 
 export interface LedgerEntry {
@@ -90,11 +92,51 @@ export interface MemberRecordRejectedPayload {
   findings: FindingSummary[];
 }
 
+/** Architecture section 9 / 17 Phase 2: accepted row (possibly after overrides). */
+export interface MemberRecordValidatedPayload {
+  recordId: string;
+  lineNumber: number;
+  sinMasked: string | null;
+  eventType: EventType | null;
+  eventDate: IsoDate | null;
+  /** WARNING / INFORMATION findings on the accepted row, sorted. */
+  findings: FindingSummary[];
+  overrides: Array<{ findingId: string; ruleId: string; reason: string }>;
+  /** sha256(JCS(findings)) - lets a verifier compare the row's findings without re-running the engine. */
+  findingsHash: string;
+  rulesConfigHash: string;
+  arielSnapshotHash: string;
+}
+
+export interface WarningOverriddenPayload {
+  findingId: string;
+  recordId: string;
+  lineNumber: number;
+  sinMasked: string | null;
+  ruleId: string;
+  messageId: string;
+  yearScope: YearScope | null;
+  reason: string;
+  note?: string;
+  /** Row outcome once this override is applied. */
+  rowOutcome: "ACCEPTED" | "HELD" | "REJECTED";
+}
+
+export interface RulesConfigChangedPayload {
+  previousHash: string;
+  newHash: string;
+  changes: Array<{ ruleId: string; key: string; from: unknown; to: unknown }>;
+  reason: string;
+}
+
 export type LedgerPayload =
   | BatchReceivedPayload
   | BatchParsedPayload
   | BatchFileRejectedPayload
-  | MemberRecordRejectedPayload;
+  | MemberRecordRejectedPayload
+  | MemberRecordValidatedPayload
+  | WarningOverriddenPayload
+  | RulesConfigChangedPayload;
 
 export interface LedgerHead {
   seq: number;

@@ -191,6 +191,10 @@ describe("ledger routes", () => {
   it("GET /api/rules lists the catalogue", async () => {
     const body = await (await rules(new Request(`${BASE}/rules`), params({}))).json();
     expect(body.items.map((r: { id: string }) => r.id)).toContain("I51");
-    expect(body.items.find((r: { id: string }) => r.id === "I7").messageId).toBe("multiple");
+    expect(body.items.find((r: { id: string }) => r.id === "I7").messageIds).toEqual(["6503", "6642"]);
+    expect(body.items.find((r: { id: string }) => r.id === "B53b").messageIds).toEqual(["7375", "8795"]);
+    expect(body.items).toHaveLength(59);
+    expect(body.items.find((r: { id: string }) => r.id === "B181").enabled).toBe(false);
+    expect(body.config.hash).toMatch(/^[0-9a-f]{64}$/);
   });
 });

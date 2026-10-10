@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { AppContext } from "@/lib/app-context";
 import { decodeCursor, encodeCursor } from "@/lib/api/pagination";
@@ -25,7 +25,9 @@ export function toFinding(r: Row): ValidationFinding {
     dataImportMessage: r.dataImportMessage,
     portalMessage: r.portalMessage,
     overrideReasons: r.overrideReasons,
-    ...(r.overrideReason ? { override: { reason: r.overrideReason, actor: r.overrideActor ?? "", at: r.overrideAt ? new Date(r.overrideAt).toISOString() : "" } } : {}),
+    ...(r.overrideReason
+      ? { override: { reason: r.overrideReason, actor: r.overrideActor ?? "", at: r.overrideAt ? new Date(r.overrideAt).toISOString() : "", ...(r.overrideNote ? { note: r.overrideNote } : {}), ...(r.overrideLedgerSeq !== null && r.overrideLedgerSeq !== undefined ? { ledgerSeq: Number(r.overrideLedgerSeq) } : {}) } }
+      : {}),
     ...(r.calculated ? { calculated: r.calculated } : {}),
     createdAt: new Date(r.createdAt).toISOString(),
     sortOrder: r.sortOrder,
@@ -37,6 +39,8 @@ export interface ListFindingsParams {
   ruleId?: string;
   lineNumber?: number;
   visibility?: FindingVisibility;
+  /** WARNING findings awaiting / carrying an override. */
+  override?: "pending" | "done";
   includePrivate: boolean;
   cursor?: string | null;
   limit?: number;
@@ -52,6 +56,8 @@ export async function listFindings(ctx: AppContext, batchId: string, p: ListFind
   if (p.lineNumber !== undefined) conds.push(eq(validationFindings.lineNumber, p.lineNumber));
   if (!p.includePrivate) conds.push(eq(validationFindings.visibility, "PUBLIC"));
   else if (p.visibility) conds.push(eq(validationFindings.visibility, p.visibility));
+  if (p.override === "pending") conds.push(eq(validationFindings.severity, "WARNING"), isNull(validationFindings.overrideReason));
+  else if (p.override === "done") conds.push(isNotNull(validationFindings.overrideReason));
   const c = decodeCursor(p.cursor, cursorSchema);
   if (c) {
     conds.push(

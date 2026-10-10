@@ -17,6 +17,8 @@ import { createTestContext, type TestContext } from "../helpers/test-context";
 let t: TestContext;
 let b0235: string; // mixed-100-rows for employer 0235 (has rejected rows => rejected.csv has raw SINs)
 let b0359: string;
+let cmeFindingId: string; // a COMPLETE_MEMBER_ERROR finding: role gates are checked before the "not overridable" check
+let m1Pseudo: string;
 const env = process.env as Record<string, string | undefined>;
 const origEnv = env.NODE_ENV;
 
@@ -24,6 +26,11 @@ beforeAll(async () => {
   t = await createTestContext();
   b0235 = (await upload(goldenInput("mixed-100-rows"), ADMIN, { employerId: "0235", executionDate: "2026-10-08" }, { filename: "mixed.csv" })).body.batchId;
   b0359 = (await upload(csvBytes([validRow(7001, { Weeks_CurrentYear: "-1" })]), ADMIN, { employerId: "0359", executionDate: "2026-10-08" }, { filename: "other.csv" })).body.batchId;
+  const { eq } = await import("drizzle-orm");
+  const [cme] = await t.ctx.db.select().from(validationFindings).where(eq(validationFindings.batchId, b0235));
+  cmeFindingId = cme.findingId;
+  const { pseudonymizeSin } = await import("@/lib/pii/sin");
+  m1Pseudo = pseudonymizeSin(t.ctx.config.sinPseudonymKey, "900000019");
   // A PRIVATE finding (SYS-RULE-ERROR shape) so visibility filtering can be observed end-to-end.
   await t.ctx.db.insert(validationFindings).values({
     findingId: "00000000-0000-7000-8000-0000000a0001",
@@ -57,13 +64,28 @@ describe("QA/security: role matrix for every Phase-1 route", () => {
     ["GET /api/ledger/entries", (h) => api.ledgerEntries(h), [401, 403, 200, 200]],
     ["GET /api/ledger/entries/1", (h) => api.ledgerEntry(h, "1"), [401, 403, 200, 200]],
     ["POST /api/ledger/verify", (h) => api.verify(h, "{}"), [401, 403, 403, 200]],
+    // Phase 2 routes (architecture section 11 / 13)
+    ["POST /api/findings/{id}/override", (h) => api.override(h, cmeFindingId, JSON.stringify({ reason: "x" })), [401, 403, 422, 422]],
+    ["POST /api/batches/{id}/findings/{id}/override", (h) => api.batchOverride(h, b0235, cmeFindingId, JSON.stringify({ reason: "x" })), [401, 403, 422, 422]],
+    ["POST /api/batches/{id}/findings/override (bulk)", (h) => api.bulkOverride(h, b0235, JSON.stringify({ findingIds: [cmeFindingId], reason: "x" })), [401, 403, 422, 422]],
+    ["PATCH /api/rules/{id}", (h) => api.patchRule(h, "B40", JSON.stringify({ enabled: true, reason: "role matrix no-op" })), [401, 403, 403, 200]],
+    ["DELETE /api/rules/{id}", (h) => api.deleteRule(h, "B40"), [401, 403, 403, 200]],
+    ["GET /api/rules/history", (h) => api.rulesHistory(h), [401, 403, 200, 200]],
+    ["GET /api/ariel/members", (h) => api.arielMembers(h), [401, 403, 200, 200]],
+    ["GET /api/ariel/members/{sinPseudo}", (h) => api.arielMember(h, m1Pseudo), [401, 403, 200, 200]],
+    ["GET /api/ariel/rates", (h) => api.arielRates(h), [401, 200, 200, 200]],
+    ["POST /api/ariel/reseed", (h) => api.arielReseed(h), [401, 403, 403, 200]],
+    ["GET /api/batches/{id}/reports/summary-of-validations.csv", (h) => api.report(h, b0235, "summary-of-validations.csv"), [401, 200, 200, 200]],
+    ["GET /api/batches/{id}/reports/summary-of-validations.private.csv", (h) => api.report(h, b0235, "summary-of-validations.private.csv"), [401, 403, 200, 200]],
+    ["GET /api/batches/{id}/reports/ariel-snapshot.ndjson", (h) => api.report(h, b0235, "ariel-snapshot.ndjson"), [401, 403, 200, 200]],
+    ["GET /api/batches/{id}/reports/rules-config.json", (h) => api.report(h, b0235, "rules-config.json"), [401, 403, 200, 200]],
   ];
   it.each(matrix)("%s", async (_name, call, expected) => {
     for (let i = 0; i < ROLES.length; i++) {
       const [role, h] = ROLES[i];
       const r = (await call(h)) as { status: number; body?: any; text?: string };
       expect(r.status, `${_name} as ${role}`).toBe(expected[i]);
-      if (r.status >= 400 && r.text !== undefined) expectErrorEnvelope(r as never, expected[i], expected[i] === 401 ? undefined : "FORBIDDEN");
+      if (r.status >= 400 && r.text !== undefined) expectErrorEnvelope(r as never, expected[i], expected[i] === 403 ? "FORBIDDEN" : undefined);
     }
   });
   it("401 codes: UNAUTHENTICATED when no identity; INVALID_ROLE / EMPLOYER_REQUIRED / INVALID_USER for malformed identities", async () => {
@@ -132,8 +154,11 @@ describe("QA/security: PRIVATE findings", () => {
     const rev = await all(REVIEWER);
     expect(sub.some((f) => f.visibility === "PRIVATE")).toBe(false);
     expect(JSON.stringify(sub)).not.toContain("injected-private-marker");
-    expect(rev.filter((f) => f.visibility === "PRIVATE")).toHaveLength(1);
-    expect(rev.length).toBe(sub.length + 1);
+    // mixed-100-rows carries its own PRIVATE rows (B41/B44/B182) plus the injected one; none reach the Submitter.
+    const priv = rev.filter((f) => f.visibility === "PRIVATE");
+    expect(priv.filter((f) => f.ruleId === "SYS-RULE-ERROR")).toHaveLength(1);
+    expect(new Set(priv.map((f) => f.ruleId))).toEqual(new Set(["SYS-RULE-ERROR", "B41", "B44", "B182"]));
+    expect(rev.length).toBe(sub.length + priv.length);
     // visibility=PUBLIC is allowed for a Submitter; explicit PRIVATE is 403 (covered in matrix).
     expect((await api.findings(SUB_0235, b0235, "?visibility=PUBLIC")).status).toBe(200);
     // ruleId / lineNumber filters cannot be used to fish for the private row.
@@ -142,6 +167,15 @@ describe("QA/security: PRIVATE findings", () => {
     const { findingFacets } = await import("@/lib/queries/findings");
     expect((await findingFacets(t.ctx, b0235, false)).byRule.some((r) => r.value === "SYS-RULE-ERROR")).toBe(false);
     expect((await findingFacets(t.ctx, b0235, true)).byRule.some((r) => r.value === "SYS-RULE-ERROR")).toBe(true);
+    // The public Summary of Validations and the Submitter's report list carry no PRIVATE rule, row or report.
+    const pubCsv = await api.report(SUB_0235, b0235, "summary-of-validations.csv");
+    expect(pubCsv.status).toBe(200);
+    expect(pubCsv.text).not.toMatch(/\bB41\b|\bB44\b|\bB182\b|SYS-RULE-ERROR|PRIVATE|injected-private-marker/);
+    expect((await api.report(REVIEWER, b0235, "summary-of-validations.private.csv")).text).toMatch(/\bB41\b.*PRIVATE/);
+    const names = (await api.getBatch(SUB_0235, b0235)).body.reports.map((x: { name: string }) => x.name);
+    expect(names).not.toContain("summary-of-validations.private.csv");
+    expect(names).not.toContain("ariel-snapshot.ndjson");
+    expect(names).not.toContain("rules-config.json");
   });
 });
 

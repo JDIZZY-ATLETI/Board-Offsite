@@ -4,3 +4,4 @@ export * from "./ledger";
 export * from "./update-sets";
 export * from "./projections";
 export * from "./ariel-mock";
+export * from "./rules-config";

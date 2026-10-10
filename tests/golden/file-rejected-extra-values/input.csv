@@ -1,4 +1,4 @@
 SIN,LastName,FirstName,EventType,EmploymentEndDate,Weeks_CurrentYear,LowContributions_CurrentYear,HighContributions_CurrentYear,AnnualizedEarnings_CurrentYear,PA_CurrentYear,Weeks_PreviousYear,LowContributions_PreviousYear,HighContributions_PreviousYear,AnnualizedEarnings_PreviousYear,PA_PreviousYear
-900000415,BAKER,Ben,TERFIN,06152026,21.00,2048.17,302.50,,7517,52.00,3051.00,441.00,,12681
-900000423,CHEN,Carol,TERFIN,07162026,22.00,2061.54,,,7554,52.00,3062.00,442.00,,12722,EXTRA
-900000431,DIAZ,Dan,TERFIN,08172026,23.00,2074.91,307.50,,7591,52.00,3073.00,443.00,,12763
+900001025,BAKER,Ben,TERFIN,03202026,11.00,1088.87,7.78,,2019,,,,,
+900001033,CHEN,Carol,TERFIN,05122026,19.00,1880.78,13.45,,3487,,,,,,EXTRA
+900001041,DIAZ,Dan,TERFIN,06302026,26.00,2573.70,18.40,,4772,,,,,

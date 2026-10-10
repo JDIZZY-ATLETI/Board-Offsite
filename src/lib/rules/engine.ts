@@ -1,4 +1,5 @@
 import type { EventsRecord, FindingSeverity, RecordOutcome, RuleTiming, ValidationFinding } from "@/types";
+import { ruleEnabled } from "./config";
 import { L0_RULES, L1_RULES, L2_RULES } from "./registry";
 import { renderMessage } from "./render";
 import type { FindingDraft, Rule, RuleContext } from "./types";
@@ -49,12 +50,19 @@ export function buildFinding(
 }
 
 function isEnabled(rule: Rule, ctx: RuleContext): boolean {
-  return rule.enabledByDefault && !ctx.config.disabled.has(rule.id);
+  return ruleEnabled(ctx.config, rule.id, rule.enabledByDefault);
 }
 
+const BLOCKING: FindingSeverity[] = ["FILE_ERROR", "COMPLETE_MEMBER_ERROR"];
+
+/**
+ * Architecture section 7.3: CME -> REJECTED; any WARNING without an override -> HELD; INFORMATION never
+ * affects the outcome.
+ */
 export function outcomeOf(findings: ValidationFinding[]): RecordOutcome {
-  const blocking: FindingSeverity[] = ["FILE_ERROR", "COMPLETE_MEMBER_ERROR"];
-  return findings.some((f) => blocking.includes(f.severity)) ? "REJECTED" : "ACCEPTED";
+  if (findings.some((f) => BLOCKING.includes(f.severity))) return "REJECTED";
+  if (findings.some((f) => f.severity === "WARNING" && !f.override)) return "HELD";
+  return "ACCEPTED";
 }
 
 class Timer {
@@ -84,16 +92,21 @@ export function runFileRules(ctx: RuleContext, deps: EngineDeps, timer = new Tim
   return { findings, timings: timer.list() };
 }
 
-/** Runs L1 then runnable L2 rules for one record. All rules run so the employer sees every problem. */
+/**
+ * Runs L1 then L2 rules for one record. All rules in a level run so the employer sees every problem; L2 is
+ * skipped once L1 rejected the row, and the Ariel-reading L2 rules are skipped once B2 fired (section 7.3).
+ */
 export function runRecordRules(record: EventsRecord, ctx: RuleContext, deps: EngineDeps, timer = new Timer()): ValidationFinding[] {
   const out: ValidationFinding[] = [];
   let sinBlank = false;
+  let memberUnknown = false;
   for (const level of [L1_RULES, L2_RULES]) {
+    if (level === L2_RULES && out.some((f) => BLOCKING.includes(f.severity))) break;
     for (const rule of level) {
       if (!isEnabled(rule, ctx)) continue;
-      if (rule.requiresAriel) continue;
       // I2 suppresses SIN-keyed rules for the row (architecture section 7.3 exception a).
       if (sinBlank && (rule.id === "I10" || rule.level === "L2")) continue;
+      if (memberUnknown && rule.requiresAriel) continue;
       if (!rule.appliesTo(record, ctx)) continue;
       const t0 = performance.now();
       let drafts: FindingDraft[];
@@ -107,6 +120,7 @@ export function runRecordRules(record: EventsRecord, ctx: RuleContext, deps: Eng
       }
       timer.record(rule, performance.now() - t0, drafts.length);
       if (rule.id === "I2" && drafts.length > 0) sinBlank = true;
+      if (rule.id === "B2" && drafts.length > 0) memberUnknown = true;
       drafts.forEach((d, i) => out.push(buildFinding(rule, d, record, ctx.batch.batchId, deps, i)));
     }
   }
@@ -152,4 +166,14 @@ export function buildSinCounts(records: EventsRecord[]): Map<string, number> {
   const m = new Map<string, number>();
   for (const r of records) if (r.sin) m.set(r.sin, (m.get(r.sin) ?? 0) + 1);
   return m;
+}
+
+/** Findings as persisted to silver/findings.ndjson: no ids or timestamps, so two runs are byte-identical (AC2). */
+export function lakeFinding(f: ValidationFinding): Record<string, unknown> {
+  const { findingId: _id, recordId: _rid, batchId: _bid, createdAt: _at, ...rest } = f;
+  void _id;
+  void _rid;
+  void _bid;
+  void _at;
+  return rest;
 }

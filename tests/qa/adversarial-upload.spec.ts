@@ -8,7 +8,7 @@ import { PipelineError, runBatch, sanitizeFailureReason } from "@/lib/pipeline/r
 import { canTransition, InvalidTransitionError, TRANSITIONS, transitionBatch } from "@/lib/pipeline/state-machine";
 import { BATCH_STATUSES, type BatchStatus } from "@/types";
 import { goldenInput } from "../helpers/fixtures";
-import { ADMIN, api, csvBytes, expectErrorEnvelope, expectLegalBatchState, HEADER, manyRows, REVIEWER, SUB_0235, upload, uploadRaw, validRow } from "../helpers/qa-api";
+import { ADMIN, api, csvBytes, expectErrorEnvelope, expectLegalBatchState, HEADER, manyRows, REVIEWER, seededRow, SUB_0235, upload, uploadRaw, validRow } from "../helpers/qa-api";
 import { createTestContext, type TestContext } from "../helpers/test-context";
 
 /**
@@ -63,8 +63,12 @@ describe("QA/upload: degenerate files", () => {
     expect(b.body.statusHistory.map((h: { toStatus: string }) => h.toStatus)).toEqual(["RECEIVED", "PARSED", "VALIDATED"]);
     expect((await api.report(ADMIN, r.body.batchId, "rejected.csv")).status).toBe(200);
   });
-  it("single valid row -> VALIDATED, 1 accepted", async () => {
-    const r = await up(csvBytes([validRow(1)]), { filename: "one.csv" });
+  it("single valid row (seeded member) -> VALIDATED, 1 accepted; an unknown SIN is rejected by B2", async () => {
+    const unknown = await up(csvBytes([validRow(1)]), { filename: "one-unknown.csv" });
+    expect(unknown.body.status).toBe("VALIDATED");
+    expect((await api.getBatch(ADMIN, unknown.body.batchId)).body.counts).toMatchObject({ rows: 1, accepted: 0, rejected: 1 });
+    expect((await api.findings(ADMIN, unknown.body.batchId)).body.items.map((f: { ruleId: string }) => f.ruleId)).toEqual(["B2"]);
+    const r = await up(csvBytes([seededRow(0)]), { filename: "one.csv" });
     expect(r.body.status).toBe("VALIDATED");
     expect((await api.getBatch(ADMIN, r.body.batchId)).body.counts).toMatchObject({ rows: 1, accepted: 1, rejected: 0 });
   });
@@ -156,7 +160,7 @@ describe("QA/upload: not-a-CSV payloads", () => {
     expect(sanitizeFailureReason("select 1", "ref-1")).toBe("Processing failed unexpectedly. Reference ref-1 - details are in the server log.");
   });
   it("BUG-PIPE-3 (fixed): a FAILED batch deduplicates, and Admin POST /retry (architecture section 11) re-runs it to VALIDATED on the same batchId", async () => {
-    const bytes = csvBytes([validRow(19)]);
+    const bytes = csvBytes([seededRow(1)]);
     const r = await ingest(t.ctx, { bytes, filename: "retry.csv", employerId: "0235", submittedBy: "user:qa", executionDate: "2026-10-08" });
     if (r.duplicate) throw new Error("unexpected duplicate");
     created.push(r.batchId);
@@ -212,7 +216,7 @@ describe("QA/upload: structural variants", () => {
     const r16 = await up(Buffer.from(`${HEADER},Extra\r\n${Object.values(validRow(5)).join(",")},x\r\n`), { filename: "c16.csv" });
     expect(r16.body.status).toBe("FILE_REJECTED");
     const cols = HEADER.split(",").slice(0, 14);
-    const vals = Object.values(validRow(6)).slice(0, 14);
+    const vals = Object.values(seededRow(2)).slice(0, 14);
     const r14 = await up(Buffer.from(`${cols.join(",")}\r\n${vals.join(",")}\r\n`), { filename: "c14.csv" });
     expect(r14.body.status).toBe("VALIDATED");
     expect((await api.getBatch(ADMIN, r14.body.batchId)).body.counts.accepted).toBe(1);
@@ -231,10 +235,10 @@ describe("QA/upload: structural variants", () => {
     }
   });
   it("LF-only and CR-only files parse like CRLF", async () => {
-    const lf = await up(csvBytes([validRow(11), validRow(12)], HEADER, "\n"), { filename: "lf.csv" });
+    const lf = await up(csvBytes([seededRow(3), seededRow(4)], HEADER, "\n"), { filename: "lf.csv" });
     expect(lf.body.status).toBe("VALIDATED");
     expect((await api.getBatch(ADMIN, lf.body.batchId)).body.counts.accepted).toBe(2);
-    const cr = await up(csvBytes([validRow(13), validRow(14)], HEADER, "\r"), { filename: "cr.csv" });
+    const cr = await up(csvBytes([seededRow(5), seededRow(6)], HEADER, "\r"), { filename: "cr.csv" });
     expect(cr.body.status).toBe("VALIDATED");
     expect((await api.getBatch(ADMIN, cr.body.batchId)).body.counts.accepted).toBe(2);
   });

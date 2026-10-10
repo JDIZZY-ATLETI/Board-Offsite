@@ -17,6 +17,7 @@ const query = z.object({
   lineNumber: z.coerce.number().int().positive().optional(),
   rowNumber: z.coerce.number().int().positive().optional(),
   visibility: z.enum(FINDING_VISIBILITIES).optional(),
+  override: z.enum(["pending", "done"]).optional(),
   cursor: z.string().optional(),
   limit: limitSchema,
 });
@@ -34,6 +35,7 @@ export const GET = withApi(async (_req, { app, session, params, url }) => {
     ruleId: q.ruleId,
     lineNumber: q.lineNumber ?? q.rowNumber,
     visibility: q.visibility,
+    override: q.override,
     includePrivate,
     cursor: q.cursor,
     limit: q.limit,

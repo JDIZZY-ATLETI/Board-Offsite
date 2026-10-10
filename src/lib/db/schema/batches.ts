@@ -33,6 +33,10 @@ export const batches = pgTable(
     rowsRejected: integer("rows_rejected").notNull().default(0),
     warningsTotal: integer("warnings_total").notNull().default(0),
     infosTotal: integer("infos_total").notNull().default(0),
+    heldTotal: integer("held_total").notNull().default(0),
+    rulesConfigHash: char("rules_config_hash", { length: 64 }),
+    arielSnapshotHash: char("ariel_snapshot_hash", { length: 64 }),
+    arielAdapter: text("ariel_adapter"),
     failureReason: text("failure_reason"),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }).notNull().defaultNow(),
   },
@@ -87,6 +91,8 @@ export const eventsRecords = pgTable(
     rawValues: jsonb("raw_values").$type<Record<string, string | null>>().notNull(),
     parseOk: boolean("parse_ok").notNull(),
     accepted: boolean("accepted"),
+    /** ACCEPTED | REJECTED | HELD; null until validated. */
+    outcome: text("outcome"),
   },
   (t) => [
     uniqueIndex("ux_records_batch_line").on(t.batchId, t.lineNumber),
@@ -119,6 +125,8 @@ export const validationFindings = pgTable(
     overrideReason: text("override_reason"),
     overrideActor: text("override_actor"),
     overrideAt: timestamp("override_at", { withTimezone: true, mode: "string" }),
+    overrideNote: text("override_note"),
+    overrideLedgerSeq: bigint("override_ledger_seq", { mode: "number" }),
     calculated: jsonb("calculated").$type<Record<string, string | number | boolean>>(),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull().defaultNow(),

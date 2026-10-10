@@ -1,16 +1,14 @@
+import type { ArielBatchSnapshot } from "@/lib/ariel/snapshot";
+import type { FileDerived } from "@/lib/derivation/provisional";
 import type { EncodingProblem } from "@/lib/events/decode";
-import type { AnyCsvColumn, EventsRecord, FindingParams, FindingSeverity, FindingVisibility, IsoDate, RawEventsRow, YearScope } from "@/types";
+import type { AnyCsvColumn, ArielRateTables, EventsRecord, FindingParams, FindingSeverity, FindingVisibility, IsoDate, RawEventsRow, YearScope } from "@/types";
+import type { RulesConfig } from "./config";
+
+export type { RulesConfig } from "./config";
 
 export type RuleLevel = "L0" | "L1" | "L2";
 export type RuleSection = "EVENTS";
 export type RuleTool = "DataImport" | "CustomDLL" | "StandardValidationModule";
-
-export interface RulesConfig {
-  /** Architecture section 18 Q5. */
-  i42ApplyToRetfin: boolean;
-  /** Rule ids disabled by configuration (architecture section 7.7 `enabled`). */
-  disabled: ReadonlySet<string>;
-}
 
 export interface RuleContext {
   batch: { batchId: string; employerId: string; executionDate: IsoDate };
@@ -18,8 +16,13 @@ export interface RuleContext {
   config: RulesConfig;
   /** Injected clock (deterministic tests). Defaults to the batch execution date. */
   now: () => IsoDate;
-  /** Normalised SIN -> number of data rows carrying it (I10). */
+  /** Normalised SIN pseudonym -> number of data rows carrying it (I10). */
   sinCounts: ReadonlyMap<string, number>;
+  /** Ariel snapshot taken at validate start (architecture section 7.1). */
+  ariel: ArielBatchSnapshot;
+  rates: ArielRateTables;
+  /** Provisional derivation (architecture section 8.1) for L2 rules; null when no employment matches. */
+  derived: (record: EventsRecord) => FileDerived | null;
 }
 
 export interface FindingDraft {
@@ -44,8 +47,10 @@ export interface Rule {
   dataImportMessage: string;
   portalMessage: string;
   enabledByDefault: boolean;
-  /** L2 rules that need the Ariel snapshot are not runnable in Phase 1. */
+  /** L2 rules that read the Ariel snapshot. Skipped for a record once B2 fires (no employment to read). */
   requiresAriel: boolean;
+  /** Spec note / architecture section 18 reference shown in the registry UI. */
+  specNote?: string;
   /** L0: called once with record = null. L1/L2: per record. */
   appliesTo(record: EventsRecord | null, ctx: RuleContext): boolean;
   evaluate(record: EventsRecord | null, ctx: RuleContext): FindingDraft[];

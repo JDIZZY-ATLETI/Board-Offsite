@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { eq } from "drizzle-orm";
 import { expect } from "vitest";
 import { GET as listBatchesRoute, POST as uploadRoute } from "@/app/api/batches/route";
@@ -12,9 +14,19 @@ import { GET as ledgerEntriesRoute } from "@/app/api/ledger/entries/route";
 import { GET as ledgerEntryRoute } from "@/app/api/ledger/entries/[seq]/route";
 import { POST as ledgerVerifyRoute } from "@/app/api/ledger/verify/route";
 import { GET as rulesRoute } from "@/app/api/rules/route";
+import { DELETE as deleteRuleRoute, PATCH as patchRuleRoute } from "@/app/api/rules/[ruleId]/route";
+import { GET as rulesHistoryRoute } from "@/app/api/rules/history/route";
+import { POST as overrideRoute } from "@/app/api/findings/[findingId]/override/route";
+import { POST as batchOverrideRoute } from "@/app/api/batches/[batchId]/findings/[findingId]/override/route";
+import { POST as bulkOverrideRoute } from "@/app/api/batches/[batchId]/findings/override/route";
+import { GET as arielMembersRoute } from "@/app/api/ariel/members/route";
+import { GET as arielMemberRoute } from "@/app/api/ariel/members/[sinPseudo]/route";
+import { GET as arielRatesRoute } from "@/app/api/ariel/rates/route";
+import { POST as arielReseedRoute } from "@/app/api/ariel/reseed/route";
 import { GET as healthRoute } from "@/app/api/health/route";
 import { DELETE as devLogoutRoute, POST as devLoginRoute } from "@/app/api/auth/dev-login/route";
 import { batches, batchStatusHistory, eventsRecords } from "@/lib/db/schema";
+import { decodeBytes } from "@/lib/events/decode";
 import { TRANSITIONS } from "@/lib/pipeline/state-machine";
 import { BATCH_STATUSES, EVENTS_CSV_COLUMNS, type BatchStatus } from "@/types";
 import type { TestContext } from "./test-context";
@@ -37,6 +49,30 @@ export function validRow(i: number, over: Row = {}): Row {
     Weeks_PreviousYear: "52.00", LowContributions_PreviousYear: "2700.00", HighContributions_PreviousYear: "410.00", AnnualizedEarnings_PreviousYear: "", PA_PreviousYear: "12100",
     ...over,
   };
+}
+
+let seededCache: Row[] | null = null;
+/** Rows for members seeded from tests/fixtures/ariel-seed.json (the happy golden files): they pass every L2 rule. */
+export function seededRows(): Row[] {
+  if (seededCache) return seededCache;
+  const out: Row[] = [];
+  for (const s of ["happy-terfin", "happy-decfin", "happy-retfin"]) {
+    const text = decodeBytes(readFileSync(path.resolve(__dirname, "../golden", s, "input.csv"))).text;
+    const [header, ...lines] = text.split(/\r?\n/).filter(Boolean);
+    const cols = header.split(",") as Array<keyof Row>;
+    for (const l of lines) {
+      const cells = l.split(",");
+      const row: Row = {};
+      cols.forEach((c, i) => (row[c] = cells[i] ?? ""));
+      out.push(row);
+    }
+  }
+  seededCache = out;
+  return out;
+}
+export function seededRow(i: number, over: Row = {}): Row {
+  const rows = seededRows();
+  return { ...rows[i % rows.length], ...over };
 }
 
 /** RFC 4180 quoting for cells containing commas, quotes or line breaks. */
@@ -98,6 +134,16 @@ export const api = {
   ledgerEntry: (h: Record<string, string>, seq: string) => toResult(ledgerEntryRoute(new Request(`${BASE}/ledger/entries/${seq}`, { headers: h }), params({ seq })) as unknown as Promise<Response>),
   verify: (h: Record<string, string>, body: string) => toResult(ledgerVerifyRoute(new Request(`${BASE}/ledger/verify`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({})) as unknown as Promise<Response>),
   rules: (h: Record<string, string> = {}) => toResult(rulesRoute(new Request(`${BASE}/rules`, { headers: h }), params({})) as unknown as Promise<Response>),
+  patchRule: (h: Record<string, string>, ruleId: string, body: string) => toResult(patchRuleRoute(new Request(`${BASE}/rules/${ruleId}`, { method: "PATCH", headers: { ...h, "content-type": "application/json" }, body }), params({ ruleId })) as unknown as Promise<Response>),
+  deleteRule: (h: Record<string, string>, ruleId: string, reason = "reset") => toResult(deleteRuleRoute(new Request(`${BASE}/rules/${ruleId}?reason=${encodeURIComponent(reason)}`, { method: "DELETE", headers: h }), params({ ruleId })) as unknown as Promise<Response>),
+  rulesHistory: (h: Record<string, string>) => toResult(rulesHistoryRoute(new Request(`${BASE}/rules/history`, { headers: h }), params({})) as unknown as Promise<Response>),
+  override: (h: Record<string, string>, findingId: string, body: string) => toResult(overrideRoute(new Request(`${BASE}/findings/${findingId}/override`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({ findingId })) as unknown as Promise<Response>),
+  batchOverride: (h: Record<string, string>, batchId: string, findingId: string, body: string) => toResult(batchOverrideRoute(new Request(`${BASE}/batches/${batchId}/findings/${findingId}/override`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({ batchId, findingId })) as unknown as Promise<Response>),
+  bulkOverride: (h: Record<string, string>, batchId: string, body: string) => toResult(bulkOverrideRoute(new Request(`${BASE}/batches/${batchId}/findings/override`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({ batchId })) as unknown as Promise<Response>),
+  arielMembers: (h: Record<string, string>, qs = "") => toResult(arielMembersRoute(new Request(`${BASE}/ariel/members${qs}`, { headers: h }), params({})) as unknown as Promise<Response>),
+  arielMember: (h: Record<string, string>, sinPseudo: string) => toResult(arielMemberRoute(new Request(`${BASE}/ariel/members/${sinPseudo}`, { headers: h }), params({ sinPseudo })) as unknown as Promise<Response>),
+  arielRates: (h: Record<string, string> = {}) => toResult(arielRatesRoute(new Request(`${BASE}/ariel/rates`, { headers: h }), params({})) as unknown as Promise<Response>),
+  arielReseed: (h: Record<string, string>) => toResult(arielReseedRoute(new Request(`${BASE}/ariel/reseed`, { method: "POST", headers: h }), params({})) as unknown as Promise<Response>),
   devLogin: (body: string, h: Record<string, string> = {}) => toResult(devLoginRoute(new Request(`${BASE}/auth/dev-login`, { method: "POST", headers: { ...h, "content-type": "application/json" }, body }), params({})) as unknown as Promise<Response>),
   devLogout: () => toResult(devLogoutRoute(new Request(`${BASE}/auth/dev-login`, { method: "DELETE" }), params({})) as unknown as Promise<Response>),
 };

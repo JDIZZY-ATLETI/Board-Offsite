@@ -1,4 +1,5 @@
 import { uuidv7 } from "uuidv7";
+import { MockArielAdapter, type ArielAdapter } from "@/lib/ariel";
 import { getConfig, type AppConfig } from "@/lib/config";
 import { createDbHandle, type Db, type DbHandle } from "@/lib/db/client";
 import { FsLakeStore, type LakeStore } from "@/lib/lake";
@@ -11,6 +12,7 @@ export interface AppContext {
   db: Db;
   lake: LakeStore;
   ledger: LedgerService;
+  ariel: ArielAdapter;
   logger: Logger;
   clock: () => Date;
   newId: () => string;
@@ -20,6 +22,7 @@ export interface AppContextOverrides {
   config?: AppConfig;
   dbHandle?: DbHandle;
   lake?: LakeStore;
+  ariel?: ArielAdapter;
   logger?: Logger;
   clock?: () => Date;
   newId?: () => string;
@@ -40,6 +43,7 @@ export async function createAppContext(overrides: AppContextOverrides = {}): Pro
     db: dbHandle.db,
     lake: overrides.lake ?? new FsLakeStore(config.lakeRoot),
     ledger: new LedgerService(dbHandle.db, { clock, newId }),
+    ariel: overrides.ariel ?? new MockArielAdapter(dbHandle.db, { pseudonymKey: config.sinPseudonymKey, encKey: config.sinEncKey }),
     logger,
     clock,
     newId,

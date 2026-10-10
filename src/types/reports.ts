@@ -21,6 +21,8 @@ export interface ExecutionReport {
     sourceSystem: string;
     uploadedBy: string;
     rulesConfigHash: string;
+    arielAdapter?: string;
+    arielSnapshotHash?: string;
   };
   input: {
     originalFilename: string;
@@ -35,6 +37,7 @@ export interface ExecutionReport {
     rows: number;
     accepted: number;
     rejected: number;
+    held?: number;
     fileErrors: number;
     memberErrors: number;
     warnings: number;

@@ -1,4 +1,4 @@
-import { bigserial, char, date, index, integer, jsonb, numeric, pgSchema, primaryKey, text, uuid } from "drizzle-orm/pg-core";
+import { bigserial, boolean, char, date, index, integer, jsonb, numeric, pgSchema, primaryKey, text, uuid } from "drizzle-orm/pg-core";
 import { bytea } from "./custom-types";
 
 export const arielMock = pgSchema("ariel_mock");
@@ -13,11 +13,13 @@ export const mockMembers = arielMock.table(
     firstName: text("first_name"),
     dateOfBirth: date("date_of_birth", { mode: "string" }).notNull(),
     dateOfDeath: date("date_of_death", { mode: "string" }),
-    status: text("status").notNull(),
+    // Nullable so the B203 data-quality guard can be exercised with seed data.
+    status: text("status"),
     subStatus: text("sub_status"),
-    statusEffectiveDate: date("status_effective_date", { mode: "string" }).notNull(),
+    statusEffectiveDate: date("status_effective_date", { mode: "string" }),
     subStatusEffectiveDate: date("sub_status_effective_date", { mode: "string" }),
     calculationIndicators: jsonb("calculation_indicators").$type<string[]>().notNull().default([]),
+    scenario: text("scenario"),
   },
   (t) => [index("ix_mock_members_sin").on(t.sinPseudo)],
 );
@@ -139,6 +141,7 @@ export const mockRateTables = arielMock.table(
     tableName: text("table_name").notNull(),
     year: integer("year").notNull(),
     value: numeric("value", { precision: 14, scale: 4 }).notNull(),
+    placeholder: boolean("placeholder").notNull().default(true),
   },
   (t) => [primaryKey({ columns: [t.tableName, t.year] })],
 );

@@ -1,13 +1,18 @@
 import { expect } from "vitest";
+import { InMemoryArielSnapshot, type ArielBatchSnapshot } from "@/lib/ariel/snapshot";
+import { deriveProvisional } from "@/lib/derivation/provisional";
 import type { EncodingProblem } from "@/lib/events/decode";
 import { buildRecord } from "@/lib/events/record";
+import { buildRulesConfig, readRulesConfigFile, type RulesConfigOverride } from "@/lib/rules/config";
 import { buildFinding, buildSinCounts, type EngineDeps } from "@/lib/rules/engine";
 import { hasUnresolvedPlaceholders } from "@/lib/rules/render";
 import type { Rule, RuleContext } from "@/lib/rules/types";
-import { EVENTS_CSV_COLUMNS, type EventsRecord, type IsoDate, type RawEventsRow, type RawValues, type ValidationFinding, type YearScope } from "@/types";
+import { EVENTS_CSV_COLUMNS, type ArielMemberSnapshot, type ArielRateTables, type EventsRecord, type IsoDate, type RawEventsRow, type RawValues, type ValidationFinding, type YearScope } from "@/types";
+import { cyBlock, RATES, snapshotOf, stdMember } from "./ariel-fixtures";
 import { VALID_TERFIN } from "./fixtures";
 
 const KEY = Buffer.from("a1".repeat(32), "hex");
+const FILE_CONFIG = readRulesConfigFile();
 
 export function rawRow(values: Partial<RawValues>, lineNumber = 2, extraValues: string[] = []): RawEventsRow {
   const v = {} as RawValues;
@@ -25,22 +30,38 @@ export function rec(over: Partial<RawValues> = {}, lineNumber = 2): EventsRecord
 
 export interface CtxOptions {
   executionDate?: IsoDate;
+  employerId?: string;
   header?: string[];
   rows?: RawEventsRow[];
   records?: EventsRecord[];
   encodingProblem?: EncodingProblem | null;
   i42ApplyToRetfin?: boolean;
   disabled?: string[];
+  /** Ariel members visible to the rules (fixture snapshot). */
+  ariel?: ArielMemberSnapshot[] | ArielBatchSnapshot;
+  rates?: ArielRateTables;
+  /** Config overrides (enable flags / tolerances) layered on config/rules.events.json. */
+  overrides?: RulesConfigOverride[];
 }
 
 export function ctxOf(o: CtxOptions = {}): RuleContext {
   const records = o.records ?? [];
+  const employerId = o.employerId ?? "0235";
+  const executionDate = o.executionDate ?? "2026-10-08";
+  const ariel = Array.isArray(o.ariel) ? snapshotOf(o.ariel, "00000000-0000-7000-8000-000000000000", employerId) : (o.ariel ?? InMemoryArielSnapshot.empty("00000000-0000-7000-8000-000000000000", employerId, "FixtureAdapter"));
+  const cache = new Map<string, ReturnType<typeof deriveProvisional>>();
   return {
-    batch: { batchId: "00000000-0000-7000-8000-000000000000", employerId: "0235", executionDate: o.executionDate ?? "2026-10-08" },
+    batch: { batchId: "00000000-0000-7000-8000-000000000000", employerId, executionDate },
     file: { header: o.header ?? [...EVENTS_CSV_COLUMNS], rows: o.rows ?? [], records, encodingProblem: o.encodingProblem ?? null },
-    config: { i42ApplyToRetfin: o.i42ApplyToRetfin ?? true, disabled: new Set(o.disabled ?? []) },
-    now: () => o.executionDate ?? "2026-10-08",
+    config: buildRulesConfig({ file: FILE_CONFIG, overrides: o.overrides, i42ApplyToRetfin: o.i42ApplyToRetfin ?? true, disabled: o.disabled ?? [] }),
+    now: () => executionDate,
     sinCounts: buildSinCounts(records),
+    ariel,
+    rates: o.rates ?? RATES,
+    derived: (record) => {
+      if (!cache.has(record.recordId)) cache.set(record.recordId, deriveProvisional(record, ariel, employerId, executionDate));
+      return cache.get(record.recordId)!;
+    },
   };
 }
 
@@ -91,6 +112,23 @@ export function ruleHarness(rule: Rule) {
           expect(findings).toHaveLength(n);
         },
       };
+    },
+  };
+}
+/** Clean TERFIN baseline (2026-09-30, 38 weeks, AE 78,000) that produces zero L2 findings against `stdMember()`. */
+export const CLEAN_CY: Partial<RawValues> = cyBlock("2026-09-30", 38, 78000);
+
+/**
+ * L2 harness: `given(fileOverrides, members?, ctxOptions?)` builds one record from the clean baseline and a
+ * snapshot from the given members (default: the matching `stdMember()`), so each spec perturbs one thing.
+ */
+export function l2Harness(rule: Rule) {
+  const h = ruleHarness(rule);
+  return {
+    raw: h,
+    given(over: Partial<RawValues> = {}, members: ArielMemberSnapshot[] | null = null, opts: Omit<CtxOptions, "records" | "ariel"> = {}) {
+      const r = rec({ ...CLEAN_CY, ...over });
+      return h.given(r, ctxOf({ ...opts, records: [r], ariel: members ?? [stdMember()] }));
     },
   };
 }

@@ -1,7 +1,7 @@
 import type { AppContext } from "@/lib/app-context";
 import { auditLog } from "@/lib/db/schema";
-import { lakePaths } from "@/lib/lake/paths";
-import type { Batch, IsoDate, Session } from "@/types";
+import { ingestDateOf, lakePaths } from "@/lib/lake/paths";
+import type { Batch, Session } from "@/types";
 import { reportPath } from "./batches";
 
 export const REPORT_NAMES = [
@@ -13,6 +13,10 @@ export const REPORT_NAMES = [
   "records.ndjson",
   "header.json",
   "manifest.json",
+  "summary-of-validations.csv",
+  "summary-of-validations.private.csv",
+  "ariel-snapshot.ndjson",
+  "rules-config.json",
 ] as const;
 export type ReportName = (typeof REPORT_NAMES)[number];
 
@@ -25,13 +29,20 @@ export const REPORT_CONTENT_TYPES: Record<ReportName, string> = {
   "records.ndjson": "application/x-ndjson; charset=utf-8",
   "header.json": "application/json; charset=utf-8",
   "manifest.json": "application/json; charset=utf-8",
+  "summary-of-validations.csv": "text/csv; charset=utf-8",
+  "summary-of-validations.private.csv": "text/csv; charset=utf-8",
+  "ariel-snapshot.ndjson": "application/x-ndjson; charset=utf-8",
+  "rules-config.json": "application/json; charset=utf-8",
 };
+
+/** Reviewer/Admin only (architecture section 10.6: Control Report content). */
+export const PRIVATE_REPORTS: ReadonlySet<ReportName> = new Set<ReportName>(["summary-of-validations.private.csv", "ariel-snapshot.ndjson", "rules-config.json"]);
 
 /** Artifacts whose download must be audit-logged because they contain raw SIN. */
 export const PII_REPORTS: ReadonlySet<ReportName> = new Set<ReportName>(["rejected.csv"]);
 
 export async function readReport(ctx: AppContext, batch: Batch, name: ReportName): Promise<{ bytes: Buffer; contentType: string; path: string } | null> {
-  const paths = lakePaths({ employerId: batch.employerId, batchId: batch.batchId, ingestDate: batch.receivedAt.slice(0, 10) as IsoDate });
+  const paths = lakePaths({ employerId: batch.employerId, batchId: batch.batchId, ingestDate: ingestDateOf(batch.receivedAt) });
   const path = reportPath(paths, name);
   if (!(await ctx.lake.exists(path))) return null;
   return { bytes: await ctx.lake.get(path), contentType: REPORT_CONTENT_TYPES[name], path };

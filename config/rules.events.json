@@ -1,0 +1,38 @@
+{
+  "$comment": "Architecture section 7.7. Effective config = this file + Admin overrides (rules_config_overrides) + RULES_DISABLED env. Hash stamped on every batch.",
+  "enabled": {
+    "B3": false,
+    "B181": false
+  },
+  "tolerances": {
+    "B31.windowStart": "12-08",
+    "B37.tolerance1Weeks": 2,
+    "B37.tolerance2Dollars": 5,
+    "B38.toleranceWeeks": -1,
+    "B40.pct": 0.15,
+    "B41.pct": 0.5,
+    "B43.amount": -2500,
+    "B44.amount": -50000,
+    "B47.min": 20000,
+    "B47.max": 120000,
+    "B53a.pa": 250,
+    "B53b.pa": 0,
+    "B184a.weeks": 0,
+    "B184b.weeks": 0,
+    "B184c.weeks": 3,
+    "B185.weeks": -1,
+    "B186a.weeks": -1,
+    "B186b.weeks": -3.42,
+    "B186c.factor": 0.65,
+    "B214.weeks": 0.14,
+    "B214.minLeaveDays": 5
+  },
+  "nhh": {
+    "NHHSIS": "2019-01-01",
+    "NHHSTJ": "2019-01-01",
+    "NHHPRO": "2019-01-01",
+    "NHHSTM": "2019-07-01",
+    "NHHGR": "2019-06-01"
+  },
+  "nhhEmployers": ["0359", "0235", "0135"]
+}

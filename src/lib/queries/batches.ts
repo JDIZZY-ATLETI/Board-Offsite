@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, lt } from "drizzle-orm";
 import type { AppContext } from "@/lib/app-context";
 import { batches, batchStatusHistory, rawFiles } from "@/lib/db/schema";
-import { lakePaths } from "@/lib/lake/paths";
+import { ingestDateOf, lakePaths } from "@/lib/lake/paths";
 import type { Batch, BatchStatus, BatchStatusHistoryEntry, IsoDate, RawFile, SourceSystem } from "@/types";
 import { REPORT_NAMES, type ReportName } from "./reports";
 
@@ -19,9 +19,12 @@ export function toBatch(r: BatchRow): Batch {
     uploadedBy: r.uploadedBy,
     receivedAt: new Date(r.receivedAt).toISOString(),
     updatedAt: new Date(r.updatedAt).toISOString(),
-    counts: { rows: r.rowsTotal, accepted: r.rowsAccepted, rejected: r.rowsRejected, warnings: r.warningsTotal, infos: r.infosTotal },
+    counts: { rows: r.rowsTotal, accepted: r.rowsAccepted, rejected: r.rowsRejected, warnings: r.warningsTotal, infos: r.infosTotal, held: r.heldTotal },
     ...(r.failureReason ? { failureReason: r.failureReason } : {}),
     fileSha256: r.fileSha256,
+    rulesConfigHash: r.rulesConfigHash,
+    arielSnapshotHash: r.arielSnapshotHash,
+    arielAdapter: r.arielAdapter,
   };
 }
 
@@ -84,7 +87,7 @@ export async function getBatchDetail(ctx: AppContext, batchId: string): Promise<
   if (!row) return null;
   const history = await ctx.db.select().from(batchStatusHistory).where(eq(batchStatusHistory.batchId, batchId)).orderBy(asc(batchStatusHistory.id));
   const batch = toBatch(row.b);
-  const paths = lakePaths({ employerId: batch.employerId, batchId, ingestDate: batch.receivedAt.slice(0, 10) as IsoDate });
+  const paths = lakePaths({ employerId: batch.employerId, batchId, ingestDate: ingestDateOf(batch.receivedAt) });
   const candidates: Array<{ name: ReportName; path: string }> = REPORT_NAMES.map((name) => ({ name, path: reportPath(paths, name) }));
   const reports: Array<{ name: ReportName; path: string }> = [];
   for (const c of candidates) if (await ctx.lake.exists(c.path)) reports.push(c);
@@ -123,5 +126,13 @@ export function reportPath(paths: ReturnType<typeof lakePaths>, name: ReportName
       return paths.bronze.header;
     case "manifest.json":
       return paths.raw.manifest;
+    case "summary-of-validations.csv":
+      return paths.gold.summaryOfValidations;
+    case "summary-of-validations.private.csv":
+      return paths.gold.summaryOfValidationsPrivate;
+    case "ariel-snapshot.ndjson":
+      return paths.silver.arielSnapshot;
+    case "rules-config.json":
+      return paths.silver.rulesConfig;
   }
 }

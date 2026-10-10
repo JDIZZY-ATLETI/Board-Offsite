@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { notFound } from "@/lib/api/errors";
+import { ApiError, notFound } from "@/lib/api/errors";
 import { withApi } from "@/lib/api/handler";
-import { canAccessEmployer } from "@/lib/auth/roles";
+import { canAccessEmployer, canViewPrivateFindings } from "@/lib/auth/roles";
 import { requireSession } from "@/lib/auth/session";
 import { getBatchDetail } from "@/lib/queries/batches";
-import { auditPiiDownload, PII_REPORTS, readReport, REPORT_NAMES } from "@/lib/queries/reports";
+import { auditPiiDownload, PII_REPORTS, PRIVATE_REPORTS, readReport, REPORT_NAMES } from "@/lib/queries/reports";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +15,7 @@ export const GET = withApi(async (req, { app, session, params }) => {
   const name = z.enum(REPORT_NAMES).parse(params.name);
   const batch = await getBatchDetail(app, batchId);
   if (!batch || !canAccessEmployer(s, batch.employerId)) throw notFound("batch");
+  if (PRIVATE_REPORTS.has(name) && !canViewPrivateFindings(s)) throw new ApiError(403, "FORBIDDEN", "This report is HOOPP-only");
   const report = await readReport(app, batch, name);
   if (!report) throw notFound(`report ${name}`);
   if (PII_REPORTS.has(name)) {

@@ -24,6 +24,8 @@ export interface BatchCounts {
   rejected: number;
   warnings: number;
   infos: number;
+  /** Rows waiting for a warning override (Phase 2). */
+  held: number;
 }
 
 export interface Batch {
@@ -40,6 +42,10 @@ export interface Batch {
   counts: BatchCounts;
   failureReason?: string;
   fileSha256: string;
+  /** Stamped by the validate step (architecture section 7.7 / 10.6). */
+  rulesConfigHash?: string | null;
+  arielSnapshotHash?: string | null;
+  arielAdapter?: string | null;
 }
 
 export type EncodingDetected = "windows-1252" | "utf-8" | "utf-8-bom";
@@ -89,7 +95,7 @@ export interface ValidationFinding {
   dataImportMessage: string;
   portalMessage: string;
   overrideReasons: string[];
-  override?: { reason: string; actor: string; at: string; note?: string };
+  override?: { reason: string; actor: string; at: string; note?: string; ledgerSeq?: number };
   calculated?: Record<string, string | number | boolean>;
   createdAt: string;
   /** Deterministic position within the record's findings. */

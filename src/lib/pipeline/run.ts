@@ -1,19 +1,24 @@
 import { eq } from "drizzle-orm";
 import type { AppContext } from "@/lib/app-context";
+import { InMemoryArielSnapshot, type ArielBatchSnapshot } from "@/lib/ariel/snapshot";
+import { canonicalize } from "@/lib/crypto/canonical";
 import { sha256Hex } from "@/lib/crypto/hash";
 import { batches, eventsRecords, rawFiles, validationFindings } from "@/lib/db/schema";
 import { parseEventsCsv, type ParsedEventsFile } from "@/lib/events/parse";
 import { buildRecord, maskedRawValues, recordParseOk } from "@/lib/events/record";
 import { todayIso } from "@/lib/events/fields";
-import { lakePaths, type LakePaths } from "@/lib/lake/paths";
+import { ingestDateOf, lakePaths, type LakePaths } from "@/lib/lake/paths";
 import { batchStream, memberStream, systemActor } from "@/lib/ledger/streams";
 import { encryptSin } from "@/lib/pii/sin";
-import { buildSinCounts, evaluateRecords, runFileRules, type EngineDeps } from "@/lib/rules/engine";
-import type { RuleContext } from "@/lib/rules/types";
-import type { BatchStatus, EventsRecord, ExecutionReport, FindingSummary, IsoDate, RecordOutcome, RuleTiming, ValidationFinding } from "@/types";
+import { loadEffectiveRulesConfig } from "@/lib/rules/config-store";
+import type { RulesConfig } from "@/lib/rules/config";
+import { lakeFinding, runFileRules, type EngineDeps } from "@/lib/rules/engine";
+import type { BatchStatus, EventsRecord, ExecutionReport, FindingSummary, IsoDate, MemberRecordValidatedPayload, RuleTiming, ValidationFinding } from "@/types";
 import { buildRejectedIndividualsCsv } from "./csv-out";
 import { renderExecutionReportHtml } from "./execution-report";
 import { transitionBatch } from "./state-machine";
+import { buildSummaryOfValidationsCsv } from "./summary-report";
+import { buildRuleContext, runValidation, serializeRulesConfig, type ValidationOutput } from "./validate";
 
 const ACTOR = systemActor("pipeline");
 const INSERT_CHUNK = 200;
@@ -50,6 +55,9 @@ interface RunState {
   counts: ExecutionReport["counts"];
   lineCount: number;
   encoding: string;
+  rulesConfigHash: string;
+  arielAdapter: string;
+  arielSnapshotHash: string;
 }
 
 function chunk<T>(arr: T[], n: number): T[][] {
@@ -58,15 +66,15 @@ function chunk<T>(arr: T[], n: number): T[][] {
   return out;
 }
 
-function summarize(f: ValidationFinding): FindingSummary {
+export function summarize(f: ValidationFinding): FindingSummary {
   return { ruleId: f.ruleId, messageId: f.messageId, field: f.field, yearScope: f.yearScope, params: f.params };
 }
 
-function sortSummaries(list: FindingSummary[]): FindingSummary[] {
+export function sortSummaries(list: FindingSummary[]): FindingSummary[] {
   return [...list].sort((a, b) => a.ruleId.localeCompare(b.ruleId) || (a.field ?? "").localeCompare(b.field ?? "") || (a.yearScope ?? "").localeCompare(b.yearScope ?? ""));
 }
 
-function findingRow(f: ValidationFinding) {
+export function findingRow(f: ValidationFinding) {
   return {
     findingId: f.findingId,
     batchId: f.batchId,
@@ -90,7 +98,7 @@ function findingRow(f: ValidationFinding) {
   };
 }
 
-function ndjson(items: unknown[]): string {
+export function ndjson(items: unknown[]): string {
   return items.map((i) => JSON.stringify(i)).join("\n") + (items.length ? "\n" : "");
 }
 
@@ -109,7 +117,24 @@ export async function loadBatch(ctx: AppContext, batchId: string): Promise<{ bat
   return { batch, rawFile };
 }
 
-/** Runs parse -> validateL1 -> finalize for a RECEIVED batch (architecture section 10.2). */
+/** Member outcome payload for accepted rows (architecture section 9 / Phase 2). */
+export function validatedPayload(r: EventsRecord, findings: ValidationFinding[], rulesConfigHash: string, arielSnapshotHash: string): MemberRecordValidatedPayload {
+  const summaries = sortSummaries(findings.map(summarize));
+  return {
+    recordId: r.recordId,
+    lineNumber: r.lineNumber,
+    sinMasked: r.sinMasked,
+    eventType: r.eventType ?? null,
+    eventDate: r.eventDate ?? null,
+    findings: summaries,
+    findingsHash: sha256Hex(canonicalize(summaries)),
+    overrides: findings.filter((f) => f.override).map((f) => ({ findingId: f.findingId, ruleId: f.ruleId, reason: f.override!.reason })).sort((a, b) => a.findingId.localeCompare(b.findingId)),
+    rulesConfigHash,
+    arielSnapshotHash,
+  };
+}
+
+/** Runs parse -> validate (L0/L1/L2 with Ariel snapshot) -> finalize for a RECEIVED batch (architecture section 10.2). */
 export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchStatus> {
   const loaded = await loadBatch(ctx, batchId);
   if (!loaded) throw new Error(`batch ${batchId} not found`);
@@ -122,16 +147,21 @@ export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchS
   const state: RunState = {
     batch,
     rawFile,
-    paths: lakePaths({ employerId: batch.employerId, batchId, ingestDate: batch.receivedAt.slice(0, 10) as IsoDate }),
+    paths: lakePaths({ employerId: batch.employerId, batchId, ingestDate: ingestDateOf(batch.receivedAt) }),
     startedAt: ctx.clock(),
     outputs: [rawFile.lakePath],
     timings: [],
-    counts: { linesRead: 0, rows: 0, accepted: 0, rejected: 0, fileErrors: 0, memberErrors: 0, warnings: 0, infos: 0, findings: 0 },
+    counts: { linesRead: 0, rows: 0, accepted: 0, rejected: 0, held: 0, fileErrors: 0, memberErrors: 0, warnings: 0, infos: 0, findings: 0 },
     lineCount: 0,
     encoding: rawFile.encodingDetected,
+    rulesConfigHash: "",
+    arielAdapter: ctx.ariel.name,
+    arielSnapshotHash: "",
   };
   const deps: EngineDeps = { newId: ctx.newId, now: ctx.clock };
   try {
+    const config = await loadEffectiveRulesConfig(ctx);
+    state.rulesConfigHash = config.hash;
     const bytes = await ctx.lake.get(rawFile.lakePath);
     const actualSha = sha256Hex(bytes);
     if (actualSha !== rawFile.sha256) throw new PipelineError(`raw file sha256 mismatch: manifest ${rawFile.sha256} vs lake ${actualSha}`);
@@ -142,16 +172,11 @@ export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchS
     state.counts.rows = parsed.rows.length;
 
     const records = parsed.rows.map((row) => buildRecord(row, { batchId, pseudonymKey: ctx.config.sinPseudonymKey, newId: ctx.newId }));
-    const ruleCtx: RuleContext = {
-      batch: { batchId, employerId: batch.employerId, executionDate: batch.executionDate as IsoDate },
-      file: { header: parsed.header.observed, rows: parsed.rows, records, encodingProblem: parsed.encodingProblem },
-      config: { i42ApplyToRetfin: ctx.config.i42ApplyToRetfin, disabled: ctx.config.rulesDisabled },
-      now: () => batch.executionDate as IsoDate,
-      sinCounts: buildSinCounts(records),
-    };
+    const batchInfo = { batchId, employerId: batch.employerId, executionDate: batch.executionDate as IsoDate };
 
-    // ---- L0 ----
-    const l0 = runFileRules(ruleCtx, deps);
+    // ---- L0 (needs no Ariel) ----
+    const l0Ctx = buildRuleContext({ batch: batchInfo, parsed, records, snapshot: InMemoryArielSnapshot.empty(batchId, batch.employerId, ctx.ariel.name), rates: await ctx.ariel.rates(), config });
+    const l0 = runFileRules(l0Ctx, deps);
     state.timings.push(...l0.timings);
     if (l0.findings.length > 0) {
       await rejectFile(ctx, state, l0.findings);
@@ -164,12 +189,17 @@ export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchS
     await stepParse(ctx, state, parsed, records);
     log.info({ rows: records.length }, "batch parsed");
 
-    // ---- validate: L1 (+ Ariel-free L2) ----
-    const evaluation = evaluateRecords(ruleCtx, deps);
-    state.timings.push(...evaluation.timings);
-    await stepValidate(ctx, state, parsed, records, evaluation.recordFindings, evaluation.outcomes);
+    // ---- validate: snapshot once, then L1 + provisional derivation + L2 ----
+    const snapshot = await takeSnapshot(ctx, state, records);
+    state.arielSnapshotHash = snapshot.hash;
+    await putOnce(ctx, state.paths.silver.rulesConfig, serializeRulesConfig(config));
+    state.outputs.push(state.paths.silver.arielSnapshot, state.paths.silver.rulesConfig);
+    const rates = await ctx.ariel.rates();
+    const validation = runValidation({ batch: batchInfo, parsed, records, snapshot, rates, config }, deps);
+    state.timings.push(...validation.timings);
+    await stepValidate(ctx, state, parsed, records, validation, config);
     await writeExecutionReport(ctx, state, "VALIDATED");
-    log.info({ accepted: state.counts.accepted, rejected: state.counts.rejected }, "batch validated");
+    log.info({ accepted: state.counts.accepted, rejected: state.counts.rejected, held: state.counts.held }, "batch validated");
     return "VALIDATED";
   } catch (err) {
     // Any exception lands the batch in FAILED (architecture section 10.5); the full error stays in the log.
@@ -195,6 +225,19 @@ export async function runBatch(ctx: AppContext, batchId: string): Promise<BatchS
   }
 }
 
+/** Snapshot is write-once: a retry reuses the persisted one so re-validation is reproducible (AC5). */
+async function takeSnapshot(ctx: AppContext, state: RunState, records: EventsRecord[]): Promise<ArielBatchSnapshot> {
+  const path = state.paths.silver.arielSnapshot;
+  if (await ctx.lake.exists(path)) {
+    ctx.logger.warn({ path }, "reusing persisted Ariel snapshot from a previous attempt");
+    return InMemoryArielSnapshot.fromNdjson((await ctx.lake.get(path)).toString("utf8"), state.batch.batchId);
+  }
+  const sins = records.map((r) => r.sinPseudo).filter((s): s is string => Boolean(s));
+  const snapshot = await ctx.ariel.snapshotForBatch(state.batch.batchId, state.batch.employerId, sins);
+  await ctx.lake.put(path, snapshot.toNdjson());
+  return snapshot;
+}
+
 async function rejectFile(ctx: AppContext, state: RunState, findings: ValidationFinding[]): Promise<void> {
   const { batch } = state;
   const at = ctx.clock().toISOString();
@@ -202,6 +245,7 @@ async function rejectFile(ctx: AppContext, state: RunState, findings: Validation
   state.counts.findings = findings.length;
   await ctx.db.transaction(async (tx) => {
     await tx.insert(validationFindings).values(findings.map((f, i) => findingRow({ ...f, sortOrder: i })));
+    await tx.update(batches).set({ rulesConfigHash: state.rulesConfigHash || null, arielAdapter: state.arielAdapter, updatedAt: at }).where(eq(batches.batchId, batch.batchId));
     await transitionBatch(tx, { batchId: batch.batchId, from: "RECEIVED", to: "FILE_REJECTED", actor: ACTOR, at, note: findings.map((f) => `${f.ruleId}/${f.messageId}`).join(", ") });
     await ctx.ledger.append(
       {
@@ -271,6 +315,7 @@ async function stepParse(ctx: AppContext, state: RunState, parsed: ParsedEventsF
           rawValues: maskedRawValues(r),
           parseOk: recordParseOk(r),
           accepted: null,
+          outcome: null,
         })),
       );
     }
@@ -289,50 +334,50 @@ async function stepParse(ctx: AppContext, state: RunState, parsed: ParsedEventsF
   });
 }
 
-async function stepValidate(
-  ctx: AppContext,
-  state: RunState,
-  parsed: ParsedEventsFile,
-  records: EventsRecord[],
-  recordFindings: Map<string, ValidationFinding[]>,
-  outcomes: Map<string, RecordOutcome>,
-): Promise<void> {
+async function stepValidate(ctx: AppContext, state: RunState, parsed: ParsedEventsFile, records: EventsRecord[], v: ValidationOutput, config: RulesConfig): Promise<void> {
   const { batch, paths } = state;
   const at = ctx.clock().toISOString();
-  const allFindings: ValidationFinding[] = [];
-  for (const r of records) {
-    const list = recordFindings.get(r.recordId) ?? [];
-    list.forEach((f, i) => allFindings.push({ ...f, sortOrder: i }));
-  }
-  const accepted = records.filter((r) => outcomes.get(r.recordId) === "ACCEPTED");
-  const rejected = records.filter((r) => outcomes.get(r.recordId) === "REJECTED");
-  state.counts.accepted = accepted.length;
-  state.counts.rejected = rejected.length;
+  const allFindings = v.findings;
+  state.counts.accepted = v.accepted.length;
+  state.counts.rejected = v.rejected.length;
+  state.counts.held = v.held.length;
   state.counts.findings = allFindings.length;
   state.counts.memberErrors = allFindings.filter((f) => f.severity === "COMPLETE_MEMBER_ERROR").length;
   state.counts.warnings = allFindings.filter((f) => f.severity === "WARNING").length;
   state.counts.infos = allFindings.filter((f) => f.severity === "INFORMATION").length;
 
-  await putOnce(ctx, paths.silver.findings, ndjson(allFindings));
-  await putOnce(ctx, paths.silver.accepted, ndjson(accepted.map(publicRecord)));
-  await putOnce(ctx, paths.silver.rejected, buildRejectedIndividualsCsv(parsed.header.observed, rejected, parsed.encoding));
-  state.outputs.push(paths.silver.findings, paths.silver.accepted, paths.silver.rejected);
+  await putOnce(ctx, paths.silver.findings, ndjson(allFindings.map(lakeFinding)));
+  await putOnce(ctx, paths.silver.accepted, ndjson(v.accepted.map(publicRecord)));
+  await putOnce(ctx, paths.silver.rejected, buildRejectedIndividualsCsv(parsed.header.observed, v.rejected, parsed.encoding));
+  await writeSummaryReports(ctx, paths, allFindings);
+  state.outputs.push(paths.silver.findings, paths.silver.accepted, paths.silver.rejected, paths.gold.summaryOfValidations, paths.gold.summaryOfValidationsPrivate);
 
   await ctx.db.transaction(async (tx) => {
     for (const part of chunk(allFindings, INSERT_CHUNK)) {
       await tx.insert(validationFindings).values(part.map(findingRow));
     }
     for (const r of records) {
-      await tx.update(eventsRecords).set({ accepted: outcomes.get(r.recordId) === "ACCEPTED" }).where(eq(eventsRecords.recordId, r.recordId));
+      const outcome = v.outcomes.get(r.recordId) ?? "REJECTED";
+      await tx.update(eventsRecords).set({ accepted: outcome === "HELD" ? null : outcome === "ACCEPTED", outcome }).where(eq(eventsRecords.recordId, r.recordId));
     }
     await tx
       .update(batches)
-      .set({ rowsAccepted: accepted.length, rowsRejected: rejected.length, warningsTotal: state.counts.warnings, infosTotal: state.counts.infos, updatedAt: at })
+      .set({
+        rowsAccepted: v.accepted.length,
+        rowsRejected: v.rejected.length,
+        heldTotal: v.held.length,
+        warningsTotal: state.counts.warnings,
+        infosTotal: state.counts.infos,
+        rulesConfigHash: config.hash,
+        arielSnapshotHash: state.arielSnapshotHash,
+        arielAdapter: state.arielAdapter,
+        updatedAt: at,
+      })
       .where(eq(batches.batchId, batch.batchId));
   });
 
-  // Member outcomes for L1 rejects (architecture section 17 Phase 1), chunked per transaction.
-  for (const part of chunk(rejected, LEDGER_CHUNK)) {
+  // Member outcomes, chunked per transaction. HELD rows are ledgered once their last override lands.
+  for (const part of chunk(v.rejected, LEDGER_CHUNK)) {
     await ctx.ledger.appendMany(
       part.map((r) => ({
         streamId: r.sinPseudo ? memberStream(r.sinPseudo) : batchStream(batch.batchId),
@@ -345,15 +390,32 @@ async function stepValidate(
           sinMasked: r.sinMasked,
           eventType: r.eventType ?? null,
           eventDate: r.eventDate ?? null,
-          findings: sortSummaries((recordFindings.get(r.recordId) ?? []).map(summarize)),
+          findings: sortSummaries((v.recordFindings.get(r.recordId) ?? []).map(summarize)),
         },
+      })),
+    );
+  }
+  for (const part of chunk(v.accepted, LEDGER_CHUNK)) {
+    await ctx.ledger.appendMany(
+      part.map((r) => ({
+        streamId: r.sinPseudo ? memberStream(r.sinPseudo) : batchStream(batch.batchId),
+        eventType: "MemberRecordValidated" as const,
+        batchId: batch.batchId,
+        actor: ACTOR,
+        payload: validatedPayload(r, v.recordFindings.get(r.recordId) ?? [], config.hash, state.arielSnapshotHash) as unknown as Record<string, unknown>,
       })),
     );
   }
 
   await ctx.db.transaction((tx) =>
-    transitionBatch(tx, { batchId: batch.batchId, from: "PARSED", to: "VALIDATED", actor: ACTOR, at: ctx.clock().toISOString(), note: `accepted=${accepted.length} rejected=${rejected.length}` }),
+    transitionBatch(tx, { batchId: batch.batchId, from: "PARSED", to: "VALIDATED", actor: ACTOR, at: ctx.clock().toISOString(), note: `accepted=${v.accepted.length} rejected=${v.rejected.length} held=${v.held.length}` }),
   );
+}
+
+/** Summary of Validations public + private CSVs (architecture section 10.6). Regenerated after overrides. */
+export async function writeSummaryReports(ctx: AppContext, paths: LakePaths, findings: ValidationFinding[]): Promise<void> {
+  await ctx.lake.put(paths.gold.summaryOfValidations, buildSummaryOfValidationsCsv(findings, { includePrivate: false }), { overwrite: true });
+  await ctx.lake.put(paths.gold.summaryOfValidationsPrivate, buildSummaryOfValidationsCsv(findings, { includePrivate: true }), { overwrite: true });
 }
 
 async function writeExecutionReport(ctx: AppContext, state: RunState, status: BatchStatus, failureReason?: string): Promise<void> {
@@ -371,7 +433,9 @@ async function writeExecutionReport(ctx: AppContext, state: RunState, status: Ba
       executionDate: batch.executionDate,
       sourceSystem: batch.sourceSystem,
       uploadedBy: batch.uploadedBy,
-      rulesConfigHash: sha256Hex(JSON.stringify({ i42ApplyToRetfin: ctx.config.i42ApplyToRetfin, disabled: [...ctx.config.rulesDisabled].sort() })),
+      rulesConfigHash: state.rulesConfigHash,
+      arielAdapter: state.arielAdapter,
+      ...(state.arielSnapshotHash ? { arielSnapshotHash: state.arielSnapshotHash } : {}),
     },
     input: {
       originalFilename: rawFile.originalFilename,

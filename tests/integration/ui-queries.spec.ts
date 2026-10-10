@@ -52,16 +52,21 @@ describe("UI query helpers (Phase 1B backend touch-ups)", () => {
     const page = await listRecords(t.ctx, mixedId, { limit: 5 });
     expect(page.items.length).toBe(5);
     const r = page.items[0];
-    expect(r.parsed.currentYear.weeks).toBe("21.00");
-    expect(r.rawValues.Weeks_CurrentYear).toBe("21.00");
-    expect(r.parsed.employmentEndDate).toBe("2026-03-21");
+    expect(r.parsed.currentYear.weeks).toBe("5.00");
+    expect(r.rawValues.Weeks_CurrentYear).toBe("5.00");
+    expect(r.parsed.employmentEndDate).toBe("2026-02-11");
+    expect(r.outcome).toBe("ACCEPTED");
+    const held = await listRecords(t.ctx, mixedId, { accepted: "held", limit: 50 });
+    expect(held.items.length).toBe(8);
+    expect(held.items.every((x) => x.outcome === "HELD" && x.findingCounts.warning > 0 && x.findingCounts.cme === 0)).toBe(true);
     expect(r.sinPseudo).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it("recordOutcomeCounts matches the batch counters", async () => {
     const c = await recordOutcomeCounts(t.ctx, mixedId);
-    expect(c.accepted).toBe(62);
-    expect(c.rejected).toBe(38);
+    expect(c.accepted).toBe(19);
+    expect(c.rejected).toBe(73);
+    expect(c.held).toBe(8);
     expect(c.pending).toBe(0);
     expect(c.byEventType.reduce((s, e) => s + e.rows, 0)).toBe(100);
   });
@@ -73,8 +78,8 @@ describe("UI query helpers (Phase 1B backend touch-ups)", () => {
     expect(scoped.recent.length).toBe(1);
     expect(scoped.recent[0].batchId).toBe(rejectedId);
     expect(all.kpis.rows30d).toBe(100);
-    expect(all.kpis.rejectedRows30d).toBe(38);
-    expect(all.kpis.rejectionRate30d).toBeCloseTo(0.38, 5);
+    expect(all.kpis.rejectedRows30d).toBe(73);
+    expect(all.kpis.rejectionRate30d).toBeCloseTo(0.73, 5);
     expect(all.needsAttention.map((b) => b.batchId)).toEqual([rejectedId]);
     expect(scoped.kpis.rejectionRate30d).toBeNull();
   });
@@ -97,8 +102,8 @@ describe("UI query helpers (Phase 1B backend touch-ups)", () => {
     const memberOnly = await listLedgerEntries(t.ctx, { streamKind: "member", limit: 200 });
     const system = await listLedgerEntries(t.ctx, { streamKind: "system", limit: 200 });
     expect(batchOnly.items.every((e) => e.streamId.startsWith("batch:"))).toBe(true);
-    // 38 rejected rows, one of which has a blank SIN and therefore lands on the batch stream.
-    expect(memberOnly.items.length).toBe(37);
+    // 73 rejected + 19 accepted rows are ledgered; the blank-SIN row lands on the batch stream; HELD rows wait for their override.
+    expect(memberOnly.items.length).toBe(91);
     expect(memberOnly.items.every((e) => e.streamId.startsWith("member:"))).toBe(true);
     expect(system.items.length).toBe(1);
     expect(system.items[0].eventType).toBe("ChainAnchorPublished");
