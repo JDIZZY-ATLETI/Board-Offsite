@@ -14,6 +14,8 @@ export interface TabItem {
   disabledReason?: string;
   /** Exact match (default) or prefix match on the pathname. */
   match?: "exact" | "prefix";
+  /** Explicit active state for tabs that differ only by query string (e.g. `?tab=history`). */
+  active?: boolean;
 }
 
 export interface TabsNavProps {
@@ -31,7 +33,7 @@ export function TabsNav({ tabs, label, className }: TabsNavProps) {
         .filter((t) => !t.hidden)
         .map((t) => {
           const path = t.href.split("?")[0];
-          const active = (t.match ?? "exact") === "exact" ? pathname === path : pathname.startsWith(path);
+          const active = t.active ?? ((t.match ?? "exact") === "exact" ? pathname === path : pathname.startsWith(path));
           const classes = cn(
             "inline-flex h-10 items-center gap-2 whitespace-nowrap border-b-2 px-3 text-body font-medium transition-colors",
             active ? "border-brand text-brand" : "border-transparent text-ink-muted hover:border-border hover:text-ink",
