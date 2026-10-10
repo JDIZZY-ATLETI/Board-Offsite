@@ -20,6 +20,8 @@ Running log for the Phase 2B pass (QA fixes + Phase 2 UI). Base `cec41e7`.
 - Part 2.12-2.14 committed (`af59082`, `4c8b1ba`, `2ece583`): Summary of validations views, /ariel browser + member page, /admin/rules registry + history.
 - Part 2.15 Dashboard "Findings by rule" (`findingsByRule()` in `src/lib/queries/dashboard.ts`: top 8 rules by finding count over batches received in the last 30 days, record-level findings only, PRIVATE via `includePrivate`, `scopeEmployerId`; `FindingsByRulePanel` table with caption, rule link -> `/admin/rules?q=<id>`, severity badge, findings/rows/batches/overridden, decorative bar, EmptyState). Rendered for Reviewer/Admin only (`data-testid="findings-by-rule"`); Submitter dashboard unchanged. Test: `ui-queries` "findingsByRule (ux 5.1 item 15)".
 
+- Part 3 unit/RTL (jsdom, mocked fetch): `tests/ui/override-drawer.spec.tsx` (11: reasons from the rule via the `loadReasons` seam, fallback to finding reasons, Other -> note required, single POST + toast + onRecorded, error copy for REASON_NOT_ALLOWED / NOTE_REQUIRED / ALREADY_OVERRIDDEN / ROW_REJECTED / BATCH_NOT_VALIDATED, bulk 207 per-item errors), `tests/ui/findings-held.spec.tsx` (8: overrideBlockedReason, Override button / Overridden state / pending n-a, HELD + rejected row tints, amber strip with ledger link, bulk selection rules, PRIVATE toggle URL, row groups, Submitter D6), `tests/ui/rules-table.spec.tsx` (5: switch states + Reviewer read-only, toggle -> dialog -> PATCH {enabled, reason}, enable, tolerance 422 inline, reset DELETE ?reason=), `tests/ui/badges.spec.tsx` status-map completeness incl. HELD. `tests/ui`: 12 files / 83 tests.
+
 ## Next
 
-- Part 3 unit/RTL tests (OverrideDrawer, FindingsTable strip, rules toggle, status-map), browser E2E + screenshots, gates + report fix pass.
+- Browser E2E + screenshots, gates + report fix pass.

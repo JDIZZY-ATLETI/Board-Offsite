@@ -6,6 +6,10 @@ import { OutcomeBadge } from "@/components/app/badges/outcome-badge";
 import { SeverityBadge } from "@/components/app/badges/severity-badge";
 import { StatusBadge } from "@/components/app/badges/status-badge";
 import { BATCH_STATUSES, FINDING_SEVERITIES } from "@/types";
+import type { RecordOutcome } from "@/types";
+import { BATCH_STATUS_MAP, INTEGRITY_MAP, OUTCOME_MAP, SEVERITY_MAP, SEVERITY_SHORT, TOKEN_CLASSES } from "@/lib/ui/status-map";
+
+const RECORD_OUTCOMES: readonly RecordOutcome[] = ["ACCEPTED", "REJECTED", "HELD"];
 
 describe("badges (P4 / P7)", () => {
   it("renders icon + text for every BatchStatus with a stable test id", () => {
@@ -37,6 +41,23 @@ describe("badges (P4 / P7)", () => {
       expect(screen.getByTestId(`severity-badge-${s}`)).toHaveTextContent("· 3");
       unmount();
     }
+  });
+
+  it("status-map is complete: every status, severity and outcome (incl. HELD) has a label, icon and colour token", () => {
+    for (const s of BATCH_STATUSES) expect(BATCH_STATUS_MAP[s], s).toMatchObject({ label: expect.any(String), icon: expect.anything() });
+    for (const s of FINDING_SEVERITIES) {
+      expect(SEVERITY_MAP[s], s).toMatchObject({ label: expect.any(String), icon: expect.anything() });
+      expect(SEVERITY_SHORT[s], s).toEqual(expect.any(String));
+    }
+    for (const o of RECORD_OUTCOMES) expect(OUTCOME_MAP[o], o).toMatchObject({ label: expect.any(String), icon: expect.anything() });
+    expect(Object.keys(OUTCOME_MAP).sort()).toEqual([...RECORD_OUTCOMES].sort());
+    expect(OUTCOME_MAP.HELD.token).toBe("held");
+    expect(OUTCOME_MAP.HELD.label).toMatch(/override/i);
+    const entries = [...Object.values(BATCH_STATUS_MAP), ...Object.values(SEVERITY_MAP), ...Object.values(OUTCOME_MAP), ...Object.values(INTEGRITY_MAP)];
+    for (const e of entries) expect(TOKEN_CLASSES[e.token], e.label).toBeDefined();
+    // Labels differ within each map so colour is never the only cue (ux 8 / P7).
+    expect(new Set(Object.values(OUTCOME_MAP).map((e) => e.label)).size).toBe(RECORD_OUTCOMES.length);
+    expect(new Set(Object.values(SEVERITY_MAP).map((e) => e.label)).size).toBe(FINDING_SEVERITIES.length);
   });
 
   it("renders outcomes", () => {
