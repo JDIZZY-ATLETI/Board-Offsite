@@ -14,9 +14,14 @@ Base: `c094f53` (Phase 2 complete). Scope: architecture section 17 Phase 3 (back
 
 - **Step 5 - member APIs + projections.** `POST /api/members/lookup` (Reviewer/Admin, body only, audit `MEMBER_LOOKUP`, returns pseudonym + mask + found/inAriel), `GET /api/members/{sinPseudo}` (projection + member-stream timeline + latest-set items + Ariel summary; 404 when unknown everywhere), `POST /api/projections/rebuild` (Admin) + `npm run projections:rebuild`. Role matrix extended for all Phase 3 routes (`tests/qa/security-roles.spec.ts`, 69 green). `tests/integration/phase3-members.spec.ts`: mixed-100-rows builds after overriding all 8 HELD rows, `CorrectionAppended` RESUBMITTED_PROPOSAL / CORRECTED_REJECTION, member lookup/view, rebuild identity via API. New `INFO-NO-DERIVATION` finding for accepted rows that cannot yield items (mixed line 51: DECFIN without any event date).
 
-## Next
+- **Steps 6-8 - golden, tests, gates, docs.** Golden `ariel-update-set.json` + `expected-update-counts.json` (3 happy scenarios, `.gitattributes -text` so they stay byte-exact); `tests/unit/update-set-writers.spec.ts` (gold doc canonical order/hash, CSV formula hardening, diff.md, export formats). Gates: `typecheck` clean, `lint` clean, `lint:pii` ok, `vitest` 731 passed / 1 skipped (95 files), coverage `src/lib/derivation` 98.0 % stmts / 97.2 % lines (all files 90.2 % / 92.7 %), `next build` clean (all new routes present), `db:migrate` + `db:seed` + `ledger:verify` + `projections:rebuild` from a fresh `.data/pglite`, `npm run e2e:phase1` green against the dev server (Phase 1 UI already renders the PENDING_APPROVAL flow; two expectations updated). README (Phase 3A status, approve/export flow via API, routes), `.env.example` (`EXPORT_DIR`), architecture section 18 Q28-Q32.
 
-- Step 6/7 remaining: writer unit tests; Step 8 gates + docs.
+## Deferred (Phase 3B / later)
+
+- Update Set review page, member page, approve/reject/export UI, Playwright AC5 (upload -> override -> approve -> export) - UI half.
+- Resume-after-crash inside the `ledger` step (duplicate `ArielUpdateProposed` on a mid-chunk crash is avoided only by the FAILED transition + retry path).
+- Membership Reconciliation / Person Data Change reports and XLSX variants (Phase 4 per section 10.6).
+- Real APX / Data Controller export layout (add an `ArielExportFormat`).
 
 ## Decisions
 

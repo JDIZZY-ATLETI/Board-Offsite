@@ -196,7 +196,8 @@ try {
   const H = readFileSync(path.resolve("tests/golden/happy-terfin/input.csv"), "latin1").split("\r\n")[0];
   const xssRow = [`9${String(Date.now()).slice(-8)}`, `"<img src=x onerror=alert(1)>"`, `"=HYPERLINK(""http://evil"",""x"")"`, "TERFIN", "09302026", "-1", "1950.25", "", "", "8450", "", "", "", "", ""].join(",");
   const xssUrl = await uploadAndWait(page, Buffer.from(`${H}\r\n${xssRow}\r\n`, "latin1"), `qa-xss-${Date.now()}.csv`);
-  await page.getByTestId("status-badge-VALIDATED").first().waitFor({ timeout: 60_000 });
+  // Phase 3: the single row is rejected, nothing is HELD, so the batch continues to PENDING_APPROVAL (empty update set).
+  await page.getByTestId("status-badge-PENDING_APPROVAL").first().waitFor({ timeout: 60_000 });
   await page.goto(`${xssUrl}/records`);
   await page.getByTestId("records-table").waitFor();
   await page.getByRole("button", { name: "Expand row" }).first().click();

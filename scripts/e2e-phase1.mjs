@@ -77,12 +77,13 @@ try {
   await page.getByTestId("upload-submit").click();
   await page.waitForURL(/\/batches\/[0-9a-f-]{36}$/, { timeout: 30_000 });
   const happyUrl = page.url();
-  await waitForStatus(page, "VALIDATED");
-  ok("happy-terfin reaches VALIDATED", true, happyUrl.split("/").pop());
+  // Phase 3: a batch without HELD rows continues automatically to PENDING_APPROVAL (architecture section 10.1).
+  await waitForStatus(page, "PENDING_APPROVAL");
+  ok("happy-terfin reaches PENDING_APPROVAL", true, happyUrl.split("/").pop());
   const validatedStep = page.getByTestId("stepper-step-VALIDATED");
-  ok("stepper marks Validated as current", (await validatedStep.getAttribute("data-state")) === "current");
-  ok("stepper marks Parsed as done", (await page.getByTestId("stepper-step-PARSED").getAttribute("data-state")) === "done");
-  ok("Next step copy for Submitter (VALIDATED clean)", (await page.getByTestId("next-step").textContent())?.includes("Validation complete"));
+  ok("stepper marks Validated as done", (await validatedStep.getAttribute("data-state")) === "done");
+  ok("stepper marks Pending approval as current", (await page.getByTestId("stepper-step-PENDING_APPROVAL").getAttribute("data-state")) === "current");
+  ok("Next step copy for Submitter (PENDING_APPROVAL)", (await page.getByTestId("next-step").textContent())?.includes("Validation complete"));
 
   // ---- Submitter: file-rejected-header -> FILE_REJECTED with I51 ----
   await page.goto(`${BASE}/upload`);
